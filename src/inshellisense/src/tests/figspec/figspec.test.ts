@@ -1,3 +1,4 @@
+/* eslint-disable header/header -- 本文件由 fig-windows-research 编写，版权声明与上游不同 */
 // Copyright (c) fig-windows-research contributors.
 // Licensed under the MIT License.
 //
@@ -35,8 +36,7 @@ afterAll(() => {
   if (workDir) fs.rmSync(workDir, { recursive: true, force: true });
 });
 
-const names = async (command: string, shell: Shell, cwd = process.cwd()) =>
-  (await getSuggestions(command, cwd, shell))?.suggestions.map((s) => s.name) ?? [];
+const names = async (command: string, shell: Shell, cwd = process.cwd()) => (await getSuggestions(command, cwd, shell))?.suggestions.map((s) => s.name) ?? [];
 
 /** 接受候选时，inshellisense 要删除的字符数和要插入的文本。name 省略时取第一个候选。 */
 const accept = async (command: string, shell: Shell, cwd: string, name?: string) => {
@@ -153,19 +153,19 @@ describe("W-xxx：PowerShell 规则", () => {
     expect(await accept("cd M", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: "'My Docs/'" });
   });
 
-  test.failing("W-002 缺陷：名称中的单引号应写成两个单引号，并整体加引号", async () => {
+  test("W-002 名称中的单引号写成两个单引号，并整体加引号（T-039 修复）", async () => {
     expect((await accept("cd it", Shell.Pwsh, workDir, "it's")).insert).toBe("'it''s/'");
   });
 
-  test.failing("W-003 缺陷：含 `$` 的名称应加单引号，否则会被当作变量展开", async () => {
+  test("W-003 含 `$` 的名称加单引号，避免被当作变量展开（T-039 修复）", async () => {
     expect((await accept("cd a", Shell.Pwsh, workDir, "a$b")).insert).toBe("'a$b/'");
   });
 
-  test.failing("W-004 缺陷：含 `&` 的名称应加单引号", async () => {
+  test("W-004 含 `&` 的名称加单引号（T-039 修复）", async () => {
     expect((await accept("cd a", Shell.Pwsh, workDir, "a&b")).insert).toBe("'a&b/'");
   });
 
-  test.failing("W-005 缺陷：中文名称按字符数删除（当前按显示宽度删除，会多删一个字符）", async () => {
+  test("W-005 中文名称按字符数删除（T-039 修复；PowerShell 中的效果待 T-035 第 15 项验证）", async () => {
     expect(await accept("cd 中", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: "中文目录/" });
   });
 
@@ -177,11 +177,11 @@ describe("W-xxx：PowerShell 规则", () => {
     expect(await accept("cd 'My", Shell.Pwsh, workDir)).toEqual({ deleteCount: 3, insert: "'My Docs/'" });
   });
 
-  test.failing("W-008 缺陷：含反引号的名称应加单引号（反引号是 PowerShell 的转义符）", async () => {
+  test("W-008 含反引号的名称加单引号（T-039 修复）", async () => {
     expect((await accept("cd a", Shell.Pwsh, workDir, "a`b")).insert).toBe("'a`b/'");
   });
 
-  test.failing("W-009 缺陷：同时含空格和单引号时，单引号应写成两个单引号（当前写成 \\'）", async () => {
+  test("W-009 同时含空格和单引号时，单引号写成两个单引号（T-039 修复）", async () => {
     expect((await accept("cd it", Shell.Pwsh, workDir, "it's dir")).insert).toBe("'it''s dir/'");
   });
 });

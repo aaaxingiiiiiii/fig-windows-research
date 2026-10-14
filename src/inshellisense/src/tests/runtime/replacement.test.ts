@@ -64,9 +64,10 @@ describe("calculateReplacement", () => {
       insertText: "好 ",
     });
   });
-  test("wide-char divergent uses display width for backspace", () => {
+  test("wide-char divergent uses character count for backspace", () => {
+    // shells delete one character per backspace regardless of its display width (fig-windows-research F-030)
     expect(calculateReplacement(makeToken({ token: "你", tokenLength: 2 }), makeSuggestion({ name: "世界" }))).toEqual({
-      backspaceCount: 2,
+      backspaceCount: 1,
       insertText: "世界 ",
     });
   });
