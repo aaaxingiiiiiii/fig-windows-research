@@ -19,7 +19,7 @@
 
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | todo | any | — | 预留：Mac 上的 GPT/Codex | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | doing | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-042`） | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | todo | any | T-042 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
