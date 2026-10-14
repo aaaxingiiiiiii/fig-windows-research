@@ -57,3 +57,12 @@
 - 产出：D-007、D-008；D-003 修订，D-004、D-006 推翻；新增任务 T-035 至 T-047；取消 PSReadLine 路线的任务。
 - 没做完 / 问题：upstream 的推送权限需要用户与仓库所有者确认。
 - 下一步建议：T-035（Windows，人工）和 T-036（任何系统）可以并行。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· 文档修正
+
+- 做了：
+  - 把 `docs/windows-plan.md` 改写为与 D-007 一致的概要。之前它仍是旧路线的内容。
+  - 复查推送权限：`origin/develop` 可以推送；`upstream/develop` 仍然返回 403。
+  - 确认 `origin` 在 GitHub 上是 `upstream` 的 fork，所以可以向 `upstream/develop` 提 Pull Request。
+  - 确认本机的 fnm 已有 Node 20，满足 inshellisense 对版本的要求（`>=18 <23`），可以直接开始 T-036。
+- 下一步建议：T-036。
