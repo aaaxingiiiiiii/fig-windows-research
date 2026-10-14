@@ -1,33 +1,36 @@
 # 当前交接状态
 
-更新时间：2026-10-14。
+更新：2026-10-14 · Claude Code/Opus 5.5。每次会话结束时重写本页，保持一屏可读。
 
-## 已完成
+## 一句话
 
-- Windows 电脑已安装 REA 6.4.0，并完成 Codex MCP 注册与配套技能安装。
-- 独立 MCP initialize、tools/list、ping 验证通过，发现 170 个工具。
-- 自建 JavaScript 样本静态分析成功。
-- 研究仓库已准备 Mac 接手说明、目标记录、发现索引和 Windows 计划。
+研究方法已经从“反编译 Fig 的 Mac 程序”改为“读开源源码，再用 Kiro 做运行时对照”（D-001）。补全链路和行为规则已经从源码整理完毕，接下来需要用户做两个决定，并分别在 Mac 和 Windows 上做实测。
 
-这些结果只证明 Windows 基础工具可用，不能代替 Mac 环境验证或 Fig 调查。
+## 已确认
 
-## 未完成
+- Fig 的后继产品是 Kiro CLI。本机安装的是 2.30.0，正在运行，zsh 会话被 `kiro-cli-term` 包装（`research/target.md`）。
+- Fig 补全的完整源码以 MIT/Apache-2.0 开源，spec 库以 MIT 开源；三个参考仓库已固定 commit，可以用 `scripts/fetch-sources.sh` 拉取。
+- 补全链路已整理到 `research/architecture.md`，行为规则和 13 条用例在 `specs/completion.md`。
+- Fig 从未完成 Windows 版本：有 ConPTY 和光标定位代码，但没有 PowerShell 集成，也没有 Windows IPC。Microsoft inshellisense 已经在 Windows 上可用（`research/prior-art.md`）。
 
-- 尚未确定 Fig 的准确产品、版本、架构和本地路径。
-- 尚未在另一台 Mac 安装/验证 REA 或原生 provider。
-- 尚无 Fig 静态或运行时证据，尚未撰写已证实的功能结论。
-- 尚未实现或测试 Windows 功能。
+## 部分完成
 
-## Mac 下一步
+- 规格中所有“源码预期”都基于开源 1.19.7，还没有在 Kiro 2.30.0 上验证（T-012）。
+- `prior-art.md` 第 3 节中关于 PSReadLine 的内容来自记忆，尚未核实（T-016）。
 
-1. 检查本机 REA/Codex；缺失时按 `mac-setup.md` 完成必要安装。
-2. 确认用户想分析的 Fig 产品及功能，记录目标版本和 SHA-256。
-3. 第一轮候选范围：补全触发 → 候选列表 → 选择 → 插入文本；先确认实际目标支持该流程。
-4. 建立 3–5 个可重复的观察用例，并写入 `specs/completion.md`。
-5. 用最少的静态/运行时证据解释行为，更新发现索引。
+## 等用户决定
 
-## 交回 Windows
+- D-002：Windows 首个支持的组合，推荐 PowerShell 7 + Windows Terminal。
+- D-003：实现路线，可选基于 inshellisense、PowerShell 原生插件或 Fig 式悬浮窗。建议先完成 T-014 再决定。
+- D-005：本项目代码的许可证。
 
-提交可公开的行为规格和文字结论，推送仓库；Windows 电脑拉取同一分支。原始材料保留在 Mac 的 `local/` 中，必要时由用户选择私有渠道传递。
+## 下一条最小可执行任务
 
-每轮交接写明：目标版本、工具版本、已回答的问题、证据索引、尚未解决的问题以及下一步。不要把仅在 Mac 上验证的行为写成已通过 Windows 测试。
+- 只有仓库和网络的 AI：**T-016**，核实 PSReadLine 相关接口，约 1 小时，结果直接影响 D-003。
+- 有 Windows 环境：T-014。
+- 有 Mac 并且有人可以看屏幕：T-012。
+
+## 注意
+
+- `local/` 只存在于产生它的机器上；其他机器先运行 `sh scripts/fetch-sources.sh`。
+- 本轮的变更尚未提交，等待用户确认。

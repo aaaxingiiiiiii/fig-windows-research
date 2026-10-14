@@ -1,50 +1,44 @@
-# Fig 行为研究与 Windows 重实现
+# Fig 补全行为研究与 Windows 实现
 
-在 macOS 上研究 Fig 的可观察行为和集成方式，形成有证据支持的功能规格，再在 Windows 上独立实现。此仓库是公开的研究与协作起点，与 Fig 官方无隶属关系。
+研究 Fig 终端补全（现由 Kiro CLI 延续）的行为，写出有证据支持的规格，在 Windows 上实现同类补全插件。本仓库与 Fig、AWS 均无隶属关系。
 
-**当前状态：准备阶段。尚未确认目标版本、取得分析证据或实现 Windows 客户端。**
+**当前状态：** 已根据开源源码整理出补全链路和行为规格，正在等待用户确定 Windows 实现路线，Mac 和 Windows 上的实测尚未进行。详见 [docs/handoff.md](docs/handoff.md)。
 
-## 是否必须使用 Mac？
+## 关键事实
 
-研究公开资料、可使用的 JavaScript 文件和静态资源不一定需要 Mac。观察 Fig 在 macOS 上的实际运行、终端交互和系统集成，需要可运行目标版本的 Mac 环境。
+- Fig 已停止服务。后继产品是 Amazon Q Developer CLI，后来更名为 Kiro CLI。
+- Fig 补全的源码（[aws/amazon-q-developer-cli-autocomplete](https://github.com/aws/amazon-q-developer-cli-autocomplete)）以 MIT/Apache-2.0 开源，spec 库（[withfig/autocomplete](https://github.com/withfig/autocomplete)）以 MIT 开源。所以本项目以**读源码**为主，不需要反编译。
+- Fig 从未发布 Windows 版。[microsoft/inshellisense](https://github.com/microsoft/inshellisense)（MIT）已经在 Windows 上实现了类似功能，是重要的对照对象。
 
-本项目已验证的 Windows 环境使用 REA 6.4.0；该版本的 Windows Ghidra P0 路径只接受 x86/x86-64 PE，不能用这一路径分析 Fig 的 Mach-O 原生程序。这是这一工具路径的限制，并非所有静态逆向工具都必须在 Mac 上使用。
+## 交给任意 AI 接手
 
-## 在另一台 Mac 上开始
+本仓库按“多 AI 接力”的方式组织，适用于 Codex、Claude Code、Gemini CLI、Cursor 等工具。把下面这段话交给 AI 即可：
 
-```bash
-git clone https://github.com/xingdouiii-maker/fig-windows-research.git
-cd fig-windows-research
-```
+> 阅读 AGENTS.md，按其中“每次会话开始”的步骤，从 tasks/board.md 选择一个适合本机环境的任务并完成，会话结束时按 AGENTS.md 更新交接文件。
 
-1. 安装/打开 Codex，将这个文件夹作为项目。
-2. 按 [Mac 环境准备](docs/mac-setup.md) 配置 REA；Windows 电脑上的工具安装不会通过 Git 自动同步。
-3. 将下面的任务交给 Mac 上的 Agent：
-
-> 阅读 AGENTS.md、docs/handoff.md 和 docs/mac-setup.md。先确认本机 Fig 的准确产品、版本和应用路径，检测 REA 是否可用。优先分析“终端补全的触发、候选展示与选中后插入”这一条流程；这是初始候选范围，若目标不包含该功能则先澄清。将事实、推断与未知项分开，更新 research/target.md、research/findings.md 和 specs/completion.md。原始应用、反编译输出与录屏只存放在忽略的 local/ 目录；仅将经过检查的文字结论和独立行为规格提交到公开仓库。当前先完成调查，不扩展为完整 Windows 客户端开发。
+想指定任务时，在这段话后面加上“做 T-0xx”。
 
 ## 目录
 
 | 路径 | 用途 |
 | --- | --- |
-| `docs/mac-setup.md` | Mac 安装、接入和 provider 选择 |
-| `docs/handoff.md` | 跨电脑交接、当前状态和下一步 |
-| `research/target.md` | 产品、版本、架构、样本哈希和来源 |
-| `research/findings.md` | 结论与证据索引 |
-| `specs/completion.md` | 面向独立实现的行为规格 |
-| `docs/windows-plan.md` | Windows 实现阶段与验收路线 |
-| `local/` | 本地样本、原始证据和临时输出；Git 忽略 |
+| `AGENTS.md` | 所有 AI 共用的规则（`CLAUDE.md`、`GEMINI.md` 只指向这里） |
+| `docs/handoff.md` | 当前状态和下一步 |
+| `tasks/board.md` | 任务板 |
+| `docs/workflow.md` | 接力流程细则：编号、证据、认领、提交 |
+| `docs/decisions.md` | 决策记录，包括待用户决定的事项 |
+| `docs/log.md` | 会话记录 |
+| `docs/windows-plan.md` | Windows 实现路线 |
+| `docs/mac-setup.md` | Mac 上的运行时观察环境 |
+| `research/` | 研究对象、来源、证据索引、结论、架构和现有方案 |
+| `specs/completion.md` | 补全行为规格和用例 |
+| `scripts/fetch-sources.sh` | 把参考仓库拉取到 `local/sources/`，固定 commit |
+| `scripts/check-public.sh` | 提交前检查本机路径、凭据和大文件 |
+| `scripts/check-refs.py` | 检查文档中的源码引用是否有效 |
+| `local/` | 源码克隆、原始证据、录屏；Git 忽略，不提交 |
 
 ## 公开仓库约定
 
-只发布自己撰写的研究说明、独立规格及可合法公开的代码。第三方软件本体、专有资源、未经授权的反编译代码、终端历史、令牌和原始抓包不进入仓库。开源参考材料应核实并记录具体许可证、版本和来源。
+只发布自己撰写的研究说明、规格和代码。开源代码按其许可证使用，复用时保留声明并登记到 `research/sources.md`。闭源程序（Kiro CLI）的二进制、资源和反编译结果不进入仓库。`.gitignore` 只是辅助手段，提交前要运行 `sh scripts/check-public.sh` 并查看 `git diff --cached`。
 
-`.gitignore` 只是辅助，提交前仍需检查 `git diff --cached`。本仓库暂未指定代码许可证；公开可见不等于授予任意复制或分发许可。
-
-## 参考
-
-- [REA 官方仓库](https://github.com/morluto/rea)
-- [REA 安装与配置](https://github.com/morluto/rea/blob/main/docs/installation.md)
-- [Codex MCP 文档](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
-
-环境基线记录于 2026-10-14；后续升级 REA 时记录实际版本与工具能力。
+本仓库的代码许可证尚未确定（D-005）。
