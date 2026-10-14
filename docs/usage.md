@@ -27,7 +27,7 @@ node build/index.js -s pwsh
 | Esc | 隐藏候选列表 |
 | Enter | **不会**接受候选，而是直接执行当前命令 |
 
-按键可以在配置文件 `~/.inshellisenserc`（TOML 格式）中修改，写法见上游 README 的 [Keybindings](https://github.com/microsoft/inshellisense#keybindings) 一节。每页显示的候选数也可以在这个文件中修改（`maxSuggestions`，默认 5）。
+按键可以在配置文件 `%USERPROFILE%\.inshellisenserc`（TOML 格式）中修改，写法见上游 README 的 [Keybindings](https://github.com/microsoft/inshellisense#keybindings) 一节。每页显示的候选数也可以在这个文件中修改（`maxSuggestions`，默认 5）。
 
 ## 3. 和 Fig 的不同之处（请在试用时留意）
 
@@ -51,12 +51,13 @@ node build/index.js -s pwsh
 
 ## 5. 已知限制
 
-- 少数命令的动态候选（例如某些 git、docker 子命令的候选）需要执行 Linux 风格的命令行工具。没有安装 Git for Windows 时，这些候选可能是空的，但不会报错。T-049 正在把它们改写成不依赖这些工具的方式。
+- 补全规则来自 Fig 的 spec 库，其中一部分动态候选要执行 Linux 风格的命令行工具（`ls`、`cat`、`grep`、`sed` 等）。最常见的用法已经改由 Node 模拟，不需要 Git for Windows，包括文件补全，git、npm、yarn、pnpm、npx、cargo、make 的动态候选（T-049）。其余用法在没有安装 Git for Windows 时没有动态候选，但不会报错，静态的子命令和选项照常显示。
+- 少数 spec 中的命令执行时使用的是启动补全时的目录，不是终端的当前目录（T-051 待修复）。
 - 只支持 Windows Terminal 中的 PowerShell 7；Windows PowerShell 5.1、cmd 和其他终端没有测试。
 - 全屏程序（vim、less 等）运行期间不显示候选。
 
 ## 6. 遇到问题时
 
 1. 加上 `-V` 参数重新启动：`node build/index.js -s pwsh -V`。
-2. 复现问题后，查看日志 `inshellisense.log`。它在用户目录下的 `.inshellisense\log\` 中；如果那里没有，就在 `.local\share\inshellisense\log\` 中。
+2. 复现问题后，查看日志 `%USERPROFILE%\.inshellisense\log\inshellisense.log`。日志会记录每条补全命令是怎么执行的：直接执行（`ran natively`）、由 Node 模拟（`emulated in node`），还是经 Git Bash 执行（`git bash`）。
 3. 把操作步骤和日志中相关的几行记入任务记录。日志中可能包含路径和命令，贴到公开的地方之前，先删掉个人信息。

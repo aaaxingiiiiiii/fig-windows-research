@@ -153,3 +153,26 @@
 - 用户验证入口：现在可在 Windows 按 docs/dev.md 从源码构建，运行 `node build/index.js -s pwsh` 做终端版试用，用 exit 退出；按 mvp-plan 的 T-035 清单记录结果，并区分原版与本项目修复版。T-037 后验证无 Git Bash，T-040 后验证安装卸载，T-043/T-044 后验证悬浮效果。
 - 下一步建议：T-043 按 v1 抽象渲染并写假服务端 L1；Windows 端继续 T-035、T-019/T-021；本轮共享协议交付后，双方后续改格式或语义须共同升级版本。
 - 合并补充：交付前再次同步，已保留 Claude 新完成的 T-037 和整合者 handoff；用户现在可直接执行新增的 T-048 人工清单验证本项目修改，POSIX helper 的进一步改写另列 T-049。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· 用户决定、T-050 准备、T-049
+
+- 用户决定：
+  - 向 microsoft/inshellisense 提交修复（D-011）。
+  - 与 Fig 的差异暂时保留，并在使用说明中注明（D-010）。
+  - 继续 T-049。
+  - GPT 完成 T-042 后，接手 T-043。
+- 新增 `docs/usage.md`（使用说明）。第 3 节列出与 Fig 的 7 处不同；README 和 mvp-plan 的 T-040、T-041 行指向它。
+- T-050：上游 main 仍是 8dcc9ca，与本仓库固定的版本相同。在本机临时目录中，从上游 main 建了两个分支：
+  - `fix/pwsh-path-quoting`：新增 26 个 escapePath 测试，修复前其中 18 个失败；
+  - `fix/wide-char-backspace`：加了一个混合宽度的用例。
+  - 两个分支上，上游的构建、lint 和 runtime 测试都通过（`brewInstallMullvad` 在本机 Homebrew 环境下本来就失败）。PR 说明已用英文写好。
+  - 阻塞：用户的 GitHub 账号下还没有 inshellisense 的 fork，本机也没有 `gh`；CLA 需要用户本人签署。
+- T-049：新增 `src/runtime/posixEmulation.ts`，在 Windows 上用 Node 模拟：
+  - `ls -1ApL`（filepaths helper，约 70 个 spec 共用）、`cat`、`grep`；
+  - 9 条固定的 `bash -c` 脚本：git 的 sed、向上查找 package.json 等、node_modules/.bin、`npm root -g`、cargo、make。
+  - generator 上下文在 Windows 上补上 HOME。
+  - 新增 31 个测试，包括脚本出处检查，以及模拟 win32 时经真实 spec 得到候选。关掉模拟后，3 个集成测试都失败。
+- 修正 T-048 清单：原来的第 5 项用 `git restore --staged`，但这个命令并不经过 bash（它用的是直接执行的 `git status`），改为 `git diff`；原来的第 4 项 `npm run ` 实际走的是 bash 脚本，改为 `npm uninstall -g `，用来验证 `npm.cmd`。日志路径改为 `%USERPROFILE%\.inshellisense\log\`。
+- 新发现 F-032：custom generator 的默认目录和输出清理与 Fig 不同，登记为 T-051。
+- 测试：`npm test -- --ci` 共 271 个，260 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；lint 通过。不加 `--ci` 时，jest 会为失败的 brew 测试写入快照，已在 dev.md 中说明。
+- 下一步：用户 Fork 后推送 T-050 的两个分支；Windows 端做 T-035、T-048；GPT 做 T-043；Mac 端可以做 T-051。

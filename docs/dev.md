@@ -21,7 +21,7 @@
 cd src/inshellisense
 npm ci                 # 按 package-lock.json 安装依赖
 npm run build          # tsc 编译，输出到 build/（已被 .gitignore 忽略）
-npm test               # 单元测试（jest）
+npm test -- --ci       # 单元测试（jest）；--ci 不写新快照，见第 3 节
 npm run lint           # eslint 和 prettier 检查
 ```
 
@@ -39,7 +39,15 @@ Windows 上的命令相同，在 PowerShell 中执行即可。
 
 从源码运行时，`--version` 显示 `__VERSION__` 占位符，打包时才会替换成真实版本号。
 
-**Windows 上的 generator 执行方式（T-037）**：先用 cross-spawn 直接执行命令；只有命令找不到时才退回 Git Bash。`bash`、`sh` 总是经 Git Bash 执行，避免误入 WSL。用 `-V` 运行时，日志 `inshellisense.log` 会记录每条命令走的是哪条路径。
+**Windows 上的 generator 执行方式（T-037、T-049）**，按顺序：
+
+1. spec 中常用的 POSIX 用法（`ls -1ApL`、`cat`、`grep`，以及登记过的 `bash -c` 脚本）由 Node 模拟，管道中的 git、npm 等原生命令照常执行。见 `src/runtime/posixEmulation.ts`。
+2. 其他命令用 cross-spawn 直接执行。
+3. 命令找不到时才退回 Git Bash。`bash`、`sh` 中没有登记的脚本，总是经 Git Bash 执行，避免误入 WSL。
+
+用 `-V` 运行时，日志 `%USERPROFILE%\.inshellisense\log\inshellisense.log` 会记录每条命令走的是哪条路径：`emulated in node`、`ran natively` 或 `git bash`。
+
+spec 包（`@withfig/autocomplete`）升级后，登记的脚本原文可能改变，模拟就会失效。`posixEmulation.test.ts` 中的出处检查会失败，提醒更新脚本表。要登记新的脚本，在 `knownScripts` 中加一项，并在测试中加上它的出处检查。
 
 ### 测试的已知情况
 
@@ -57,7 +65,7 @@ Windows 上的命令相同，在 PowerShell 中执行即可。
 ```sh
 cd src/inshellisense
 node --experimental-vm-modules node_modules/jest/bin/jest.js src/tests/figspec   # 只运行规格用例
-npm test                                                                          # 运行全部测试，包含规格用例
+npm test -- --ci                                                                  # 运行全部测试，包含规格用例
 ```
 
 约定：
@@ -65,7 +73,9 @@ npm test                                                                        
 - 已知缺陷用 `test.failing` 写出正确的期望，修复后改为 `test`。不要为了让测试通过而改动期望。
 - 新增用例时，同步更新 `specs/completion.md` 的第 9 节或第 10 节。
 
-2026-10-14 在 Mac 上的结果（T-037 之后）：全部测试 240 个，229 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 27 个（规格用例 22 个、执行方式 5 个），全部按预期执行；只剩 2 个 `test.failing`。
+2026-10-14 在 Mac 上的结果（T-049 之后，`npm test -- --ci`）：全部测试 271 个，260 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 58 个（规格用例 22 个、执行方式 5 个、POSIX 模拟 31 个），全部按预期执行；只剩 2 个 `test.failing`。
+
+建议加上 `--ci`。不加时，jest 会为失败的 `brewInstallMullvad` 新写一个快照，把 `__snapshots__/runtime.test.ts.snap` 改掉；出现这种改动时，用 `git checkout` 还原，不要提交。
 
 ## 4. 仓库脚本
 

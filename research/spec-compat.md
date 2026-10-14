@@ -73,6 +73,27 @@
 3. **再替换少量文本管道。** git 的 sed、docker 的 grep、cargo 的 grep/cut、make 的 awk/sort 改成 JS 后处理。保留其原生命令查询，避免把 spec 全部重写成 PowerShell。
 4. **把静态候选作为逐项回退。** 某个 generator 超时、缺依赖或解析失败时，应保留静态选项；Fig AI 不纳入当前独立实现。是否恢复云规格加载应由现有计划范围决定，本报告不擅自移除 ignoredSpecs。排除证据：`is:src/runtime/runtime.ts#L26-L28`。
 
+## T-049 落实情况（2026-10-14，Claude Code）
+
+建议 2、3 中的大部分改为在执行层用 Node 模拟，**不修改 spec 包**。spec 包是压缩后的构建产物，filepaths helper 分别打包进了约 70 个 spec 文件中，逐个修改不可行。实现见 `src/inshellisense/src/runtime/posixEmulation.ts`，只在 Windows 上启用：
+
+| 范围 | 覆盖的 CLI（本表编号） | 做法 |
+| --- | --- | --- |
+| H：`ls -1ApL` | 2、7、8、10、20、22 等所有使用 H 的 spec | 用 `fs.readdir` 列出目录，文件夹加 `/`，跟随链接 |
+| `cat 文件` | 3、5、20、24、25 等 | 用 `fs.readFile` 读取；ssh、scp 依赖的 HOME 在 Windows 上补为用户目录 |
+| `grep -iE 模式 文件` | 12（Dockerfile 构建阶段） | JS 正则；只接受带文件参数、选项为 `-i -E -v -q` 的用法 |
+| 固定的 `bash -c` 脚本 | 1（sed）、3–6（向上查找 package.json、node_modules/.bin、`npm root -g`）、22（cargo 的 grep 和 cut）、28（make 的 awk 和 sort） | 管道中的原生命令照常执行，文本处理改成 JS；`.bin` 中的 `.cmd`、`.ps1` 等启动器去重 |
+
+仍未处理的项：
+- gh 的 GraphQL 参数引号。
+- rustup 的 find/sed。
+- npm 的网络搜索（curl.exe 可以直接执行，需要实测）。
+- dotnet 的 `cat` 使用的相对路径，以及 custom generator 的默认目录和输出换行（F-032，T-051）。
+- scp 中 `host:path` 与盘符冒号的区分。
+- python 和 node 的 `generateSpec` 探测：当前引擎不调用 `generateSpec`，所以没有模拟。
+
+这些都没有在 Windows 上运行过，由 T-048 第 4 至 6 项验证。
+
 ## 验证清单与未知项
 
 **未知（尚无 Windows 运行证据）**：本报告没有测过上述 CLI 的实际版本、CRLF 输出、安装布局和 PowerShell 交互。也没有把 wf 2.692.3 与 is 实际包 2.675.0 做逐项 diff。T-037 应先在引入的构建中确认实际包版本，再对这张表复核；不要据此直接升级依赖。

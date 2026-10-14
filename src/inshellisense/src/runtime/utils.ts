@@ -10,6 +10,7 @@ import { homedir } from "node:os";
 import { CommandToken } from "./parser.js";
 import { getPathSeparator, gitBashPath, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
+import { emulatePosixCommand } from "./posixEmulation.js";
 
 export type ExecuteShellCommandTTYResult = {
   code: number | null;
@@ -133,10 +134,20 @@ const posixShellCommands = new Set(["bash", "sh", "bash.exe", "sh.exe"]);
 
 const toOutput = ({ status, stderr, stdout }: ProcessResult): Fig.ExecuteCommandOutput => ({ status, stderr, stdout });
 
-export const buildExecuteShellCommand =
-  (timeout: number, signal?: AbortSignal): Fig.ExecuteCommandFunction =>
-  async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
+export const buildExecuteShellCommand = (timeout: number, signal?: AbortSignal): Fig.ExecuteCommandFunction => {
+  const execute = async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
     signal?.throwIfAborted();
+    // Windows: common POSIX usages in specs (ls -1ApL, cat, grep, known bash -c pipelines) are emulated in node,
+    // running only the native commands of a pipeline (git, npm, ...), so they work without Git Bash.
+    if (process.platform === "win32") {
+      const emulated = await emulatePosixCommand(command, args, cwd ?? process.cwd(), (nativeCommand, nativeArgs) =>
+        execute({ command: nativeCommand, args: nativeArgs, cwd, env }),
+      );
+      if (emulated != null) {
+        log.debug({ msg: "generator command emulated in node", command });
+        return emulated;
+      }
+    }
     const options: ProcessOptions = { cwd, env: { ...process.env, ...env, ISTERM: "1" }, signal };
     const requiresPosixShell = process.platform === "win32" && posixShellCommands.has(command.toLowerCase());
     const result = requiresPosixShell ? undefined : await runProcess(command, args, options, timeout);
@@ -154,6 +165,8 @@ export const buildExecuteShellCommand =
     });
     return toOutput(await runProcess(command, args, { ...options, shell: executionShell }, timeout));
   };
+  return execute;
+};
 
 const isHomedir = (path: string) => path.startsWith("~");
 

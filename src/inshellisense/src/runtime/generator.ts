@@ -3,11 +3,12 @@
 
 import { runTemplates } from "./template.js";
 import { buildExecuteShellCommand } from "./utils.js";
+import { withPosixHome } from "./posixEmulation.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 
 const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
   return {
-    environmentVariables: Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] != null)),
+    environmentVariables: withPosixHome(Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] != null))),
     currentWorkingDirectory: cwd,
     currentProcess: "", // TODO: define current process
     sshPrefix: "", // deprecated, should be empty

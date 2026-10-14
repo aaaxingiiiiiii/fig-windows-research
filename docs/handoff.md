@@ -4,30 +4,37 @@
 
 ## 一句话
 
-路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。阶段 A 中只需要 Mac 就能做的部分已经基本完成，现在**卡在 Windows 实测**：T-035、T-048。
+路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。阶段 A 中只需要 Mac 就能做的部分已经完成，包括 T-049：常用补全不再依赖 Git Bash。现在**卡在 Windows 实测**：T-035、T-048。阶段 B 的协议（T-042）已经完成，GPT 接着做 T-043。
 
 ## 进度
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac） | T-036 引入源码；T-038 规格用例自动化；T-039 修复 pwsh 引号和中文删除；T-037 generator 直接执行（`bash`、`sh` 经 Git Bash） | 可以接着做 T-049（改写 POSIX 依赖），或者等 T-042 完成后做 T-043 |
-| GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015 spec 兼容性评估（`research/spec-compat.md`） | T-042 悬浮窗协议（分支 `ai/codex/T-042`） |
-| Windows 上的 AI 和用户 | — | **T-035**（实测原版 inshellisense）→ **T-048**（实测我们的修改）→ T-040（打包） |
+| Claude Code（Mac） | T-036、T-037、T-038、T-039、T-049（POSIX 命令模拟）；使用说明 `docs/usage.md` | T-050 等用户 Fork；之后可以做 T-051 |
+| GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015、T-042（`docs/protocol.md` v1） | **T-043**（渲染器抽象和悬浮窗渲染器），已预留 |
+| Windows 上的 AI 和用户 | — | **T-035**（实测原版）→ **T-048**（实测我们的修改，清单已更新为 7 项）→ T-040（打包） |
+| 用户 | D-010、D-011 已决定 | T-050：在 GitHub 上 Fork microsoft/inshellisense，并在 PR 中签署 CLA |
 
 ### 交给 Windows 上那个 AI 的话
 
 > 克隆仓库并切换到 develop 分支，阅读 AGENTS.md 和 docs/handoff.md。先做 T-035：按 docs/windows-setup.md 准备环境，运行 scripts/windows/check-env.ps1，再按 docs/mvp-plan.md 中的“T-035 人工清单”和用户一起逐条测试，结果写入 research/spike-inshellisense.md。然后做 T-048：按 docs/dev.md 从源码构建 src/inshellisense，按“T-048 人工清单”测试，结果写入 research/spike-fork-windows.md。安装软件前先征得用户同意。每个任务在 ai/<工具>/<任务号> 分支上提交，合并到 develop 前先同步最新的 develop；不要重写 docs/handoff.md。
 
+### T-050（上游 PR）的现状
+
+- 两个分支已经在 Mac 上准备好，上游的构建、lint 和测试都通过。备份在 `local/upstream-pr/`，包括 patch 和英文 PR 说明；这个目录只在当前这台 Mac 上。
+- 下一步：用户 Fork 之后，从上游 main（8dcc9ca）应用这两个 patch，推送到 fork，再用 compare 页面创建 PR。微软的 CLA 机器人会要求签署，需要用户本人操作。
+
 ## 关键结论（本轮新增）
 
-- 我们的分支在 Mac 上：全部测试 240 个，229 个通过，10 个跳过，1 个失败（本机 Homebrew 环境问题，见 `docs/dev.md`）。
-- 已修复：pwsh 路径引号（F-029）、中文补全多删字符（F-030，在 bash 和 zsh 上实测确认）；Windows 上的 generator 不再强依赖 Git Bash。这几处对上游也有用（`src/inshellisense/CHANGES.md` 中标为“可提交上游”），要不要向 microsoft/inshellisense 提 PR，由用户决定。
-- inshellisense 与 Fig 的 7 处做法差异见 `specs/completion.md` 第 9 节。是否改成 Fig 风格，等用户试用（T-041）后再决定。
+- T-049：Windows 上，文件补全以及 git、npm/yarn/pnpm/npx、cargo、make 的常用动态候选由 Node 模拟 POSIX 命令（`src/runtime/posixEmulation.ts`），不需要 Git Bash。Mac 上模拟 win32 的测试通过，还没有在 Windows 上运行过。
+- T-048 清单已修正：原来的第 4、5 项选错了命令（`npm run`、`git restore` 实际走的路径与清单描述不符），现在第 4 项是 `npm uninstall -g `，第 5 项是 `git diff `，另外新增了第 6 项。
+- F-032：custom generator 的默认目录和输出清理与 Fig 不同，登记为 T-051。
+- Mac 上的测试（`npm test -- --ci`）：共 271 个，260 个通过，10 个跳过，1 个失败（Homebrew 环境问题）。
 
 ## 推送
 
 - `origin/develop`（用户的 fork）可以推送，已是最新。
-- `upstream/develop` 仍然返回 403。授权之前，可以从 fork 提 Pull Request（D-008）。
+- `upstream/develop` 仍然返回 403。获得授权之前，可以从 fork 提 Pull Request（D-008）。
 
 ## 注意
 
