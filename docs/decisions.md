@@ -16,7 +16,7 @@
 
 ## D-002 Windows 首个支持的 shell 和终端组合
 
-- 状态：待决定
+- 状态：已采用（2026-10-14，用户选择推荐项：PowerShell 7 + Windows Terminal）
 - 选项：
   1. **PowerShell 7 + Windows Terminal**（推荐）：Windows 11 的默认终端；PSReadLine 提供精确的缓冲区读取、按键处理和预测插件接口；也是 inshellisense 已覆盖的组合，便于对照。
   2. Windows PowerShell 5.1：系统自带，但 PSReadLine 版本较旧，无法使用预测插件接口（推断）。
@@ -26,21 +26,29 @@
 
 ## D-003 实现路线
 
-- 状态：待决定（建议先完成 T-014，再做选择）
+- 状态：已采用（2026-10-14，用户选择选项 3：Fig 式悬浮窗）
 - 选项：
-  1. **基于 inshellisense**：fork 或向上游贡献。最快得到可用版本；体验是终端内绘制而不是悬浮窗；依赖 Node；在 Windows 上，generator 要经过 Git Bash 执行。
-  2. **PowerShell 原生插件**：一个 PowerShell 模块，通过 PSReadLine 的键处理器或预测插件取得输入，补全引擎可以替换。最符合“插件”的形态，读取缓冲区精确，不需要包装 PTY；只支持 PowerShell。
-  3. **Fig 式完整架构**：ConPTY 包装加置顶悬浮窗（例如 WebView2）加 IPC。体验最接近 Fig，支持任意 shell；成本和风险最高，涉及光标像素定位、焦点、输入法和 DPI 等问题。
-- 推荐：先用 T-014 实测 inshellisense，列出它与 Fig 的体验差距。如果差距可以接受，选 1；如果需要 Windows 原生的 PowerShell 体验，选 2，同时把补全引擎做成独立组件，日后再加上 3 的悬浮窗。
-- 依赖：D-002。
+  1. 基于 inshellisense：MVP 约 1–2 周；菜单画在终端内。
+  2. PowerShell 原生插件，终端内显示：MVP 约 4–6 周。
+  3. **Fig 式悬浮窗**：MVP 约 8–12 周；体验最接近 Fig。
+- 决定：采用选项 3，并按 `docs/overlay-design.md` 做以下调整：
+  - 在 PowerShell 7 中，用 PSReadLine 适配模块代替 figterm 的 PTY 包装。
+  - 把 Fig 的补全前端放进 WebView2 中复用。
+  - 先完成验证关卡 T-019 至 T-022，再全面开发。
+- 回退：如果 T-019（光标定位）不通过，第一版改为终端内显示，悬浮窗留到第 3 阶段。适配模块和补全引擎的投入都可以保留。
+- 成本评估：见 `docs/overlay-design.md`。
 
-## D-004 补全引擎的语言与 JS 运行时
+## D-004 宿主语言、补全引擎与 JS 运行时
 
-- 状态：待决定（依赖 D-003）
-- 约束：`wf` 的 spec 是可执行的 JavaScript，必须嵌入 JS 运行时，否则只能支持 spec 中的静态部分。
-- 选项：TypeScript + Node（可在许可证范围内复用 `aq:packages/autocomplete-parser` 和 `is` 的逻辑）；C#/.NET + Jint 或 ClearScript（与 PowerShell 同进程）；Rust + QuickJS 或 Boa（可复用 `aq` 的 Rust 代码）。
+- 状态：暂定（2026-10-14，随 D-003 提出；验证关卡完成后定稿）
+- 约束：`wf` 的 spec 是可执行的 JavaScript（F-016）。
+- 暂定方案：
+  - 宿主进程使用 **C#/.NET**（WinForms 或 WPF 加 WebView2）。它对 UI Automation、命名管道和 WebView2 的支持最直接，PowerShell 7 也运行在 .NET 上，日后可以把适配模块改写成 C# 二进制模块。
+  - 补全引擎和 UI 使用 **TypeScript**，运行在 WebView2 中，复用 `aq` 的前端代码；JS 运行时就是 WebView2 自带的引擎。
+  - 适配模块先用 PowerShell 脚本实现。如果 T-020 的延迟不达标，再改为 C# 二进制模块。
+- 备选：Rust（tao、wry、windows-rs）可以复用 Fig 的 Rust 代码，但 Fig 的 Windows 部分已经过时（F-014），所以不作首选。
 
 ## D-005 本项目代码的许可证
 
-- 状态：待决定
-- 建议：采用 MIT 或 MIT/Apache-2.0 双许可，与计划复用的 `aq`、`wf`、`is` 兼容。在第一次提交实现代码之前决定。
+- 状态：已采用（2026-10-14，用户同意建议）
+- 决定：本仓库采用 MIT 许可证，见根目录 `LICENSE`。与计划复用的 `aq`（MIT/Apache-2.0）、`wf`（MIT）、`is`（MIT）兼容；复用时保留原版权声明，并在 `research/sources.md` 中登记。

@@ -41,4 +41,4 @@
 
 只发布自己撰写的研究说明、规格和代码。开源代码按其许可证使用，复用时保留声明并登记到 `research/sources.md`。闭源程序（Kiro CLI）的二进制、资源和反编译结果不进入仓库。`.gitignore` 只是辅助手段，提交前要运行 `sh scripts/check-public.sh` 并查看 `git diff --cached`。
 
-本仓库的代码许可证尚未确定（D-005）。
+本仓库采用 [MIT 许可证](LICENSE)（D-005）。复用的第三方代码保留其原有许可证。
