@@ -6,3 +6,4 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-14 | T-036 | `UPSTREAM`、`CHANGES.md` | 新增 | 记录上游来源与改动 | 否 |
 | 2026-10-14 | T-036 | `.github/workflows/ci.yml` | 换行符由 CRLF 变为 LF（本仓库的 `.gitattributes` 设置了 `text=auto`，提交时自动转换） | 仓库统一换行符；内容不变 | 否 |
+| 2026-10-14 | T-038 | `src/tests/figspec/figspec.test.ts` | 新增 | 规格用例（C-xxx、W-xxx）的自动化测试；不修改上游代码 | 部分可以（缺陷用例可以随修复一起提交） |

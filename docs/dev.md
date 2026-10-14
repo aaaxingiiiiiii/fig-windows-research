@@ -50,7 +50,20 @@ Windows 上的命令相同，在 PowerShell 中执行即可。
 
 ## 3. 我们新增的测试
 
-规格用例（`specs/completion.md`）的自动化由 T-038 负责。测试文件放在哪里、怎样运行，由 T-038 决定后写在这里。
+规格用例（`specs/completion.md` 的 C-xxx 和 W-xxx）的测试放在 `src/inshellisense/src/tests/figspec/figspec.test.ts`，这样可以直接使用 inshellisense 的 jest 配置和运行时：
+
+```sh
+cd src/inshellisense
+node --experimental-vm-modules node_modules/jest/bin/jest.js src/tests/figspec   # 只运行规格用例
+npm test                                                                          # 运行全部测试，包含规格用例
+```
+
+约定：
+- 与 Fig 只是做法不同的地方，断言 inshellisense 的实际行为，并在测试名称中写“差异”。
+- 已知缺陷用 `test.failing` 写出正确的期望，修复后改为 `test`。不要为了让测试通过而改动期望。
+- 新增用例时，同步更新 `specs/completion.md` 的第 9 节或第 10 节。
+
+2026-10-14 在 Mac 上的结果：全部测试 235 个，224 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。规格用例 22 个全部按预期执行，其中 8 个是 `test.failing`。
 
 ## 4. 仓库脚本
 

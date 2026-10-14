@@ -73,7 +73,7 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 | **T-036** 引入源码 | any | ① 把上游源码复制到 `src/inshellisense/`，保留 LICENSE，在 `UPSTREAM` 文件中记录 commit；② 跑通构建和自带的测试；③ 编写 `docs/dev.md` | 在 Mac 上 `npm test` 通过；在 Windows 上能从源码运行 `is` |
 | **T-037** 去掉对 Git Bash 的依赖 | any（Windows 上验证） | 修改 `src/runtime/utils.ts` 的执行方式：Windows 上不经过 shell 直接启动命令，命令名需要解析为 `.exe` 或 `.cmd`；参数不再按 bash 规则转义。补充测试 | 在没有安装 Git Bash 的 Windows 上，`git checkout ` 后能列出分支；新增的测试通过 |
 | **T-038** 规格用例自动化 | any | 把 C-001 至 C-013 改写为针对 inshellisense 引擎的测试，并逐条标注与 Fig 行为不同的地方；新增 pwsh 规则用例，至少包括：带空格的路径、单引号、反引号、中文路径、`;` 之后的命令 | 测试通过；与 Fig 的差异记入 `specs/completion.md` 的新一节“inshellisense 与 Fig 的差异” |
-| **T-039** 补齐高优先级差异 | any | 根据 T-038 的差异清单，实现最影响体验的 1–3 项，例如 `insertValue` 中的 `{cursor}` | 对应用例通过；改动记入 `CHANGES.md` |
+| **T-039** 修复 pwsh 插入缺陷 | any | ① 路径加引号的条件改为“含空格或 PowerShell 特殊字符”，pwsh 中的单引号写成 `''`（F-029）；② 删除数按字符计算，不按显示宽度（F-030）；③ Fig 风格的差异（`specs/completion.md` 第 9 节）等用户决定后再改 | W-002 至 W-005、W-008、W-009 由 `test.failing` 改为 `test` 并通过；`npm test` 没有新增失败；改动记入 `CHANGES.md`，并标注可提交上游 |
 | **T-040** 打包与安装 | windows | ① 用 inshellisense 自带的打包脚本（`is:scripts/pkg.ts`）生成 win-x64 单文件程序；② 编写 `install.ps1`：修改 `$PROFILE` 前先备份，把初始化语句加到最后一行；③ 编写 `uninstall.ps1`；④ 在 README 中写使用说明 | 在一台干净的 Windows 上能安装、使用、卸载，`$PROFILE` 能恢复原样 |
 | **T-041** 试用 | human | 用户日常使用一到两天，把问题登记为新任务 | 没有导致无法输入或误执行命令的问题 |
 
@@ -95,6 +95,8 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 12. 按 Ctrl+C 能中断正在运行的命令，例如 `ping -t localhost`。
 13. 连续快速输入一行长命令，没有丢字，也没有明显延迟。
 14. 开启 PSReadLine 的预测（灰色提示文字）时，补全候选和灰色提示不会互相干扰。
+15. 新建文件夹 `中文目录`，输入 `cd 中` 并接受补全。命令行应为 `cd 中文目录/`，`cd` 后面的空格没有被删掉（F-030）。
+16. 新建文件夹 `a$b` 和 `it's`，分别输入 `cd a`、`cd it` 并接受补全，再按 Enter，能否进入对应的文件夹？记录命令行的实际内容（F-029，预期当前会失败）。
 
 ## 7. 阶段 B：悬浮窗
 
