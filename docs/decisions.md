@@ -92,3 +92,11 @@
   - 本地 remote `origin` 是用户的 fork，可以推送，已建立 `origin/develop`。
   - `upstream`（`xingdouiii-maker/fig-windows-research`）的 `develop` 分支已经包含到 T-034 为止的提交，但当前账号推送时返回 403，没有写权限。
 - 待确认：由仓库所有者把当前账号加为协作者，直接推送到 `upstream/develop`；或者改为从 `origin/develop` 向 `upstream/develop` 提 Pull Request。
+
+## D-009 T-042：建立 inshellisense 悬浮窗协议 v1
+
+- 状态：已采用（2026-10-14，D-007 / T-042 授权范围内的技术细化；不是新增产品路线）。
+- 原因：归档的 v0 面向 PSReadLine/WebView2，会把按键、插入和 generator 执行放进宿主，不适用于 D-007。新增 `docs/protocol.md`，协议标识 `figwin-overlay`、版本 1，与旧 v0 不互通。
+- 约定：命名管道双向 JSON 行；inshellisense 保留候选计算、选中项、分页、按键和插入；宿主只定位、显示、隐藏和报告状态。完整快照带会话/连接/序号，坐标按终端单元格而非字符串偏移计数。定位、会话绑定或连接失败时回退终端内显示。
+- 边界：管道协议和 debugState 是 T-043/T-044 的共同契约，尚无实现或 Windows 实测。无法可靠匹配 WT 窗格时不显示悬浮窗；具体绑定和定位能力在 T-019/T-044 验证，不虚构 WT_SESSION 能唯一定位窗格。
+- 修改规则：后续改变线格式或行为语义时增加协议版本并在本页记录原因；纯勘误注明文档修订，不复用旧版本号解释不兼容数据。
