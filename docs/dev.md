@@ -39,7 +39,7 @@ Windows 上的命令相同，在 PowerShell 中执行即可。
 
 从源码运行时，`--version` 显示 `__VERSION__` 占位符，打包时才会替换成真实版本号。
 
-**Windows 上的 generator 执行方式（T-037）**：先用 cross-spawn 直接执行命令；只有命令找不到时才退回 Git Bash。用 `-V` 运行时，日志 `inshellisense.log` 会记录每条命令走的是哪条路径。
+**Windows 上的 generator 执行方式（T-037）**：先用 cross-spawn 直接执行命令；只有命令找不到时才退回 Git Bash。`bash`、`sh` 总是经 Git Bash 执行，避免误入 WSL。用 `-V` 运行时，日志 `inshellisense.log` 会记录每条命令走的是哪条路径。
 
 ### 测试的已知情况
 
@@ -65,7 +65,7 @@ npm test                                                                        
 - 已知缺陷用 `test.failing` 写出正确的期望，修复后改为 `test`。不要为了让测试通过而改动期望。
 - 新增用例时，同步更新 `specs/completion.md` 的第 9 节或第 10 节。
 
-2026-10-14 在 Mac 上的结果（T-037 之后）：全部测试 239 个，228 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 26 个（规格用例 22 个、执行方式 4 个），全部按预期执行；只剩 2 个 `test.failing`。
+2026-10-14 在 Mac 上的结果（T-037 之后）：全部测试 240 个，229 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 27 个（规格用例 22 个、执行方式 5 个），全部按预期执行；只剩 2 个 `test.failing`。
 
 ## 4. 仓库脚本
 

@@ -14,3 +14,4 @@
 | 2026-10-14 | T-037 | `package.json`、`package-lock.json` | 新增依赖 `cross-spawn@^7.0.6`，开发依赖 `@types/cross-spawn@^6.0.6` | Windows 上不经过 shell 直接执行 generator 命令，需要正确处理 PATHEXT 和 `.cmd`/`.bat` | 是 |
 | 2026-10-14 | T-037 | `src/runtime/utils.ts` | `buildExecuteShellCommand`：Windows 上先用 cross-spawn 直接执行；命令找不到（ENOENT）时才退回 Git Bash；没有 Git Bash 时返回空结果。macOS 和 Linux 上的行为不变。`-V` 日志会记录每条命令走的是哪条路径 | 去掉对 Git Bash 的硬依赖（D-007，阶段 A） | 是 |
 | 2026-10-14 | T-037 | `src/tests/figspec/executeCommand.test.ts` | 新增 | 检查执行和回退的控制流（模拟 win32） | 否 |
+| 2026-10-14 | T-037 | `src/runtime/utils.ts`、`src/tests/figspec/executeCommand.test.ts` | Windows 上 `bash`、`sh` 总是经 Git Bash 执行，不按本机路径解析；没有 Git Bash 时返回状态码 127 | 本机路径解析可能找到 System32 中的 WSL 启动器，使命令在 WSL 中运行（风险由 T-015 的报告指出：git 的部分 generator 会执行 `bash -c … \| sed`） | 是 |

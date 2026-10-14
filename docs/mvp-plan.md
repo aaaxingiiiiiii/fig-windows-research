@@ -107,7 +107,8 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 2. 新建文件夹 `中文目录`，输入 `cd 中` 并接受补全，命令行为 `cd 中文目录/`，`cd` 后面的空格还在（W-005）。
 3. 新建文件夹 `it's`、`a$b`、`a&b`、`` a`b `` 和 `it's dir`，分别输入 `cd it`、`cd a` 并接受补全，按 Enter 后都能进入对应的文件夹（W-002 至 W-004、W-008、W-009）。
 4. 输入 `npm run `（在有 `package.json` 的目录中），能列出脚本名。这条用来验证 `.cmd` 形式的命令可以直接执行。
-5. 在 `src/inshellisense/` 下运行 `npm test`，记录结果，与 `docs/dev.md` 中 Mac 上的结果对比。
+5. 如果这台电脑装了 WSL：在 git 仓库中修改一个文件并 `git add`，再输入 `git restore --staged `，候选应列出已暂存的文件；日志中应看到 `using git bash`，任务管理器中不应出现 WSL 进程。
+6. 在 `src/inshellisense/` 下运行 `npm test`，记录结果，与 `docs/dev.md` 中 Mac 上的结果对比。
 
 ## 7. 阶段 B：悬浮窗
 

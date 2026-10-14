@@ -127,6 +127,10 @@ const runProcess = (command: string, args: string[], options: ProcessOptions, ti
   });
 };
 
+// On Windows, a bare "bash"/"sh" would resolve to the WSL launcher in System32 and run inside WSL;
+// generators that invoke them expect Git Bash, so they always go through the Git Bash path.
+const posixShellCommands = new Set(["bash", "sh", "bash.exe", "sh.exe"]);
+
 const toOutput = ({ status, stderr, stdout }: ProcessResult): Fig.ExecuteCommandOutput => ({ status, stderr, stdout });
 
 export const buildExecuteShellCommand =
@@ -134,16 +138,20 @@ export const buildExecuteShellCommand =
   async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
     signal?.throwIfAborted();
     const options: ProcessOptions = { cwd, env: { ...process.env, ...env, ISTERM: "1" }, signal };
-    const result = await runProcess(command, args, options, timeout);
-    if (process.platform !== "win32" || !result.notFound) {
+    const requiresPosixShell = process.platform === "win32" && posixShellCommands.has(command.toLowerCase());
+    const result = requiresPosixShell ? undefined : await runProcess(command, args, options, timeout);
+    if (result != null && (process.platform !== "win32" || !result.notFound)) {
       if (process.platform === "win32") log.debug({ msg: "generator command ran natively", command });
       return toOutput(result);
     }
     // Windows: only commands that cannot be found natively (e.g. POSIX tools such as grep) fall back to Git Bash, if installed.
     const executionShell = await getExecutionShell();
-    if (executionShell == null) return toOutput(result);
+    if (executionShell == null) return result != null ? toOutput(result) : { status: 127, stderr: `${command}: git bash not found`, stdout: "" };
     signal?.throwIfAborted();
-    log.debug({ msg: "generator command not found natively, falling back to git bash", command });
+    log.debug({
+      msg: requiresPosixShell ? "generator requires a posix shell, using git bash" : "generator command not found natively, falling back to git bash",
+      command,
+    });
     return toOutput(await runProcess(command, args, { ...options, shell: executionShell }, timeout));
   };
 

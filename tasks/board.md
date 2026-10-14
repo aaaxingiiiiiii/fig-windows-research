@@ -33,6 +33,7 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
+| T-049 | 按 `research/spec-compat.md`“给 T-037 的建议顺序”第 2、3 条，改写依赖 POSIX 命令的部分：把 filepaths helper（`ls -1ApL`）改到引擎模板或 Node API，把 git 的 sed、docker 和 cargo 的 grep 等文本管道改成 JS 后处理 | todo | any | — | | 选定的 CLI 在没有 Git Bash 时也能给出动态候选；补充测试；改动记入 `CHANGES.md` |
 | T-012 | 在 Kiro 2.30.0 上执行规格用例 C-001 至 C-013 | todo | mac-kiro, human | — | | 每条用例的“Kiro 2.30.0 观察”一栏都有结果和证据编号 |
 | T-013 | 弄清 F-006：在 figterm 包装的交互式 zsh 中，`init zsh post` 输出什么 | todo | mac-kiro | — | | 用黑盒方式取得证据，不反编译 |
 

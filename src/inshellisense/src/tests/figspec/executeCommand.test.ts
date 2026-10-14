@@ -36,3 +36,10 @@ test("模拟 win32：找不到的命令在没有 Git Bash 时返回空输出，�
   const output = await execute({ command: "fig-windows-research-no-such-command", args: [] });
   expect(output.stdout).toBe("");
 });
+
+test("模拟 win32：bash 不按本机路径解析（避免进入 WSL），没有 Git Bash 时返回“找不到”", async () => {
+  setPlatform("win32");
+  const output = await execute({ command: "bash", args: ["-c", "echo native"] });
+  expect(output.stdout).toBe("");
+  expect(output.status).toBe(127);
+});
