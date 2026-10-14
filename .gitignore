@@ -1,0 +1,39 @@
+# Local-only third-party artifacts and raw evidence
+local/
+artifacts/
+captures/
+raw-evidence/
+*.app/
+*.dmg
+*.pkg
+*.ipa
+*.asar
+*.har
+*.pcap
+*.pcapng
+*.mov
+*.mp4
+*.i64
+*.idb
+*.gpr
+*.rep/
+
+# Credentials and machine settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.codex/
+.rea/
+.DS_Store
+Thumbs.db
+
+# Generated files
+node_modules/
+dist/
+build/
+coverage/
+*.log
+__pycache__/
+.venv/
