@@ -20,7 +20,7 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-042`） | `docs/protocol.md` v1、D-009：双向 JSON 行、会话/序号、显示快照、定位/回退、debugState、P-01 至 P-12；JSON 示例与引用检查通过，T-043/T-044 尚待实现 |
-| T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | todo | any | T-042 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | todo | any | T-042 | 预留：Codex/GPT（Mac） | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
 | T-021 | 原生悬浮列表窗口：置顶、不激活、跟随 WT | todo | windows, human | — | | 同上 |
@@ -33,7 +33,8 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
-| T-049 | 按 `research/spec-compat.md`“给 T-037 的建议顺序”第 2、3 条，改写依赖 POSIX 命令的部分：把 filepaths helper（`ls -1ApL`）改到引擎模板或 Node API，把 git 的 sed、docker 和 cargo 的 grep 等文本管道改成 JS 后处理 | todo | any | — | | 选定的 CLI 在没有 Git Bash 时也能给出动态候选；补充测试；改动记入 `CHANGES.md` |
+| T-049 | 按 `research/spec-compat.md`“给 T-037 的建议顺序”第 2、3 条，改写依赖 POSIX 命令的部分：把 filepaths helper（`ls -1ApL`）改到引擎模板或 Node API，把 git 的 sed、docker 和 cargo 的 grep 等文本管道改成 JS 后处理 | doing | any | — | Claude Code/Opus 5.5 2026-10-14（Mac，分支 `ai/claude/T-049`） | 选定的 CLI 在没有 Git Bash 时也能给出动态候选；补充测试；改动记入 `CHANGES.md` |
+| T-050 | 向 microsoft/inshellisense 提交 T-039 的两项修复（D-011） | blocked | human | — | Claude Code/Opus 5.5 2026-10-14 准备分支；用户 Fork、发 PR、签 CLA | 两个 PR 已创建；合并后在 `src/inshellisense/CHANGES.md` 中注明 PR 编号。阻塞：用户 GitHub 账号下还没有 inshellisense 的 fork，本机也没有 `gh` |
 | T-012 | 在 Kiro 2.30.0 上执行规格用例 C-001 至 C-013 | todo | mac-kiro, human | — | | 每条用例的“Kiro 2.30.0 观察”一栏都有结果和证据编号 |
 | T-013 | 弄清 F-006：在 figterm 包装的交互式 zsh 中，`init zsh post` 输出什么 | todo | mac-kiro | — | | 用黑盒方式取得证据，不反编译 |
 

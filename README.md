@@ -2,7 +2,7 @@
 
 研究 Fig 终端补全（现由 Kiro CLI 延续）的行为，写出有证据支持的规格，在 Windows 上实现同类补全插件。本仓库与 Fig、AWS 均无隶属关系。
 
-**当前状态：** 研究和方案设计已经完成。路线是在 PowerShell 7 + Windows Terminal 上先基于 inshellisense 做终端内补全，再加 Fig 式悬浮窗。即将开始阶段 A，计划见 [docs/mvp-plan.md](docs/mvp-plan.md)，当前进度见 [docs/handoff.md](docs/handoff.md)。开发分支为 `develop`。
+**当前状态：** 路线是在 PowerShell 7 + Windows Terminal 上先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。阶段 A 的代码在 `src/inshellisense/`，正在等待 Windows 实测。计划见 [docs/mvp-plan.md](docs/mvp-plan.md)，当前进度见 [docs/handoff.md](docs/handoff.md)，使用方法见 [docs/usage.md](docs/usage.md)。开发分支为 `develop`。
 
 ## 关键事实
 
@@ -28,7 +28,10 @@
 | `docs/workflow.md` | 接力流程细则：编号、证据、认领、提交 |
 | `docs/decisions.md` | 决策记录，包括待用户决定的事项 |
 | `docs/log.md` | 会话记录 |
+| `docs/usage.md` | **使用说明**：启动、按键、与 Fig 的不同之处、已知限制 |
+| `docs/dev.md` | 开发指南：构建、测试、运行 |
 | `docs/mvp-plan.md` | **实现主计划**：阶段 A（终端内）和阶段 B（悬浮窗）的步骤与测试 |
+| `docs/protocol.md` | 悬浮窗协议 v1（inshellisense 与宿主之间） |
 | `docs/overlay-design.md` | 悬浮窗的技术评估（光标定位等结论仍然适用） |
 | `docs/archive/` | 已存档的 PSReadLine 路线计划与协议 |
 | `docs/windows-setup.md` | Windows 开发与验证环境 |
@@ -36,6 +39,7 @@
 | `docs/mac-setup.md` | Mac 上的运行时观察环境 |
 | `research/` | 研究对象、来源、证据索引、结论、架构和现有方案 |
 | `specs/completion.md` | 补全行为规格和用例 |
+| `src/inshellisense/` | 阶段 A 的代码：引入的 inshellisense 及我们的修改（见其中的 `CHANGES.md`） |
 | `scripts/fetch-sources.sh` | 把参考仓库拉取到 `local/sources/`，固定 commit |
 | `scripts/check-public.sh` | 提交前检查本机路径、凭据和大文件 |
 | `scripts/check-refs.py` | 检查文档中的源码引用是否有效 |

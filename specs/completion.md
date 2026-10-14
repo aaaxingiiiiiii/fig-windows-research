@@ -135,7 +135,7 @@ Windows：PowerShell 的转义规则与 bash 不同，路径中的空格应使�
 
 依据：`src/inshellisense/src/tests/figspec/figspec.test.ts`，2026-10-14 在 macOS 上用 Node 20 运行。这一节记录的是**引擎层**的行为；终端中的实际效果由 T-035 在 Windows 上验证。
 
-“建议”一栏供 T-039 选择改动范围时参考，是否修改由用户决定。
+“建议”一栏供 T-039 选择改动范围时参考，是否修改由用户决定。目前暂时保留 inshellisense 的做法，试用（T-041）后再定（D-010）；面向使用者的说明见 `docs/usage.md` 第 3 节，修改本节时要同步更新。
 
 | 用例 | Fig（开源基线） | inshellisense 0.0.4 | 类型 | 建议 |
 | --- | --- | --- | --- | --- |
