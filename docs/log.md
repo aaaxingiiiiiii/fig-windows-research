@@ -112,3 +112,13 @@
   - PowerShell 中的实际效果待 T-035 第 15、16 项验证。
   - 这两处修复对上游也有用，可以考虑向 microsoft/inshellisense 提交 PR，需要用户决定。
 - 下一步建议：T-037（去掉 Git Bash 依赖）。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-037
+
+- 做了：
+  - Windows 上的 generator 改为先用 cross-spawn 直接执行；命令找不到时才退回 Git Bash；没有 Git Bash 时返回空结果。macOS 和 Linux 上的行为不变。
+  - 新增依赖 `cross-spawn`，并新增 4 个执行方式测试，其中 2 个模拟 win32。
+  - 把 Windows 上的验证拆成 T-048，并写好人工清单。
+- 测试：全部 239 个，228 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；`npm run lint` 通过。
+- 没做完 / 问题：还没有在 Windows 上实际运行（T-048）。超时后结束 `.cmd` 命令时，只能结束 cmd.exe，它启动的子进程可能残留（推断）。
+- 下一步建议：Windows 端做 T-035、T-048；Mac 端可以做 T-042（悬浮窗协议，已预留给 GPT）。
