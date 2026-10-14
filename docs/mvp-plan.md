@@ -71,7 +71,8 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 | --- | --- | --- | --- |
 | **T-035** 实测原版 inshellisense | windows, human | ① 按 `docs/windows-setup.md` 准备环境；② 用 `npm install -g @microsoft/inshellisense` 安装，或下载官方发布的程序；③ 运行 `is init pwsh` 并把输出加到 `$PROFILE` 的**最后一行**；④ 按下方“T-035 人工清单”逐条测试 | 写出 `research/spike-inshellisense.md`，内容为：各项结果、启动耗时、按键延迟的主观感受。**关卡**：没有阻断问题（例如画面错乱、输入丢失、明显卡顿），否则在 `docs/decisions.md` 中写清问题和选项，交给用户决定 |
 | **T-036** 引入源码 | any | ① 把上游源码复制到 `src/inshellisense/`，保留 LICENSE，在 `UPSTREAM` 文件中记录 commit；② 跑通构建和自带的测试；③ 编写 `docs/dev.md` | 在 Mac 上 `npm test` 通过；在 Windows 上能从源码运行 `is` |
-| **T-037** 去掉对 Git Bash 的依赖 | any（Windows 上验证） | 修改 `src/runtime/utils.ts` 的执行方式：Windows 上不经过 shell 直接启动命令，命令名需要解析为 `.exe` 或 `.cmd`；参数不再按 bash 规则转义。补充测试 | 在没有安装 Git Bash 的 Windows 上，`git checkout ` 后能列出分支；新增的测试通过 |
+| **T-037** 去掉对 Git Bash 的依赖 | any | 修改 `src/runtime/utils.ts`：Windows 上用 cross-spawn 直接执行命令（处理 PATHEXT 和 `.cmd`），找不到命令时才退回 Git Bash。补充测试 | Mac 上的测试通过（已完成）；Windows 上的验证见 T-048 |
+| **T-048** 在 Windows 上验证我们的修改 | windows, human | 从源码运行（`docs/dev.md` 第 2 节）：`node build/index.js -s pwsh -V`，然后按下方“T-048 人工清单”执行 | 清单全部通过；结果写入 `research/spike-fork-windows.md` |
 | **T-038** 规格用例自动化 | any | 把 C-001 至 C-013 改写为针对 inshellisense 引擎的测试，并逐条标注与 Fig 行为不同的地方；新增 pwsh 规则用例，至少包括：带空格的路径、单引号、反引号、中文路径、`;` 之后的命令 | 测试通过；与 Fig 的差异记入 `specs/completion.md` 的新一节“inshellisense 与 Fig 的差异” |
 | **T-039** 修复 pwsh 插入缺陷 | any | ① 路径加引号的条件改为“含空格或 PowerShell 特殊字符”，pwsh 中的单引号写成 `''`（F-029）；② 删除数按字符计算，不按显示宽度（F-030）；③ Fig 风格的差异（`specs/completion.md` 第 9 节）等用户决定后再改 | W-002 至 W-005、W-008、W-009 由 `test.failing` 改为 `test` 并通过；`npm test` 没有新增失败；改动记入 `CHANGES.md`，并标注可提交上游 |
 | **T-040** 打包与安装 | windows | ① 用 inshellisense 自带的打包脚本（`is:scripts/pkg.ts`）生成 win-x64 单文件程序；② 编写 `install.ps1`：修改 `$PROFILE` 前先备份，把初始化语句加到最后一行；③ 编写 `uninstall.ps1`；④ 在 README 中写使用说明 | 在一台干净的 Windows 上能安装、使用、卸载，`$PROFILE` 能恢复原样 |
@@ -97,6 +98,17 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 14. 开启 PSReadLine 的预测（灰色提示文字）时，补全候选和灰色提示不会互相干扰。
 15. 新建文件夹 `中文目录`，输入 `cd 中` 并接受补全。命令行应为 `cd 中文目录/`，`cd` 后面的空格没有被删掉（F-030）。
 16. 新建文件夹 `a$b` 和 `it's`，分别输入 `cd a`、`cd it` 并接受补全，再按 Enter，能否进入对应的文件夹？记录命令行的实际内容（F-029，预期当前会失败）。
+
+### T-048 人工清单
+
+在 `src/inshellisense/` 下执行 `npm ci`、`npm run build`，然后运行 `node build/index.js -s pwsh -V`，在启动的 pwsh 中逐条测试。
+
+1. 在一个 git 仓库中输入 `git checkout `（末尾有空格），能列出分支。打开 `%USERPROFILE%\.inshellisense` 下的 `inshellisense.log`，能看到 `generator command ran natively`，没有 `falling back to git bash`。
+2. 新建文件夹 `中文目录`，输入 `cd 中` 并接受补全，命令行为 `cd 中文目录/`，`cd` 后面的空格还在（W-005）。
+3. 新建文件夹 `it's`、`a$b`、`a&b`、`` a`b `` 和 `it's dir`，分别输入 `cd it`、`cd a` 并接受补全，按 Enter 后都能进入对应的文件夹（W-002 至 W-004、W-008、W-009）。
+4. 输入 `npm run `（在有 `package.json` 的目录中），能列出脚本名。这条用来验证 `.cmd` 形式的命令可以直接执行。
+5. 如果这台电脑装了 WSL：在 git 仓库中修改一个文件并 `git add`，再输入 `git restore --staged `，候选应列出已暂存的文件；日志中应看到 `using git bash`，任务管理器中不应出现 WSL 进程。
+6. 在 `src/inshellisense/` 下运行 `npm test`，记录结果，与 `docs/dev.md` 中 Mac 上的结果对比。
 
 ## 7. 阶段 B：悬浮窗
 
