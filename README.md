@@ -2,7 +2,7 @@
 
 研究 Fig 终端补全（现由 Kiro CLI 延续）的行为，写出有证据支持的规格，在 Windows 上实现同类补全插件。本仓库与 Fig、AWS 均无隶属关系。
 
-**当前状态：** 已根据开源源码整理出补全链路和行为规格，正在等待用户确定 Windows 实现路线，Mac 和 Windows 上的实测尚未进行。详见 [docs/handoff.md](docs/handoff.md)。
+**当前状态：** 研究和方案设计已经完成，路线确定为 PowerShell 7 + Windows Terminal 上的 Fig 式悬浮窗。即将进入实现阶段 0（代码骨架），计划见 [docs/mvp-plan.md](docs/mvp-plan.md)，当前进度见 [docs/handoff.md](docs/handoff.md)。
 
 ## 关键事实
 
@@ -28,7 +28,11 @@
 | `docs/workflow.md` | 接力流程细则：编号、证据、认领、提交 |
 | `docs/decisions.md` | 决策记录，包括待用户决定的事项 |
 | `docs/log.md` | 会话记录 |
-| `docs/windows-plan.md` | Windows 实现路线 |
+| `docs/mvp-plan.md` | **实现主计划**：最小方案、阶段、步骤、测试 |
+| `docs/protocol.md` | 模块间的消息协议 |
+| `docs/overlay-design.md` | 悬浮窗方案的架构与成本评估 |
+| `docs/windows-setup.md` | Windows 开发与验证环境 |
+| `docs/windows-plan.md` | Windows 实现路线（概要） |
 | `docs/mac-setup.md` | Mac 上的运行时观察环境 |
 | `research/` | 研究对象、来源、证据索引、结论、架构和现有方案 |
 | `specs/completion.md` | 补全行为规格和用例 |

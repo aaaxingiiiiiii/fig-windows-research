@@ -11,10 +11,11 @@
 - Fig 已于 2024-09-01 停止服务。它的代码已由 AWS 以 MIT/Apache-2.0 开源，补全规格库 `withfig/autocomplete` 采用 MIT 许可。
 - 本机可运行的是闭源后继产品 Kiro CLI。它只用于黑盒行为观察，不反编译（D-001）。
 - 研究优先级：开源源码 → Kiro 运行时观察 → 公开文档。原生逆向工具（REA、Ghidra、Hopper）不是前置条件。
+- 路线已经确定：在 PowerShell 7 + Windows Terminal 上实现 Fig 式悬浮窗。实现阶段的主计划是 `docs/mvp-plan.md`，模块间的契约是 `docs/protocol.md`。
 
 ## 每次会话开始
 
-1. 依次读取 `docs/handoff.md`（当前状态）、`tasks/board.md`（任务板）和 `docs/workflow.md`（流程细则）。
+1. 依次读取 `docs/handoff.md`（当前状态）、`tasks/board.md`（任务板）和 `docs/workflow.md`（流程细则）。如果认领的是实现任务，还要读 `docs/mvp-plan.md` 和 `docs/protocol.md`。
 2. 若用户未指定任务，选择 board 中第一条满足以下条件的任务：状态为 `todo`、依赖均已 `done`、`env` 与本机能力相符、没有标注 `decision:user`。
 3. 把该任务改为 `doing`，填写负责人（工具/模型）和日期。
 4. 若需要源码，运行 `sh scripts/fetch-sources.sh`，在 `local/sources/` 获得固定版本。

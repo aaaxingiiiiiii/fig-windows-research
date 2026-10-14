@@ -8,6 +8,8 @@
 | `wf` | [withfig/autocomplete](https://github.com/withfig/autocomplete) | `autocomplete` | `aef52ac`（2025-05-05） | MIT | 补全规格（spec）库，覆盖数百个 CLI |
 | `is` | [microsoft/inshellisense](https://github.com/microsoft/inshellisense) | `inshellisense` | `8dcc9ca`（2026-10-03） | MIT | 已有的跨平台实现，支持 Windows，使用 `wf` 的 spec |
 
+实现阶段计划通过 npm 使用的包（都已核实为 MIT 许可，F-026）：`@withfig/autocomplete`（编译好的 spec；2.692.3 版解压后约 77 MB、1541 个文件）、`@fig/autocomplete-generators`、`@fig/autocomplete-helpers`、`@fig/autocomplete-shared`、`@withfig/autocomplete-types`。
+
 另外两个相关仓库，目前未克隆：
 
 - [aws/amazon-q-developer-cli](https://github.com/aws/amazon-q-developer-cli)（Apache-2.0）：主要是聊天和智能体功能。按搜索结果，该项目已转为只修复安全问题，后续功能在闭源的 Kiro CLI 中开发（未在仓库 README 中逐字核实）。

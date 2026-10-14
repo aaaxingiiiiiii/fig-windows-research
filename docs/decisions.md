@@ -45,6 +45,7 @@
 - 暂定方案：
   - 宿主进程使用 **C#/.NET**（WinForms 或 WPF 加 WebView2）。它对 UI Automation、命名管道和 WebView2 的支持最直接，PowerShell 7 也运行在 .NET 上，日后可以把适配模块改写成 C# 二进制模块。
   - 补全引擎和 UI 使用 **TypeScript**，运行在 WebView2 中，复用 `aq` 的前端代码；JS 运行时就是 WebView2 自带的引擎。
+  - 前端与宿主之间改用 **JSON 消息**，用自写的 `bridge` 包替换 Fig 原有的、基于 protobuf 的 `api-bindings`（2026-10-14 补充，见 `docs/protocol.md`）。
   - 适配模块先用 PowerShell 脚本实现。如果 T-020 的延迟不达标，再改为 C# 二进制模块。
 - 备选：Rust（tao、wry、windows-rs）可以复用 Fig 的 Rust 代码，但 Fig 的 Windows 部分已经过时（F-014），所以不作首选。
 
@@ -52,3 +53,18 @@
 
 - 状态：已采用（2026-10-14，用户同意建议）
 - 决定：本仓库采用 MIT 许可证，见根目录 `LICENSE`。与计划复用的 `aq`（MIT/Apache-2.0）、`wf`（MIT）、`is`（MIT）兼容；复用时保留原版权声明，并在 `research/sources.md` 中登记。
+
+## D-006 MVP 的范围与实现取舍
+
+- 状态：已采用（2026-10-14，用户委托 AI 制定；用户可以推翻）
+- 决定：按 `docs/mvp-plan.md` 第 2 节执行：
+  - 复用 Fig 前端，前端与宿主之间用 JSON 桥接；
+  - 适配模块先用 PowerShell 脚本实现；
+  - 插入使用 `Replace`；
+  - 悬浮窗不透明、不接收鼠标；
+  - spec 打包在本地；
+  - 模拟 `ls -1ApL`；
+  - 只支持相对路径和 `~`；
+  - 只实现 Fig 的默认键位。
+- 退路：见 `docs/mvp-plan.md` 第 2 节末尾。任何一项退路都要先由用户确认才能启用。
+- 后果：MVP 约 3.5–5 周（AI 编码，用户每天测试 1–2 小时）。cmd、Git Bash、历史模式、安装包和代码签名都放到 MVP 之后。
