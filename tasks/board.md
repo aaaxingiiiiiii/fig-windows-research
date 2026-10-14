@@ -10,8 +10,8 @@
 
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-035 | 实测原版 inshellisense（关卡） | todo | windows, human | — | | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
-| T-036 | 把 inshellisense 源码引入 `src/inshellisense/`，跑通构建和测试，编写 `docs/dev.md` | todo | any | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-035 | 实测原版 inshellisense（关卡） | todo | windows, human | — | 预留：Windows 上的 AI 和用户 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
+| T-036 | 把 inshellisense 源码引入 `src/inshellisense/`，跑通构建和测试，编写 `docs/dev.md` | doing | any | — | Claude Code/Opus 5.5 2026-10-14（Mac，分支 `ai/claude/T-036`） | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-037 | Windows 上的 generator 不再依赖 Git Bash | todo | any（Windows 上验证） | T-036 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-038 | 把规格用例改写为针对 inshellisense 引擎的测试，整理与 Fig 的差异 | todo | any | T-036 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-039 | 补齐 1–3 项高优先级差异 | todo | any | T-038 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
@@ -22,7 +22,7 @@
 
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | todo | any | T-036 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | todo | any | — | 预留：Mac 上的 GPT/Codex | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | todo | any | T-042 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
@@ -35,7 +35,7 @@
 
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | todo | any | — | | 选出最常用的 30 个 CLI，列出它们的 generator 调用了哪些外部命令，分为“可直接使用”“需改写”“不适用”三类，写入 `research/spec-compat.md` |
+| T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | todo | any | — | 预留：Mac 上的 GPT/Codex | 选出最常用的 30 个 CLI，列出它们的 generator 调用了哪些外部命令，分为“可直接使用”“需改写”“不适用”三类，写入 `research/spec-compat.md` |
 | T-012 | 在 Kiro 2.30.0 上执行规格用例 C-001 至 C-013 | todo | mac-kiro, human | — | | 每条用例的“Kiro 2.30.0 观察”一栏都有结果和证据编号 |
 | T-013 | 弄清 F-006：在 figterm 包装的交互式 zsh 中，`init zsh post` 输出什么 | todo | mac-kiro | — | | 用黑盒方式取得证据，不反编译 |
 

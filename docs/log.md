@@ -66,3 +66,12 @@
   - 确认 `origin` 在 GitHub 上是 `upstream` 的 fork，所以可以向 `upstream/develop` 提 Pull Request。
   - 确认本机的 fnm 已有 Node 20，满足 inshellisense 对版本的要求（`>=18 <23`），可以直接开始 T-036。
 - 下一步建议：T-036。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· 并行分工准备
+
+- 做了：
+  - 新增 `scripts/windows/check-env.ps1`：只读的 Windows 环境检查脚本，尚未在 Windows 上运行过。
+  - 在 `docs/workflow.md` 中新增“多个 AI 同时工作”的规则。
+  - 在任务板上认领 T-036，并把 T-015、T-042 预留给 Mac 上的 GPT，T-035 预留给 Windows。
+  - 在 `docs/handoff.md` 中写好分工表和两段接手提示词。
+- 下一步：Claude 做 T-036；GPT 在独立的 worktree 中做 T-015、T-042；Windows 端做 T-035。

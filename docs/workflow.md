@@ -92,6 +92,23 @@ is:src/runtime/runtime.ts#L55
 - 分支（D-008）：日常开发在 `develop` 上进行。每个任务从 `develop` 分出 `ai/<工具>/<任务号>` 分支，完成后合并回 `develop`；只有文档的小改动可以直接提交到 `develop`。`main` 只用于里程碑，由用户决定何时合并。
 - 推送：推送到 `origin`（用户的 fork）。同步到 `upstream` 的方式见 D-008 的“待确认”一项。
 
+## 多个 AI 同时工作
+
+例如：Mac 上的 Claude 和 GPT 同时开发，Windows 上还有一个 AI 做实测。
+
+1. **一个 AI 一个工作目录。**同一台机器上的多个 AI 不能共用一个 git 工作目录，否则切换分支时会互相覆盖文件。第二个 AI 使用 git worktree，例如：
+   `git worktree add -b ai/codex/T-015 ../fig-windows-research-codex develop`
+   `local/` 不会随 worktree 带过去，需要在新目录中运行 `sh scripts/fetch-sources.sh`。在 macOS 上也可以用 `cp -cR <原目录>/local <新目录>/` 快速复制一份。
+2. **先认领，再开工。**开工前，在 `develop` 上把任务改为 `doing` 并推送，其他 AI 拉取后就能看到。认领提交只改自己那一行。
+3. **只改自己的部分。**任务进行期间只修改：
+   - 自己负责的代码和文档；
+   - 任务板上自己的那一行；
+   - 在 `docs/log.md` 末尾追加记录。
+
+   **不要重写 `docs/handoff.md`**，由用户指定的整合者（默认是最后一个合并进 `develop` 的 AI）在合并后统一更新。
+4. **合并前先同步。**合并回 `develop` 前，先 `git fetch` 并把最新的 `develop` 合并进自己的分支，解决冲突后再合并、推送。不要强制推送，不要改写已推送的历史。
+5. **共享的契约文件**（`docs/protocol.md`、`docs/decisions.md`）如果需要修改，在 log 中写明，并通知用户。
+
 ## 遇到问题时
 
 - 工具不可用：在 log 中记录现象，再换用其他方法。不要为了用某个工具而扩大安装范围。

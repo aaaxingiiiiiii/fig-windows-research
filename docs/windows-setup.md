@@ -27,7 +27,7 @@ git switch develop
 sh scripts/fetch-sources.sh      # 需要 Git Bash；也可以按脚本内容手动执行 git 命令
 ```
 
-把 Windows、Windows Terminal、PowerShell、PSReadLine 和 .NET 的版本写入验证报告的开头。
+运行 `pwsh -NoProfile -File scripts/windows/check-env.ps1`，把输出的表格粘贴到验证报告的开头。这个脚本只读取版本信息，不安装任何东西；它还没有在 Windows 上运行过，出错时请修正后提交。
 
 ## 3. 验证程序的存放与报告
 
