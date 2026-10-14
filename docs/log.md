@@ -176,3 +176,11 @@
 - 新发现 F-032：custom generator 的默认目录和输出清理与 Fig 不同，登记为 T-051。
 - 测试：`npm test -- --ci` 共 271 个，260 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；lint 通过。不加 `--ci` 时，jest 会为失败的 brew 测试写入快照，已在 dev.md 中说明。
 - 下一步：用户 Fork 后推送 T-050 的两个分支；Windows 端做 T-035、T-048；GPT 做 T-043；Mac 端可以做 T-051。
+
+## 2026-10-14 · Codex/GPT-6（Windows）· T-035 环境与初步验证
+
+- 从 Mac fork 的 develop（5020935）接手，按工作流认领 T-035，在独立任务分支工作。共享 develop 已同步 Mac 成果和认领记录。
+- 修复 check-env.ps1 的 try/catch 解析错误和缺失 SDK 的显示；版本结果见 research/spike-inshellisense.md。
+- 经用户同意在项目 local/ 安装官方原版 0.0.4，使用项目内隔离缓存；未修改 PowerShell 启动配置。
+- doctor、git ch CLI 补全及受控 PTY 的启动/输入/候选/Tab 插入/退出通过。记录 E-005、E-006；不将这些结果冒充 Windows Terminal 人工验收。
+- T-035 保持 doing，等待用户完成 16 项 WT 清单；T-048 未开始。按并行协作规则未重写 docs/handoff.md。

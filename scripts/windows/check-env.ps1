@@ -1,7 +1,7 @@
 # Windows 环境检查（只读，不安装、不修改任何东西）
 # 用法：在 PowerShell 7 中运行  pwsh -NoProfile -File scripts/windows/check-env.ps1
 # 输出一段 Markdown 表格，可直接粘贴到验证报告（research/spike-*.md）开头。
-# 注意：本脚本编写于 macOS，尚未在 Windows 上运行验证；如有报错，请修正后提交。
+# 已在 Windows 11 / PowerShell 7.6.5 验证解析及版本读取；运行时配置仍需在目标交互终端确认。
 
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -24,12 +24,12 @@ $rows = [ordered]@{
     'Windows Terminal'   = if ($wt) { $wt.Version.ToString() } else { '未找到（可能不是 Store 版）' }
     'PowerShell'         = $PSVersionTable.PSVersion.ToString()
     'PSReadLine'         = if ($psrl) { $psrl.Version.ToString() } else { '未找到' }
-    'PredictionSource'   = try { (Get-PSReadLineOption).PredictionSource.ToString() } catch { '读取失败' }
+    'PredictionSource'   = $(try { (Get-PSReadLineOption).PredictionSource.ToString() } catch { '读取失败' })
     'Node.js'            = Get-CmdVersion 'node' @('--version')
     'npm'                = Get-CmdVersion 'npm' @('--version')
     'git'                = Get-CmdVersion 'git' @('--version')
     'Git Bash'           = if ($gitBash) { '已安装' } else { '未安装' }
-    '.NET SDK'           = Get-CmdVersion 'dotnet' @('--version')
+    '.NET SDK'           = if (Get-Command dotnet -ErrorAction SilentlyContinue) { $(if (@(& dotnet --list-sdks 2>$null).Count -gt 0) { Get-CmdVersion 'dotnet' @('--version') } else { '未安装 SDK（检测到 dotnet 入口）' }) } else { '未安装' }
     'inshellisense (is)' = Get-CmdVersion 'is' @('--version')
 }
 
