@@ -4,33 +4,29 @@
 
 ## 一句话
 
-研究方法已经从“反编译 Fig 的 Mac 程序”改为“读开源源码，再用 Kiro 做运行时对照”（D-001）。补全链路和行为规则已经从源码整理完毕，接下来需要用户做两个决定，并分别在 Mac 和 Windows 上做实测。
+路线已经确定：在 **PowerShell 7 + Windows Terminal** 上做 **Fig 式悬浮窗**补全，代码采用 MIT 许可。架构和成本评估已经完成（`docs/overlay-design.md`，MVP 约 9–15 人周）。下一步是在真实的 Windows 机器上完成 4 项验证（T-019 至 T-022），再全面开发。
 
 ## 已确认
 
-- Fig 的后继产品是 Kiro CLI。本机安装的是 2.30.0，正在运行，zsh 会话被 `kiro-cli-term` 包装（`research/target.md`）。
-- Fig 补全的完整源码以 MIT/Apache-2.0 开源，spec 库以 MIT 开源；三个参考仓库已固定 commit，可以用 `scripts/fetch-sources.sh` 拉取。
-- 补全链路已整理到 `research/architecture.md`，行为规则和 13 条用例在 `specs/completion.md`。
-- Fig 从未完成 Windows 版本：有 ConPTY 和光标定位代码，但没有 PowerShell 集成，也没有 Windows IPC。Microsoft inshellisense 已经在 Windows 上可用（`research/prior-art.md`）。
+- 研究基础：Fig 的源码已开源（`aq`），本机的 Kiro CLI 2.30.0 用于对照。补全链路见 `research/architecture.md`，行为规格和 13 条用例见 `specs/completion.md`。
+- 决策：D-001（以源码为主）、D-002（PowerShell 7 + WT）、D-003（Fig 式悬浮窗）、D-005（MIT）已经采用；D-004（C#/.NET 宿主 + WebView2 中运行复用的 Fig TS 前端）暂定。
+- 关键技术事实：
+  - Fig 前端只用到约 15 种宿主接口，可以放进 WebView2 复用（F-018 至 F-020）。
+  - PSReadLine 能读写缓冲区，但没有“缓冲区已变化”事件（F-021、`research/psreadline.md`）。
+  - WT 的光标矩形可以通过 UIA TextPattern 取得，高 DPI 下可能偏移（F-023、F-024、`research/caret-wt.md`）。
 
 ## 部分完成
 
-- 规格中所有“源码预期”都基于开源 1.19.7，还没有在 Kiro 2.30.0 上验证（T-012）。
-- `prior-art.md` 第 3 节中关于 PSReadLine 的内容来自记忆，尚未核实（T-016）。
-
-## 等用户决定
-
-- D-002：Windows 首个支持的组合，推荐 PowerShell 7 + Windows Terminal。
-- D-003：实现路线，可选基于 inshellisense、PowerShell 原生插件或 Fig 式悬浮窗。建议先完成 T-014 再决定。
-- D-005：本项目代码的许可证。
+- 所有关于 Windows 的结论都来自源码和文档，**还没有在 Windows 上实际运行过**。
+- 规格中的源码预期还没有在 Kiro 2.30.0 上验证（T-012）。
 
 ## 下一条最小可执行任务
 
-- 只有仓库和网络的 AI：**T-016**，核实 PSReadLine 相关接口，约 1 小时，结果直接影响 D-003。
-- 有 Windows 环境：T-014。
+- 有 Windows 环境：**T-019**（光标定位），然后是 T-020（适配模块）。这两项风险最高，决定整个方案能否成立。环境见 `docs/windows-setup.md`，测量方法和通过标准见 `docs/overlay-design.md` 的“验证关卡”。
+- 只有仓库和网络：T-015（spec 在 Windows 上的可用性）或 T-017（PowerShell 分词与转义规则）。
 - 有 Mac 并且有人可以看屏幕：T-012。
 
 ## 注意
 
 - `local/` 只存在于产生它的机器上；其他机器先运行 `sh scripts/fetch-sources.sh`。
-- 本轮的变更尚未提交，等待用户确认。
+- 提交使用仓库本地配置的 git 身份；不要改写或强制推送历史。

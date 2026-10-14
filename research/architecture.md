@@ -99,6 +99,6 @@
 ## 对 Windows 实现的含义（推断）
 
 1. Fig 的设计依赖“PTY 包装 + 影子终端 + 提示符标记”取得缓冲区。这种方式适用于任何 shell，但需要处理 ConPTY 的事件顺序问题（`CR/figterm/src/main.rs#L583-L584`），还要识别灰色预测文字。
-2. 在 PowerShell 中，PSReadLine 可以直接提供缓冲区和光标，可能不需要 PTY 包装（待 T-014 验证）。
+2. 在 PowerShell 中，PSReadLine 可以直接提供缓冲区和光标，可能不需要 PTY 包装；但它没有“缓冲区已变化”事件，见 `psreadline.md`（待 T-020 验证）。
 3. 插入的本质是“删除 N 个字符，再输入文本”。Windows 上每种 shell 对退格字节（`0x08` 或 `0x7f`）的处理需要实测，inshellisense 对 pwsh 使用 `0x7f`。
 4. 前端的补全逻辑（解析、spec、排序、插入规则）与平台无关，可以作为 Windows 引擎的行为基准。详见 `specs/completion.md`。

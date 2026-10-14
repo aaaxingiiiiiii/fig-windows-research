@@ -1,6 +1,6 @@
 # Windows 实现计划
 
-本页是待验证的路线，阶段的具体内容取决于 `docs/decisions.md` 中的 D-002、D-003 和 D-004。Fig 链路的事实依据见 `research/architecture.md`，现有方案对比见 `research/prior-art.md`。
+路线已经确定：PowerShell 7 加 Windows Terminal（D-002），Fig 式悬浮窗（D-003）。架构、成本和验证关卡见 `docs/overlay-design.md`；宿主语言暂定为 C#/.NET，前端为 TypeScript（D-004，验证后定稿）。Fig 链路的事实依据见 `research/architecture.md`，现有方案对比见 `research/prior-art.md`。
 
 ## 一个补全插件由哪些部分组成
 
@@ -20,14 +20,13 @@
 ## 阶段 0：规格与决策（当前）
 
 - 完成 `specs/completion.md` 第 8 节的用例（C-001 至 C-013），每条都要有源码依据；能做运行时观察的，再补充 Kiro 2.30.0 的实际结果。
-- 用户确定 D-002、D-003。
-- T-014：在 Windows 上实测 inshellisense，并验证 PSReadLine 接口的能力。
+- 完成验证关卡 T-019 至 T-022（`docs/overlay-design.md`），再由 T-023 汇总结果、定稿 D-004、写出 MVP 设计。
 
-完成标准：每个已选定的设计问题都有决策记录；MVP 的用例清单已经确定。
+完成标准：4 项验证都有结论（通过或启用回退方案）；`docs/mvp-design.md` 写好模块划分和接口。
 
 ## 阶段 1：最小可用版本（MVP）
 
-范围：在 D-002 选定的组合中，使用自带的 `git` spec 和文件路径补全。
+范围：PowerShell 7 加 Windows Terminal；悬浮窗显示；使用自带的 `git` spec 和文件路径补全。
 
 完成标准：
 
@@ -44,9 +43,9 @@
 
 ## 阶段 3：体验与安装
 
-- 可选：实现悬浮窗显示，涉及光标像素定位、DPI、多显示器和输入法。
+- 悬浮窗体验打磨：多显示器、DPI 切换、输入法组字期间的处理、主题和动画。
 - 提供设置项、安装和卸载、日志与诊断命令。
-- 打包发布，渠道为 PowerShell Gallery、winget 或 npm，取决于 D-003。
+- 打包发布：宿主用 winget 或 MSIX 分发，适配模块可同时发布到 PowerShell Gallery。
 
 ## 阶段 4：兼容性矩阵
 
@@ -58,5 +57,5 @@
 | --- | --- |
 | spec 中的 generator 假定 POSIX 命令（`ls`、`grep` 等） | 统计受影响的 spec；为常用 CLI 编写 pwsh 版本的 generator |
 | 执行第三方 spec 代码的安全问题 | 只加载打包时固定版本的 spec；generator 设置超时，并限制可执行的命令 |
-| PSReadLine 的灰色预测文字与补全菜单冲突 | 在 T-014 中验证二者如何共存 |
+| PSReadLine 的灰色预测文字与补全菜单冲突 | 在 T-020 中验证二者如何共存 |
 | 终端内绘制菜单导致画面错乱（滚动、调整窗口大小、备用屏幕） | 参考 `is` 的处理：在备用屏幕中暂停绘制，调整大小后延迟重绘 |

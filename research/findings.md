@@ -20,12 +20,16 @@
 | F-012 | 第一个词（命令名）默认不补全，由 `autocomplete.firstTokenCompletion` 控制，默认值为 false | 观察 | `aq:packages/dashboard-app/src/data/autocomplete.ts#L131-L138` | C-013 |
 | F-013 | 按 Esc 隐藏后，后续输入保持隐藏，直到状态重置 | 观察 | `aq:packages/autocomplete-app/src/state/index.ts#L324-L346` | 重置时机是推断；C-005 |
 | F-014 | Fig 自己的 Windows 移植是未完成的原型：已有 ConPTY、控制台 I/O、UIA/MSAA 光标定位；缺少 Windows IPC、PowerShell 和 cmd 集成、安装程序 | 观察 | `prior-art.md` 第 1 节 | 无法在 Windows 编译这一点是推断 |
-| F-015 | inshellisense 已在 Windows 上支持 pwsh、powershell 和 cmd（实验性），方式是 ConPTY 包装加终端内 ANSI 绘制，使用 `wf` spec 2.675.0；Windows 上的 generator 经 Git Bash 执行 | 观察 | `prior-art.md` 第 2 节 | 没有在 Windows 上实际运行（T-014） |
+| F-015 | inshellisense 已在 Windows 上支持 pwsh、powershell 和 cmd（实验性），方式是 ConPTY 包装加终端内 ANSI 绘制，使用 `wf` spec 2.675.0；Windows 上的 generator 经 Git Bash 执行 | 观察 | `prior-art.md` 第 2 节 | 没有在 Windows 上实际运行（T-014 已取消，只作参考） |
 | F-016 | `wf@aef52ac`（2.692.3）顶层 715 个 spec 文件中，有 201 个含 `postProcess` 或 `custom` 函数。因此 Windows 引擎需要嵌入 JS 运行时，否则只能支持静态部分 | 观察 | 用 `grep -lE 'postProcess\|custom:' src/*.ts` 统计 | 没有统计子目录中的 spec |
 | F-017 | 开源前端有两处疑似缺陷：计算删除数时只把查询词中的第一个空白算作 `\ `；`selectSuggestionN` 只有第 1 个有效 | 观察（是否属于缺陷为推断） | `aq:packages/autocomplete-app/src/state/insertion.ts#L56`、`aq:packages/autocomplete-app/src/hooks/keypress.ts#L183-L189` | Windows 实现不照搬 |
 | F-018 | Fig 补全前端与宿主之间只有一层很薄的桥：用 `window.ipc.postMessage` 发送 base64 编码的 protobuf，宿主用 DOM 事件 `FigProtoMessageReceived` 回传；spec 文件通过宿主的 `fread` 读取 | 观察 | `aq:packages/api-bindings/src/core.ts#L94-L116`、`aq:packages/autocomplete-parser/src/loadHelpers.ts#L62` | — |
 | F-019 | 补全前端、解析器和设置封装实际调用的宿主接口约 15 种：编辑缓冲区订阅、按键通知与拦截设置、插入文本、设置读写、运行进程、读写文件、窗口定位、历史查询、状态和事件订阅、遥测 | 观察 | 在 `aq:packages/autocomplete-app/src`、`autocomplete-parser/src`、`api-bindings-wrappers/src` 中统计 `Shell.`、`Settings.`、`Process.` 等调用 | 统计方法是 grep，可能漏掉间接调用 |
 | F-020 | 因此可以把 Fig 的 React 前端（含引擎和 UI）放进 Windows 的 WebView2 中运行：写一层把 `window.ipc.postMessage` 转到 `chrome.webview.postMessage` 的转接代码，宿主实现上述约 15 种接口即可；WebView2 自带的 JS 引擎同时解决了 spec 需要 JS 运行时的问题（F-016） | 推断 | F-018、F-019 | 需要在 Windows 上验证（T-022） |
+| F-021 | PSReadLine 公开了读写缓冲区和光标、按词元替换、调用按键原有功能的接口，但**没有“缓冲区已变化”事件**；预测插件在渲染时调用，有多种跳过的情况，并且拿不到真实光标位置 | 观察 | `psreadline.md` 第 1、2 节 | 运行时表现待 T-020 验证 |
+| F-022 | 在 Windows Terminal 中粘贴时，文本作为输入逐字符送入；PSReadLine 不支持括号粘贴模式。推断：输入法提交的中文不经过按键处理器 | 观察（输入法部分为推断） | `psreadline.md` 第 4 节 | T-020 |
+| F-023 | WT 的 TermControl 通过 UIA TextPattern 提供光标所在字符的矩形（空区间先扩展到一个字符）；`GetGUIThreadInfo` 和 MSAA 在 WT 中拿不到光标，在 conhost 中可用 | 观察（读源码和文档，未运行） | `caret-wt.md` 第 1、2 节 | T-019 |
+| F-024 | WT 的 UIA 矩形计算中，padding 可能没有乘 DPI 缩放比例，在 150% 和 200% 缩放下可能分别偏约 4 px 和 8 px | 推断 | `caret-wt.md` 第 1 节 | T-019 |
 
 ## 注意
 

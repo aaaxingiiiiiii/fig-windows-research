@@ -36,15 +36,13 @@ MIT 许可，TypeScript 编写，仍在维护（固定 commit `8dcc9ca`，2026-1
 
 已知限制：cmd 支持是实验性的；Windows 端到端测试只覆盖 cmd、pwsh、powershell 和 xonsh；`insertValue` 中的 `{cursor}` 没有实现（推断，源码中无引用）；没有 Git for Windows 时 script generator 可能失败（推断）。
 
-## 3. 其他 Windows 方案（未克隆，需要验证）
+## 3. 其他 Windows 方案（T-016 已核实，详见 `psreadline.md`）
 
 | 方案 | 特点 | 与 Fig 的差距 |
 | --- | --- | --- |
-| PSReadLine 预测插件（`ICommandPredictor`，PowerShell 7.2+） | 官方扩展点，每次按键都会收到当前输入，结果显示在 PSReadLine 的 ListView 中 | 推断：建议以整行为单位，不是按词元补全；说明文字的显示能力未知 |
-| `Register-ArgumentCompleter -Native` 配合 `MenuComplete` | 按词元补全，`CompletionResult` 可以带 ToolTip | 需要按 Tab 或 Ctrl+Space 触发，不会自动弹出 |
-| VS Code 终端建议（terminal suggest） | 也使用 Fig spec | 只能在 VS Code 内使用 |
-
-以上三项的事实都来自记忆，尚未在本仓库中核实（未知），由 T-016 负责核实。
+| PSReadLine 预测插件（`ICommandPredictor`，PowerShell 7.2 以上，PSReadLine 2.2.2 以上） | 渲染时调用，限时 20 ms；结果显示在 ListView 或 InlineView 中 | 建议以整行为单位；列表最多 10 行，只显示选中项的提示；拿不到真实光标位置 |
+| `Register-ArgumentCompleter -Native` 配合 `MenuComplete` | 按词元补全，`CompletionResult` 可以带提示文字 | 需要按 Tab 或 Ctrl+Space 触发，不会自动弹出 |
+| VS Code 终端建议（`terminal-suggest` 扩展） | 基于 Fig spec；在 pwsh 中通过 shell 集成脚本报告命令行和当前目录 | 只能在 VS Code 内使用 |
 
 ## 4. 各环节对照与 Windows 实现要点
 

@@ -18,3 +18,14 @@
 - 产出：F-001 至 F-017，C-001 至 C-013，D-001 至 D-005，E-001 至 E-004。
 - 没做完 / 问题：没有做 GUI 运行时观察，因为需要人看屏幕；F-006 的原因未知；PSReadLine 相关内容未核实。
 - 下一步建议：T-016；用户决定 D-002 和 D-003。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-010/T-011/T-018、T-016
+
+- 做了：
+  - 记录用户决定：D-002 选 PowerShell 7 + WT，D-003 选 Fig 式悬浮窗，D-005 选 MIT（新增 `LICENSE`）；D-004 暂定 C#/.NET 宿主 + WebView2。
+  - 统计 Fig 前端与宿主之间的接口，确认可以在 WebView2 中复用前端（F-018 至 F-020）。
+  - 用两个并行子代理调研 PSReadLine 接口和 WT 中的光标定位方法，整理成 `research/psreadline.md`、`research/caret-wt.md`。
+  - 写出并修订 `docs/overlay-design.md`（架构、成本、验证关卡）和 `docs/windows-setup.md`。
+- 产出：F-018 至 F-024；新增任务 T-019 至 T-023；T-014 取消。
+- 没做完 / 问题：所有 Windows 结论都还没有上机验证。用户已用 filter-branch 把前两次提交的作者改写为仓库本地身份，并推送。
+- 下一步建议：在 Windows 上做 T-019、T-020。

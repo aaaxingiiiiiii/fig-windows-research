@@ -22,7 +22,7 @@
   2. Windows PowerShell 5.1：系统自带，但 PSReadLine 版本较旧，无法使用预测插件接口（推断）。
   3. cmd（配合 Clink）：用户多，但需要依赖 Clink 等第三方工具才能获得行编辑能力。
   4. Git Bash：可以最大程度复用 Fig 的 bash 集成，但不是 Windows 原生体验。
-- 影响：决定 T-014 的验证对象，以及阶段一的验收环境。
+- 影响：决定验证关卡（T-019 至 T-022）的测试环境，以及阶段一的验收环境。
 
 ## D-003 实现路线
 
@@ -30,7 +30,7 @@
 - 选项：
   1. 基于 inshellisense：MVP 约 1–2 周；菜单画在终端内。
   2. PowerShell 原生插件，终端内显示：MVP 约 4–6 周。
-  3. **Fig 式悬浮窗**：MVP 约 8–12 周；体验最接近 Fig。
+  3. **Fig 式悬浮窗**：MVP 约 9–15 周；体验最接近 Fig。
 - 决定：采用选项 3，并按 `docs/overlay-design.md` 做以下调整：
   - 在 PowerShell 7 中，用 PSReadLine 适配模块代替 figterm 的 PTY 包装。
   - 把 Fig 的补全前端放进 WebView2 中复用。
