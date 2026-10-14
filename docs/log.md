@@ -41,3 +41,19 @@
 - 产出：D-006；D-004 补充改用 JSON 桥接；F-025 至 F-027；新增任务 T-024 至 T-033。
 - 没做完 / 问题：协议是草案，所有 Windows 部分都还没有上机验证。
 - 下一步建议：T-024，然后是 T-025。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-047
+
+- 做了：
+  - 用户要求改在 dev 分支上开发。经查，对方仓库（upstream）中的分支名是 `develop`，已经包含到 T-034 为止的提交；当前账号推送 upstream 返回 403。因此在本地建立 `develop`，并推送到 `origin/develop`。
+  - 用户决定先做 inshellisense 终端内版本，再做悬浮窗。核实了 inshellisense 的几处细节：
+    - 核心约 3500 行；
+    - 渲染方法独立（`suggestionManager.render`）；
+    - 已能按 shell 处理引号；
+    - Windows 上的 generator 依赖 Git Bash；
+    - npm 最新版本为 0.0.4；
+    - Windows 相关的未解决 issue 只有 1 个。
+  - 重写 `docs/mvp-plan.md`（阶段 A、B，包括 T-035 人工清单）；旧计划和协议移到 `docs/archive/`。
+- 产出：D-007、D-008；D-003 修订，D-004、D-006 推翻；新增任务 T-035 至 T-047；取消 PSReadLine 路线的任务。
+- 没做完 / 问题：upstream 的推送权限需要用户与仓库所有者确认。
+- 下一步建议：T-035（Windows，人工）和 T-036（任何系统）可以并行。

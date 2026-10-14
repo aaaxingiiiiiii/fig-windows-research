@@ -1,6 +1,8 @@
 # Fig 式悬浮窗方案：架构与成本评估
 
-更新：2026-10-14。具体的实现步骤和测试步骤见 `docs/mvp-plan.md`。对应 D-003（已采用 Fig 式悬浮窗）和 D-004。依据见 `research/psreadline.md`、`research/caret-wt.md`、`research/findings.md` 中的 F-018 至 F-020。本页的成本数字都是**估算（推断）**，验证关卡（T-019 至 T-022）完成后需要修正。
+> **注意（2026-10-14）**：本页按 PSReadLine 路线做的评估。D-007 已把路线改为“先 inshellisense 终端内，再加悬浮窗”，悬浮窗改由 inshellisense 驱动、宿主只负责显示。所以本页的“适配模块”“前端移植”两行不再适用；光标定位、悬浮窗和验证关卡（T-019、T-021）的结论仍然有效。当前计划见 `docs/mvp-plan.md`。
+
+更新：2026-10-14。对应 D-003（已采用 Fig 式悬浮窗）和 D-004。依据见 `research/psreadline.md`、`research/caret-wt.md`、`research/findings.md` 中的 F-018 至 F-020。本页的成本数字都是**估算（推断）**，验证关卡（T-019 至 T-022）完成后需要修正。
 
 ## 结论
 

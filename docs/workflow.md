@@ -89,7 +89,8 @@ is:src/runtime/runtime.ts#L55
 - 一个任务对应一个或少量提交，提交信息以任务编号开头，例如 `T-012: 记录 Tab 与 Enter 的插入行为`。
 - 提交前运行 `sh scripts/check-public.sh`，并人工查看 `git diff --cached --stat`。
 - 新增或修改了源码引用时，运行 `python3 scripts/check-refs.py`，检查文件是否存在、行号是否越界。它不检查引用的内容是否与结论相符，内容需要人工抽查。
-- 不同 AI 同时工作时，各自使用 `ai/<工具>/<任务号>` 分支，由用户合并。只有一个 AI 依次接力时，可以直接在 `main` 上提交。
+- 分支（D-008）：日常开发在 `develop` 上进行。每个任务从 `develop` 分出 `ai/<工具>/<任务号>` 分支，完成后合并回 `develop`；只有文档的小改动可以直接提交到 `develop`。`main` 只用于里程碑，由用户决定何时合并。
+- 推送：推送到 `origin`（用户的 fork）。同步到 `upstream` 的方式见 D-008 的“待确认”一项。
 
 ## 遇到问题时
 

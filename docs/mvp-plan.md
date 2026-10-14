@@ -1,148 +1,130 @@
-# 最小实现方案与分阶段计划
+# 实现计划：先做终端内版本，再加悬浮窗
 
-更新：2026-10-14。本页是实现阶段的主计划，对应 D-006（MVP 范围）和 D-004（技术选型）。架构背景见 `docs/overlay-design.md`，模块之间的消息格式见 `docs/protocol.md`。
+更新：2026-10-14。对应 D-007。旧路线（PSReadLine 适配模块 + Fig 前端 + WebView2）已存档在 `docs/archive/`，其中的调研结论仍然有效。
 
-## 1. 目标
+## 1. 结论
 
-在 **PowerShell 7 + Windows Terminal** 中，用户输入命令时，光标旁边自动弹出 Fig 风格的悬浮补全窗：
+- **第一个可用版本会快很多**：大约 1–2 周，旧路线需要 3.5–5 周。原因是 inshellisense 已经能在 PowerShell 7 上运行（F-015），我们只需要补上 Windows 上的缺口，不必从零写三个模块。
+- **到悬浮窗版本的总时间大致相当**：大约 3–5 周。前提是阶段 B 在 inshellisense 的基础上**只替换显示方式**，不推倒重来。
+- **风险更低**：
+  - 最难的问题是“感知输入变化”。PSReadLine 没有提供这个事件（F-021），而 inshellisense 通过 PTY 读取屏幕，可以看到每次回显，包括输入法提交的中文和粘贴的内容，这个问题自然解决。
+  - 悬浮窗只负责“在光标旁边画一个列表”。按键拦截、插入和补全计算都留在 inshellisense 中，所以悬浮窗宿主可以做得很简单。
+- **代价**：
+  1. inshellisense 的补全引擎比 Fig 少一些功能，例如 `history` 和 `help` 模板、`{cursor}`、带版本的 spec（见 `research/prior-art.md` 第 2 节）。
+  2. shell 会被包装两层 ConPTY：WT → inshellisense → pwsh。可能出现兼容问题，所以第一步就要实测（T-035）。
+  3. 需要 Node 运行时。发布时可以打包成单文件可执行程序，inshellisense 自己就是这样发布的。
 
-- 可以补全子命令、选项和参数，并显示说明；
-- 用 Tab、Enter、↑、↓、Shift+Tab、Esc 操作；
-- 插入结果正确，包括带空格的路径；
-- 不影响正常输入，悬浮窗不可见时按键行为与原来完全一致。
-
-**判断原则**：在保证上述体验的前提下，新写的代码越少越好；能复用的经过验证的代码（Fig 前端、`wf` spec）尽量复用；有风险的部分先验证，并准备退路。
-
-## 2. 关键取舍
-
-| 方面 | 最小实现的选择 | 暂不做 | 理由 |
-| --- | --- | --- | --- |
-| 补全引擎与 UI | **复用 Fig 前端源码**（`aq` 的 autocomplete-app、autocomplete-parser、shell-parser），只把底层的 `api-bindings` 换成自写的 JSON 桥 | 自写引擎 | 行为与 Fig 一致，规格用例可以直接对照；新代码只有桥接层，约 400 行 |
-| 前端与宿主的通信 | JSON 消息 | Fig 原有的 protobuf | 少一套代码生成工具链，日志可以直接阅读，方便 AI 调试 |
-| 感知输入变化 | 为可打印字符和编辑键绑定脚本处理器；粘贴时用 `[Console]::KeyAvailable` 跳过中间状态；按 Tab、Enter 时再核对一次缓冲区 | 预测插件钩子、C# 二进制模块 | 不需要编译就能迭代；T-020 不达标时再升级 |
-| 插入 | PSReadLine 的 `Replace` 加 `SetCursorPosition` | 像 figterm 那样往 PTY 写退格和文本 | 精确，并且支持撤销 |
-| 光标定位 | UIA TextPattern；拿不到时贴着终端控件底部显示 | 自写输入法、注入代码 | 见 `research/caret-wt.md` |
-| 悬浮窗 | 不透明矩形、不接收鼠标、不抢焦点 | 透明圆角、鼠标点选 | 避开 WebView2 透明背景和焦点的已知难点 |
-| spec | 打包固定版本的 `@withfig/autocomplete`，通过 WebView2 的本地虚拟主机加载 | 从 CDN 在线更新 | 离线可用，结果可以复现 |
-| generator | 宿主直接启动进程；模拟 `ls -1ApL`（Fig 的文件补全依赖它）；其他 POSIX 命令失败时返回空 | 改写所有依赖 POSIX 命令的 generator | `git` 等常用 CLI 可以直接使用 |
-| 路径 | 相对路径和 `~`；`/` 与 `\` 都识别为分隔符；插入时用 `/`；含空格或特殊字符时用 PowerShell 单引号 | 盘符开头的绝对路径（第二阶段） | PowerShell 和大多数程序都接受 `/` |
-| 按键 | Fig 默认键位：Tab、Enter、↑、↓、Shift+Tab、Esc | Ctrl+K、Ctrl+R、数字选择、历史模式 | 先保证核心操作 |
-| 设置 | 固定默认值，可选一个 JSON 文件覆盖 | 设置界面 | — |
-| 安装 | `install.ps1` 修改 `$PROFILE`，并让宿主开机自启 | MSI、winget、代码签名 | 发布前再做 |
-| 不在范围内 | cmd、Git Bash、conhost、命令名补全、历史模式、遥测、自动更新、AI 功能 | — | — |
-
-**退路**：
-
-- 复用 Fig 前端失败（T-022 不通过）时，改用 inshellisense 的运行时引擎（MIT，`is:src/runtime/`），自己写一个简单的列表 UI。
-- 光标定位失败（T-019 不通过）时，第一版改为在终端内显示菜单。
-- 感知输入变化不达标（T-020 不通过）时，改为 C# 预测插件钩子，或者“按 Tab 才弹出”的模式。
-
-## 3. 架构与目录
+## 2. 两个阶段
 
 ```text
-Windows Terminal → pwsh 7 + PSReadLine
-  └─ src/adapter/      PowerShell 模块 FigWin（适配层）
-        │  命名管道，JSON 行（docs/protocol.md 第 2 节）
-        ▼
-  src/host/            C#/.NET 8 宿主（托盘常驻）
-        · PipeServer、SessionManager、ProcessRunner（含 ls 模拟）
-        · ICaretLocator（UIA 实现，另有可测试的假实现）
-        · IOverlayWindow（WebView2 实现）、ForegroundTracker
-        · DebugState：输出内部状态，供自动测试读取
-        │  WebView2 消息，JSON（docs/protocol.md 第 3 节）
-        ▼
-  src/frontend/
-        · vendor/aq/   复用的 Fig 前端源码（保留 LICENSE 和 NOTICE，记录改动）
-        · bridge/      替换 api-bindings 的 JSON 桥，另有浏览器用的假桥
-        · specs/       构建时从 @withfig/autocomplete 生成，不提交
-tests/
-  · engine/            vitest：用 C-xxx 用例测试引擎（任何系统都能运行）
-  · adapter/           Pester：插入换算等纯函数
-  · host/              dotnet test：协议、ls 模拟、进程超时
-  · e2e/               Windows 端到端脚本（用 tools/wt-driver）
-tools/wt-driver/       启动 WT、模拟按键、截图、读取宿主状态
+阶段 A：终端内版本（约 1–2 周）
+  Windows Terminal → inshellisense（我们的分支，Node）→ pwsh 7
+    · 用 ConPTY 包装 pwsh，用影子终端读取命令行和光标所在的单元格
+    · 补全计算：wf spec；Windows 上的 generator 不再依赖 Git Bash
+    · 显示：在终端内用 ANSI 绘制（inshellisense 原有方式）
+    · 按键：可见时拦截 Tab、↑、↓、Esc，插入时向 PTY 写入删除和文本
+
+阶段 B：悬浮窗（约 2–3 周，复用阶段 A 的全部成果）
+  inshellisense 分支新增“悬浮窗渲染器”：不在终端里画，而是把 {候选, 选中项, 光标单元格} 通过命名管道发给 ↓
+  悬浮窗宿主（C#/.NET，只负责显示）
+    · 用 UIA 定位光标的像素位置；失败时用“终端控件边界 + 单元格坐标 × 单元格尺寸”换算
+    · 原生绘制一个置顶、不抢焦点、不接收鼠标的列表窗口
+    · 宿主不在线或定位失败时，inshellisense 自动回到终端内绘制
 ```
 
-为了方便多个 AI 接力，所有与平台相关的部分都放在接口后面，并提供假实现。这样只有光标定位、悬浮窗和 WebView2 这三处必须在 Windows 上开发，其余部分在 Mac 或 Linux 上也能开发和测试：
+## 3. 关键取舍
 
-- `pwsh` 和 PSReadLine 可以在 Mac 上运行；
-- .NET 的命名管道在 Unix 上会映射为 Unix socket；
-- 前端可以在浏览器中运行。
+| 方面 | 选择 | 理由 |
+| --- | --- | --- |
+| 基础 | 把 inshellisense（MIT）复制到 `src/inshellisense/`，固定上游 commit，在 `CHANGES.md` 中记录每处改动 | 一个仓库就能完成全部工作，方便多个 AI 接力；改动清单便于以后同步上游，或把通用修复提交回上游 |
+| 补全引擎 | 沿用 inshellisense 的引擎和打包的 `wf` spec | 已经在 Windows 上运行，并且能按 shell 处理引号（`is:src/runtime/utils.ts#L87-L88`） |
+| generator | 在 Windows 上直接启动命令；只有确实需要 shell 时才用 pwsh；不再依赖 Git Bash（现状见 `is:src/runtime/utils.ts#L17-L24`、`#L90-L96`） | 用户不需要另外安装 Git for Windows；`git` 等命令本身照常可用 |
+| 键位 | 先沿用 inshellisense 的默认键位（Tab 接受、↑↓ 选择、Esc 关闭），可以通过配置改成 Fig 风格（Enter 接受） | 不修改代码即可调整 |
+| 悬浮窗的职责 | 只负责显示；按键和插入都由 inshellisense 处理 | 宿主不需要处理键盘，也不需要 WebView2，复杂度最低 |
+| 悬浮窗绘制 | 原生 WinForms 或 WPF 列表 | 候选已经算好，只需要画列表 |
+| 光标定位 | UIA 优先，单元格换算作为后备（`research/caret-wt.md`） | inshellisense 已经知道光标在第几行第几列，后备方案比旧路线更可靠 |
+| 暂不做 | cmd、Git Bash、鼠标点选、设置界面、历史模式、代码签名 | — |
 
-## 4. 测试分层
+## 4. 目录
+
+```text
+src/inshellisense/     上游源码（MIT）+ CHANGES.md + UPSTREAM（记录上游 commit）
+src/overlay-host/      阶段 B：C# 悬浮窗宿主
+tools/wt-driver/       Windows 自动测试工具：启动 WT、模拟按键、截图、读取状态
+tests/                 我们新增的测试（规格用例、Windows 规则）
+docs/dev.md            构建、测试、安装命令（由 T-036 编写）
+```
+
+## 5. 测试分层
 
 | 层级 | 运行环境 | 由谁执行 | 内容 |
 | --- | --- | --- | --- |
-| L1 单元测试 | 任何系统 | AI 自动执行 | 引擎用例（C-xxx）、转义规则、插入换算、协议、ls 模拟 |
-| L2 自动集成测试 | Windows | AI 用 `tools/wt-driver` 执行，无需人工值守 | 启动 WT，模拟按键，读取宿主的 `debugState`，检查候选列表、插入结果、悬浮窗与光标的位置差，并保存截图 |
-| L3 人工验收 | Windows | 用户按清单执行，10–20 分钟 | 看效果：位置、遮挡、闪烁、输入法、多显示器；截图保存到 `local/evidence/` |
+| L1 单元测试 | 任何系统 | AI 自动执行 | inshellisense 自带的测试，以及我们新增的规格用例（`specs/completion.md`）和 Windows 规则 |
+| L2 自动集成测试 | Windows | AI 用 `tools/wt-driver` 执行 | 启动 WT 和 pwsh，模拟按键，检查插入结果；阶段 B 还要检查悬浮窗与光标的位置差，并保存截图 |
+| L3 人工验收 | Windows | 用户按编号清单执行，回答“是”或“否” | 看效果、输入法、多显示器等 |
 
-规则：每个任务结束时，它涉及的 L1 测试必须全部通过；L2 和 L3 的结果写进任务对应的报告。不允许为了让测试通过而删除或放宽用例；确实需要修改用例时，在 `specs/completion.md` 中说明原因。
+规则：每个任务结束时，它涉及的 L1 测试必须全部通过。不允许为了让测试通过而删除或放宽用例；确实需要修改用例时，在 `specs/completion.md` 中说明原因。
 
-## 5. 阶段与步骤
+## 6. 阶段 A：终端内版本
 
-阶段之间按依赖关系排列，A 线（任何系统）和 W 线（Windows）可以并行。估算是在“AI 写代码、用户每天测试 1–2 小时”的前提下给出的日历时间。
+| 任务 | env | 实现步骤 | 测试与完成标准 |
+| --- | --- | --- | --- |
+| **T-035** 实测原版 inshellisense | windows, human | ① 按 `docs/windows-setup.md` 准备环境；② 用 `npm install -g @microsoft/inshellisense` 安装，或下载官方发布的程序；③ 运行 `is init pwsh` 并把输出加到 `$PROFILE` 的**最后一行**；④ 按下方“T-035 人工清单”逐条测试 | 写出 `research/spike-inshellisense.md`，内容为：各项结果、启动耗时、按键延迟的主观感受。**关卡**：没有阻断问题（例如画面错乱、输入丢失、明显卡顿），否则在 `docs/decisions.md` 中写清问题和选项，交给用户决定 |
+| **T-036** 引入源码 | any | ① 把上游源码复制到 `src/inshellisense/`，保留 LICENSE，在 `UPSTREAM` 文件中记录 commit；② 跑通构建和自带的测试；③ 编写 `docs/dev.md` | 在 Mac 上 `npm test` 通过；在 Windows 上能从源码运行 `is` |
+| **T-037** 去掉对 Git Bash 的依赖 | any（Windows 上验证） | 修改 `src/runtime/utils.ts` 的执行方式：Windows 上不经过 shell 直接启动命令，命令名需要解析为 `.exe` 或 `.cmd`；参数不再按 bash 规则转义。补充测试 | 在没有安装 Git Bash 的 Windows 上，`git checkout ` 后能列出分支；新增的测试通过 |
+| **T-038** 规格用例自动化 | any | 把 C-001 至 C-013 改写为针对 inshellisense 引擎的测试，并逐条标注与 Fig 行为不同的地方；新增 pwsh 规则用例，至少包括：带空格的路径、单引号、反引号、中文路径、`;` 之后的命令 | 测试通过；与 Fig 的差异记入 `specs/completion.md` 的新一节“inshellisense 与 Fig 的差异” |
+| **T-039** 补齐高优先级差异 | any | 根据 T-038 的差异清单，实现最影响体验的 1–3 项，例如 `insertValue` 中的 `{cursor}` | 对应用例通过；改动记入 `CHANGES.md` |
+| **T-040** 打包与安装 | windows | ① 用 inshellisense 自带的打包脚本（`is:scripts/pkg.ts`）生成 win-x64 单文件程序；② 编写 `install.ps1`：修改 `$PROFILE` 前先备份，把初始化语句加到最后一行；③ 编写 `uninstall.ps1`；④ 在 README 中写使用说明 | 在一台干净的 Windows 上能安装、使用、卸载，`$PROFILE` 能恢复原样 |
+| **T-041** 试用 | human | 用户日常使用一到两天，把问题登记为新任务 | 没有导致无法输入或误执行命令的问题 |
 
-### 阶段 0：骨架与契约（A 线，1–2 天）
+### T-035 人工清单
 
-| 任务 | 实现步骤 | 测试与完成标准 |
+每一项都回答“是”或“否”，回答“否”时附截图（存到 `local/evidence/`）。
+
+1. 打开一个新的 WT 标签页，pwsh 能正常启动，没有报错。记录从打开标签到出现提示符的大致秒数。
+2. 输入 `git ch`，候选中出现 `checkout` 和 `cherry-pick`。
+3. 按 ↓ 再按 Tab，命令行变成 `git cherry-pick `。
+4. 输入 `git checkout `（末尾有空格），能看到本仓库的分支列表。
+5. 在一个含有 `My Docs` 文件夹的目录中输入 `cd My`，接受补全后，命令能正确进入该文件夹。
+6. 候选可见时按 Esc，候选消失；之后的输入正常。
+7. 候选不可见时，Tab、↑、↓、Esc 与没有安装时的行为相同。
+8. 用微软拼音输入一段中文，例如 `echo 你好`，回车后输出正确，画面没有错乱。
+9. 粘贴一段约 20 行的文本，内容完整，没有明显卡顿。
+10. 调整窗口大小、左右分屏，候选的位置和画面都正常。
+11. 运行 `vim`、`less` 或 `git log` 这类全屏程序，退出后终端正常。
+12. 按 Ctrl+C 能中断正在运行的命令，例如 `ping -t localhost`。
+13. 连续快速输入一行长命令，没有丢字，也没有明显延迟。
+14. 开启 PSReadLine 的预测（灰色提示文字）时，补全候选和灰色提示不会互相干扰。
+
+## 7. 阶段 B：悬浮窗
+
+| 任务 | env | 实现步骤 | 测试与完成标准 |
+| --- | --- | --- | --- |
+| **T-042** 悬浮窗协议 | any | 新写 `docs/protocol.md`：inshellisense → 宿主，使用命名管道和 JSON 行；消息包括会话、显示或隐藏、候选列表（名称、说明、类型）、选中项、光标单元格、终端的行数和列数 | 由 T-043 和 T-044 的负责人共同遵守；修改时升级版本号 |
+| **T-043** 渲染抽象 | any | 在 inshellisense 中把显示部分（`is:src/ui/suggestionManager.ts#L177`、`is:src/isterm/pty.ts` 中的补丁逻辑）抽象为接口：终端渲染器保持现状；新增悬浮窗渲染器，按协议发送消息；连接失败或宿主报告定位失败时，自动回到终端渲染 | L1 测试：渲染器切换和回退逻辑；用一个假的管道服务端检查发出的消息 |
+| **T-029** 自动测试工具 | windows | `tools/wt-driver`：用 `wt.exe` 启动指定 profile、用 SendInput 模拟按键、截图、用 UIA 读取终端控件的边界、读取宿主状态 | 能跑通一个脚本：打开 WT，输入 `echo hi`，截图并保存 |
+| **T-019** 光标定位 | windows, human | 在宿主中实现 `ICaretLocator`：UIA 优先，单元格换算作为后备（`research/caret-wt.md`） | 达到 `docs/overlay-design.md` 中 T-019 的通过标准；报告写入 `research/spike-caret.md` |
+| **T-021** 悬浮窗 | windows, human | 实现置顶、不激活、不接收鼠标的原生列表窗口；跟踪前台窗口、移动、最小化、窗格切换 | 达到 T-021 的通过标准；人工确认弹出时输入不中断 |
+| **T-044** 宿主集成 | windows | 管道服务端、按会话管理状态、定位后显示列表、向 inshellisense 报告定位失败；提供 `debugState` 供 wt-driver 读取 | 输入 `git ch` 时悬浮窗出现在光标下方，误差不超过半个字符；从收到消息到显示小于 30 ms |
+| **T-045** 端到端测试 | windows, human | 用 wt-driver 把 T-035 人工清单中可以自动化的项目写成 L2 测试，其余整理为 L3 清单 | L2 全部通过；用户完成 L3，没有阻断问题 |
+| **T-046** 打包与试用 | windows, human | 把宿主加入安装脚本，设置开机自启；用户试用一到两天 | 同 T-040、T-041 |
+
+**阶段 B 的退路**：如果 T-019 不通过，就保留终端内版本作为正式版，悬浮窗暂缓，并由用户决定是否尝试其他定位方法。
+
+## 8. 时间估算（推断）
+
+前提是 AI 写代码，用户每天测试 1–2 小时。
+
+| 阶段 | 日历时间 | 什么时候能用上 |
 | --- | --- | --- |
-| T-024 建立代码骨架 | ① 按第 3 节建立目录；② 宿主使用 `net8.0-windows` 并开启 `EnableWindowsTargeting`，这样 Mac 上也能编译；③ 前端用 pnpm 工作区；④ 提供 `scripts/build.ps1` 和 `scripts/build.sh`；⑤ 新建 `docs/dev.md`，写明构建和测试命令 | 在 Mac 和 Windows 上都能完成构建，空测试能运行 |
-| T-025 定稿协议 | 审阅 `docs/protocol.md`，补齐字段，版本号定为 1 | 各模块的负责人（AI）都按这份文档实现；以后修改要升级版本号并写入 log |
+| A 终端内版本 | 1–2 周 | 阶段 A 结束时 |
+| B 悬浮窗 | 2–3 周 | 阶段 B 结束时 |
+| **合计** | **约 3–5 周** | 第 1–2 周就有可用版本 |
 
-### 阶段 1：引擎在浏览器中跑通（A 线，4–7 天）
+## 9. 给接手 AI 的规则
 
-| 任务 | 实现步骤 | 测试与完成标准 |
-| --- | --- | --- |
-| T-026 引入 Fig 前端 | ① 把 `aq` 的 autocomplete-app、autocomplete-parser、shell-parser、api-bindings-wrappers、shared、fuzzysort 复制到 `src/frontend/vendor/aq/`，带上 LICENSE，并在 NOTICE 中记录来源 commit；② 新建 `bridge` 包，导出与原 `api-bindings` 同名、但只包含实际用到的约 15 个函数（F-019），内部改发 JSON 消息；③ 写浏览器用的假桥：页面上有一个输入框模拟缓冲区，用 `wf` 的 spec，并用 Node 端服务模拟 `ls` 和 `git`；④ 把 spec 地址常量（`aq:packages/autocomplete-parser/src/loadHelpers.ts#L32-L33`）改为本地地址，构建时从 `@withfig/autocomplete` 生成 `index.json` | 在开发页面输入 `git ch`，看到 `checkout` 和 `cherry-pick`；按 Enter 后，假桥收到的插入消息正确 |
-| T-027 用例自动化 | 把 `specs/completion.md` 中的 C-001 至 C-013 写成 vitest 测试：输入缓冲区和光标，断言候选列表和插入消息 | 所有能在引擎层验证的用例都通过；不能验证的用例要在测试文件中注明原因 |
-| T-028 PowerShell 化补丁（包含原 T-017） | ① 转义改为 PowerShell 单引号规则，文件夹插入为 `'My Docs/{cursor}'`，让光标停在引号内；② 路径识别 `\` 和 `/`；③ 去掉对 macOS 键码 48 的依赖；④ 在 `specs/completion.md` 中新增“Windows 规则”一节和至少 5 条用例 | 新用例通过；`vendor/aq/CHANGES.md` 记录每处改动的文件和原因 |
-
-### 阶段 2：Windows 风险验证（W 线，4–6 天，与阶段 1 并行）
-
-| 任务 | 实现步骤 | 测试与完成标准 |
-| --- | --- | --- |
-| T-029 自动测试工具 | 编写 `tools/wt-driver`：① 用 `wt.exe` 启动指定 profile；② 用 SendInput 模拟按键；③ 截图；④ 通过管道读取宿主的 `debugState`；⑤ 用 UIA 读取终端控件的边界 | 能跑一个脚本：打开 WT，输入 `echo hi`，截图并保存 |
-| T-019 光标定位 | 在 `src/host` 中实现 `ICaretLocator`，用 UIA 定位，按 `research/caret-wt.md` 处理空区间、DPI、焦点；写一个小程序，用 wt-driver 输入文本后，比较 UIA 结果与截图中的光标位置 | 达到 `docs/overlay-design.md` 中的通过标准；报告写入 `research/spike-caret.md` |
-| T-021 悬浮窗 | 实现 `IOverlayWindow`：置顶、不激活、不接收鼠标，内嵌 WebView2 并显示一个静态页面；跟踪前台窗口，WT 失焦、最小化、移动时隐藏或跟随 | 达到通过标准；人工确认弹出时输入不中断；报告写入 `research/spike-overlay.md` |
-
-### 阶段 3：适配模块与宿主核心（A 线、W 线各一部分，4–7 天）
-
-| 任务 | 实现步骤 | 测试与完成标准 |
-| --- | --- | --- |
-| T-030 宿主核心 | 实现 `PipeServer`、`SessionManager`、`ProcessRunner`（包括 `ls -1ApL` 模拟和超时）、设置读取、`debugState` | dotnet test 通过（在 Mac 上也能运行）；`ls` 模拟的输出格式与 Fig 的期望一致 |
-| T-020 适配模块 | 按 `docs/protocol.md` 实现 `src/adapter`：发送缓冲区（遇到 `KeyAvailable` 时跳过）、同步发送按键请求、执行 `Replace` 和 `SetCursorPosition`、在每个提示符处报告当前目录；宿主不在线时，50 ms 超时后自动回退到 PSReadLine 原有行为 | Pester 测试通过；在 Windows 上测量延迟、粘贴 10 KB、输入中文、调出历史；达到 T-020 的通过标准；报告写入 `research/spike-psreadline.md` |
-
-### 阶段 4：集成（W 线，4–6 天）
-
-| 任务 | 实现步骤 | 测试与完成标准 |
-| --- | --- | --- |
-| T-022 WebView2 承载前端 | 宿主用虚拟主机加载前端构建产物和 spec；接通 `bridge` 与宿主之间的消息；把 `setFrame` 请求换算成以光标为基准的窗口位置 | 在 WT 中输入 `git ch` 时弹出候选；从收到缓冲区到显示小于 50 ms；记录常驻内存 |
-| T-031 端到端用例 | 用 wt-driver 把 C-001 至 C-013 和 Windows 规则用例写成 L2 测试，并整理一份 L3 人工清单 | L2 全部通过；用户完成 L3 清单，没有阻断性问题 |
-
-### 阶段 5：可试用版本（W 线，3–5 天）
-
-| 任务 | 实现步骤 | 测试与完成标准 |
-| --- | --- | --- |
-| T-032 安装与诊断 | 编写 `install.ps1` 和 `uninstall.ps1`：修改 `$PROFILE` 前先备份，宿主开机自启；日志写到 `%LOCALAPPDATA%`；提供 `figwin doctor` 命令检查环境；README 中写使用说明 | 在一台干净的 Windows 上安装、使用、卸载，`$PROFILE` 能恢复原样 |
-| T-033 试用 | 用户日常使用一到两天，问题记录到 `tasks/board.md` 的新任务中 | 没有导致无法输入或误执行命令的问题 |
-
-## 6. 时间估算（推断）
-
-| 阶段 | 日历时间 | 是否需要人参与 |
-| --- | --- | --- |
-| 0 骨架与契约 | 1–2 天 | 否 |
-| 1 引擎 | 4–7 天 | 否 |
-| 2 风险验证 | 4–6 天（与阶段 1 并行） | 需要，每天 1–2 小时 |
-| 3 适配与宿主 | 4–7 天 | 部分需要 |
-| 4 集成 | 4–6 天 | 需要 |
-| 5 试用 | 3–5 天 | 需要 |
-| **合计** | **约 3.5–5 周** | |
-
-## 7. 给接手 AI 的规则
-
-1. 按任务板的依赖顺序认领任务，一次只做一个任务，在自己的分支 `ai/<工具>/<任务号>` 上开发；完成后由用户合并，或经用户同意后直接合并到 `main`。
-2. 修改 `docs/protocol.md` 前，先在 `docs/decisions.md` 中记录原因，并升级协议版本号。
-3. 修改 `vendor/aq/` 下的代码时，在 `vendor/aq/CHANGES.md` 中逐条记录改动；不要重新格式化整份文件，这样便于和上游对照。
-4. 遇到阶段 2 的“不通过”时，不要自行决定退路，在 `docs/decisions.md` 中写清楚测量结果和各个选项，交给用户决定。
-5. Windows 上的人工步骤（L3）要写成编号清单，用户只需逐条执行并回答“是”或“否”。
+1. 开发分支是 `develop`（D-008）。每个任务在 `ai/<工具>/<任务号>` 分支上进行，从 `develop` 分出，完成后合并回 `develop`。`main` 只用于里程碑。
+2. 修改 `src/inshellisense/` 时，在 `CHANGES.md` 中逐条记录改动的文件和原因；不要重新格式化整份文件。对上游也有用的修复（例如 T-037），在 log 中标注“可提交上游”。
+3. 修改 `docs/protocol.md` 前，先在 `docs/decisions.md` 中记录原因，并升级版本号。
+4. 遇到关卡不通过时，不要自行选择退路；在 `docs/decisions.md` 中写清测量结果和选项，交给用户决定。
+5. 需要用户在 Windows 上操作的步骤，写成编号清单，用户只需逐条回答“是”或“否”。

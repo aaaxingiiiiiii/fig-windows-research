@@ -1,5 +1,7 @@
 # 模块间协议（版本 0，草案）
 
+> **已存档（2026-10-14）**：本文是“PSReadLine 适配模块 + Fig 前端 + WebView2”路线的模块间协议。D-007 已把路线改为“先基于 inshellisense 做终端内版本，再加悬浮窗”，当前计划见 `docs/mvp-plan.md`。如果将来 inshellisense 路线受阻，可以回到本方案；其中的调研结论仍然有效。
+
 状态：草案，由 T-025 定稿为版本 1。修改规则见 `docs/mvp-plan.md` 第 7 节。
 
 三个模块：适配模块（PowerShell，在每个 pwsh 进程中运行）、宿主（C#，每个用户一个进程）、前端（TypeScript，运行在宿主的 WebView2 中）。

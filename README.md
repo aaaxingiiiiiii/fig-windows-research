@@ -2,7 +2,7 @@
 
 研究 Fig 终端补全（现由 Kiro CLI 延续）的行为，写出有证据支持的规格，在 Windows 上实现同类补全插件。本仓库与 Fig、AWS 均无隶属关系。
 
-**当前状态：** 研究和方案设计已经完成，路线确定为 PowerShell 7 + Windows Terminal 上的 Fig 式悬浮窗。即将进入实现阶段 0（代码骨架），计划见 [docs/mvp-plan.md](docs/mvp-plan.md)，当前进度见 [docs/handoff.md](docs/handoff.md)。
+**当前状态：** 研究和方案设计已经完成。路线是在 PowerShell 7 + Windows Terminal 上先基于 inshellisense 做终端内补全，再加 Fig 式悬浮窗。即将开始阶段 A，计划见 [docs/mvp-plan.md](docs/mvp-plan.md)，当前进度见 [docs/handoff.md](docs/handoff.md)。开发分支为 `develop`。
 
 ## 关键事实
 
@@ -14,7 +14,7 @@
 
 本仓库按“多 AI 接力”的方式组织，适用于 Codex、Claude Code、Gemini CLI、Cursor 等工具。把下面这段话交给 AI 即可：
 
-> 阅读 AGENTS.md，按其中“每次会话开始”的步骤，从 tasks/board.md 选择一个适合本机环境的任务并完成，会话结束时按 AGENTS.md 更新交接文件。
+> 切换到 develop 分支，阅读 AGENTS.md，按其中“每次会话开始”的步骤，从 tasks/board.md 选择一个适合本机环境的任务并完成，会话结束时按 AGENTS.md 更新交接文件。
 
 想指定任务时，在这段话后面加上“做 T-0xx”。
 
@@ -28,9 +28,9 @@
 | `docs/workflow.md` | 接力流程细则：编号、证据、认领、提交 |
 | `docs/decisions.md` | 决策记录，包括待用户决定的事项 |
 | `docs/log.md` | 会话记录 |
-| `docs/mvp-plan.md` | **实现主计划**：最小方案、阶段、步骤、测试 |
-| `docs/protocol.md` | 模块间的消息协议 |
-| `docs/overlay-design.md` | 悬浮窗方案的架构与成本评估 |
+| `docs/mvp-plan.md` | **实现主计划**：阶段 A（终端内）和阶段 B（悬浮窗）的步骤与测试 |
+| `docs/overlay-design.md` | 悬浮窗的技术评估（光标定位等结论仍然适用） |
+| `docs/archive/` | 已存档的 PSReadLine 路线计划与协议 |
 | `docs/windows-setup.md` | Windows 开发与验证环境 |
 | `docs/windows-plan.md` | Windows 实现路线（概要） |
 | `docs/mac-setup.md` | Mac 上的运行时观察环境 |
