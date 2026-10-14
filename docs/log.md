@@ -76,6 +76,43 @@
   - 在 `docs/handoff.md` 中写好分工表和两段接手提示词。
 - 下一步：Claude 做 T-036；GPT 在独立的 worktree 中做 T-015、T-042；Windows 端做 T-035。
 
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-036
+
+- 做了：
+  - 用 `git archive` 把 inshellisense 上游 commit `8dcc9ca`（0.0.4）原样导入 `src/inshellisense/`，新增 `UPSTREAM` 和 `CHANGES.md`。
+  - 用 Node 20.20.2（通过 fnm 临时切换）执行了 `npm ci`、`npm run build` 和 `npm test`。
+  - 编写 `docs/dev.md`。
+- 产出：F-028。测试结果为 202 个通过、10 个跳过、1 个失败。失败的是 `brewInstallMullvad`：本机 Homebrew 的 `brew casks` 输出为空，属于环境问题。另外发现可以用 `complete` 子命令直接输出补全结果，适合 T-038 做自动测试。
+- 没做完 / 问题：还没有在 Windows 上构建；`--version` 显示占位符，打包时才会替换。
+- 下一步建议：T-038（规格用例自动化，可以利用 `complete` 子命令或直接调用运行时）和 T-037。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-038
+
+- 做了：
+  - 新增 `src/inshellisense/src/tests/figspec/figspec.test.ts`，共 22 个用例：C-001 至 C-013（C-006 在引擎层无法测试）和新增的 W-001 至 W-009。
+  - 用 node-pty 驱动 macOS 自带的 bash 和 zsh，实测确认中文补全会多删一个字符。
+  - 把 8 个缺陷用例临时改成普通测试运行，确认它们都是因为断言不符而失败，不是因为找不到候选。
+- 产出：
+  - `specs/completion.md` 第 9 节（与 Fig 的差异）和第 10 节（PowerShell 规则用例）；
+  - F-029（pwsh 引号缺陷）、F-030（中文删除缺陷）、F-031（7 处做法差异）；
+  - T-035 人工清单新增第 15、16 项；T-039 的范围改为修复这些缺陷。
+- 测试：全部 235 个，224 个通过，10 个跳过，1 个失败（仍是 Homebrew 环境问题）。
+- 下一步建议：T-039（修复缺陷）；T-037（去掉 Git Bash 依赖）。Fig 风格的差异是否修改，等用户决定。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-039
+
+- 做了：
+  - 修复 inshellisense 的两处缺陷：
+    - 删除的字符数改为按字符计算（F-030）；
+    - PowerShell 下，路径含空格或特殊字符时加单引号，单引号写成 `''`（F-029）。
+  - 把对应的 6 个规格用例改为回归测试。
+  - 上游有一条测试期望“按显示宽度删除”，按实测依据改为按字符删除，并在 `CHANGES.md` 中写明。
+- 测试：全部 235 个，224 个通过，10 个跳过，1 个失败（仍是 Homebrew 环境问题）；`npm run lint` 通过。
+- 没做完 / 问题：
+  - PowerShell 中的实际效果待 T-035 第 15、16 项验证。
+  - 这两处修复对上游也有用，可以考虑向 microsoft/inshellisense 提交 PR，需要用户决定。
+- 下一步建议：T-037（去掉 Git Bash 依赖）。
+
 ## 2026-10-14 · Codex/GPT-6（Mac）· T-015
 
 - 做了：

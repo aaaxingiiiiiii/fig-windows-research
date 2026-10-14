@@ -15,6 +15,12 @@
 - [aws/amazon-q-developer-cli](https://github.com/aws/amazon-q-developer-cli)（Apache-2.0）：主要是聊天和智能体功能。按搜索结果，该项目已转为只修复安全问题，后续功能在闭源的 Kiro CLI 中开发（未在仓库 README 中逐字核实）。
 - [withfig/fig](https://github.com/withfig/fig)（MIT，已归档）：Fig 公开问题追踪库，可用来查找历史行为和已知问题。
 
+## 引入本仓库的第三方代码
+
+| 目录 | 来源 | 版本 | 许可证 | 引入任务 |
+| --- | --- | --- | --- | --- |
+| `src/inshellisense/` | `is`（microsoft/inshellisense） | commit `8dcc9ca`，0.0.4 | MIT（目录内的 `LICENSE`） | T-036；改动记录在该目录的 `CHANGES.md` |
+
 ## 闭源对象
 
 | 对象 | 用途 | 限制 |

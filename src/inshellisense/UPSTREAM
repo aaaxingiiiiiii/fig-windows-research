@@ -1,0 +1,6 @@
+repository: https://github.com/microsoft/inshellisense
+commit: 8dcc9ca3e3ee6f6d535577898639154f189f390b
+commit-date: 2026-10-03
+version: 0.0.4 (package.json; same as the npm release @microsoft/inshellisense@0.0.4)
+license: MIT (see LICENSE in this directory)
+imported: 2026-10-14 by T-036, via `git archive` of the pinned commit (no files removed)

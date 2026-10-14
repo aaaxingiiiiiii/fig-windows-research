@@ -11,11 +11,8 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-035 | 实测原版 inshellisense（关卡） | todo | windows, human | — | 预留：Windows 上的 AI 和用户 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
-| T-036 | 把 inshellisense 源码引入 `src/inshellisense/`，跑通构建和测试，编写 `docs/dev.md` | doing | any | — | Claude Code/Opus 5.5 2026-10-14（Mac，分支 `ai/claude/T-036`） | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-037 | Windows 上的 generator 不再依赖 Git Bash | todo | any（Windows 上验证） | T-036 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
-| T-038 | 把规格用例改写为针对 inshellisense 引擎的测试，整理与 Fig 的差异 | todo | any | T-036 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
-| T-039 | 补齐 1–3 项高优先级差异 | todo | any | T-038 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
-| T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本 | todo | windows | T-035, T-037 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本 | todo | windows | T-035, T-037, T-039 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 
 ### 阶段 B：悬浮窗（复用阶段 A）
@@ -43,6 +40,9 @@
 
 | 编号 | 任务 | 负责人 | 产出 |
 | --- | --- | --- | --- |
+| T-039 | 修复 pwsh 路径引号（W-002 至 W-004、W-008、W-009）和中文删除数（W-005） | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/runtime/replacement.ts`、`utils.ts`；对应用例转为回归测试；`CHANGES.md` 中标注可提交上游 |
+| T-038 | 规格用例自动化：C-001 至 C-013 和新增的 W-001 至 W-009，整理与 Fig 的差异 | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/tests/figspec/figspec.test.ts`；`specs/completion.md` 第 9、10 节；F-029 至 F-031 |
+| T-036 | 引入 inshellisense 源码到 `src/inshellisense/`，在 Mac 上跑通构建和测试，编写 `docs/dev.md` | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/`（含 `UPSTREAM`、`CHANGES.md`）、`docs/dev.md`；F-028 |
 | T-047 | 路线修订为“先 inshellisense，后悬浮窗”；建立 `develop` 分支；重写实现计划 | Claude Code/Opus 5.5 2026-10-14 | `docs/mvp-plan.md`（新版）；D-007、D-008；旧计划存档 |
 | T-020、T-022 至 T-028、T-030 至 T-033 | （取消）PSReadLine 路线的任务，被 D-007 取代；需要时可以在 `docs/archive/` 中查看原计划 | — | — |
 | T-034 | 制定最小实现方案、分阶段步骤与测试分层、模块间协议草案 | Claude Code/Opus 5.5 2026-10-14 | `docs/mvp-plan.md`、`docs/protocol.md`；D-006；F-025 至 F-027 |
