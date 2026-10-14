@@ -75,3 +75,13 @@
   - 在任务板上认领 T-036，并把 T-015、T-042 预留给 Mac 上的 GPT，T-035 预留给 Windows。
   - 在 `docs/handoff.md` 中写好分工表和两段接手提示词。
 - 下一步：Claude 做 T-036；GPT 在独立的 worktree 中做 T-015、T-042；Windows 端做 T-035。
+
+## 2026-10-14 · Claude Code/Opus 5.5（Mac）· T-036
+
+- 做了：
+  - 用 `git archive` 把 inshellisense 上游 commit `8dcc9ca`（0.0.4）原样导入 `src/inshellisense/`，新增 `UPSTREAM` 和 `CHANGES.md`。
+  - 用 Node 20.20.2（通过 fnm 临时切换）执行了 `npm ci`、`npm run build` 和 `npm test`。
+  - 编写 `docs/dev.md`。
+- 产出：F-028。测试结果为 202 个通过、10 个跳过、1 个失败。失败的是 `brewInstallMullvad`：本机 Homebrew 的 `brew casks` 输出为空，属于环境问题。另外发现可以用 `complete` 子命令直接输出补全结果，适合 T-038 做自动测试。
+- 没做完 / 问题：还没有在 Windows 上构建；`--version` 显示占位符，打包时才会替换。
+- 下一步建议：T-038（规格用例自动化，可以利用 `complete` 子命令或直接调用运行时）和 T-037。

@@ -33,6 +33,7 @@
 | F-025 | Fig 的文件补全（`@fig/autocomplete-generators` 2.4.0 的 `filepaths`）通过执行 `ls -1ApL` 列出文件，并假定路径分隔符是 `/`、绝对路径以 `/` 开头 | 观察 | npm 包 `lib/src/filepaths.js` 第 112–129 行 | 在 Windows 上需要宿主模拟 `ls`，并修改路径处理 |
 | F-026 | Fig 前端依赖的 npm 包 `@fig/autocomplete-helpers`、`@fig/autocomplete-generators`、`@fig/autocomplete-shared`、`@withfig/autocomplete-types` 都采用 MIT 许可 | 观察 | npm 元数据；helpers 包的 metadata 中没有 license 字段，但包内附有 LICENSE 文件 | — |
 | F-027 | Fig 前端的三个衔接点：按键通过 `Keybindings.pressed` 以动作名送入；插入通过 `Shell.insert` 发出“退格 × n + 文本 + ESC[D × k”格式的串；窗口尺寸通过 `WindowPosition.setFrame` 请求。spec 地址是 `loadHelpers.ts` 中的一个常量 | 观察 | `aq:packages/autocomplete-app/src/fig/hooks.ts#L92-L95`、`aq:packages/api-bindings/src/position.ts#L21-L33`、`aq:packages/autocomplete-parser/src/loadHelpers.ts#L32-L33` | 这是 `docs/protocol.md` 的设计依据 |
+| F-028 | inshellisense 0.0.4 的源码在 macOS arm64、Node 20 上可以构建；自带 213 个测试中 202 个通过，10 个跳过，1 个因本机 Homebrew 环境失败。`complete` 子命令可以不进入交互界面直接输出补全结果（JSON）；对 `git ch` 返回 `checkout` 和 `cherry-pick`，与 C-001 的源码预期一致 | 观察 | T-036；`docs/dev.md` 第 2 节 | 尚未在 Windows 上构建 |
 
 ## 注意
 
