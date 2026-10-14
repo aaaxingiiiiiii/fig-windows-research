@@ -27,6 +27,12 @@
 - `wf` 的 spec 是可执行的 JavaScript（含 generator、postProcess 等函数）。直接加载它们意味着运行第三方代码，需要在实现中考虑沙箱和信任边界。
 - 二手资料（博客、聚合站）只能作为线索，结论应以仓库或官方文档为准。
 
+## T-015：共享 generator 的固定版本核对
+
+- 来源：npm 官方 registry 的 [`@fig/autocomplete-generators` 2.4.0 tarball](https://registry.npmjs.org/@fig/autocomplete-generators/-/autocomplete-generators-2.4.0.tgz)，包内 `package.json` 声明 MIT。2026-10-14 仅下载到内存并读取源码，没有安装、运行或复制其实现到项目。
+- 固定依据：`wf:pnpm-lock.yaml#L383-L384`；实算 tarball SHA-512 与锁文件 integrity 一致（`sha512-fiaaCGmsgnbUJbVbNAcVDmrnCGj/SmfarK6WKt/lfQP9k1hLHkkmZQ836VSMJvPP1vAKFAiXpdJziG6EGyjAYg==`）。
+- 检查文件：包内 `package/lib/src/filepaths.js`（尤其第 94–149 行）、`keyvalue.js`、`ai.js`。用于区分 helper 的 `ls`/`fig` 依赖与 inshellisense 内建文件模板；结论见 `spec-compat.md`。这里核对的是 wf 锁定依赖，不代表 is 2.675.0 构建中的 helper 已核实。
+
 ## 已用于核实背景的公开资料
 
 - GitHub API 仓库元数据（2026-10-14 查询）：上表的许可证、归档状态和最近推送时间。

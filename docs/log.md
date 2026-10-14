@@ -75,3 +75,14 @@
   - 在任务板上认领 T-036，并把 T-015、T-042 预留给 Mac 上的 GPT，T-035 预留给 Windows。
   - 在 `docs/handoff.md` 中写好分工表和两段接手提示词。
 - 下一步：Claude 做 T-036；GPT 在独立的 worktree 中做 T-015、T-042；Windows 端做 T-035。
+
+## 2026-10-14 · Codex/GPT-6（Mac）· T-015
+
+- 做了：
+  - 阅读交接、任务板与工作流，按预留分工在独立 worktree 的 `ai/codex/T-015` 分支完成源码评估。
+  - 用 fetch-sources 脚本确认三个参考仓库的固定版本；审查 30 个常用 CLI 样本的 generator、动态 spec/别名、共享导入及子规格。
+  - 从 npm registry 只读核对 autocomplete-generators 2.4.0，SHA-512 与 wf 锁文件一致；确认 filepaths helper 依赖 ls、git AI 候选依赖 fig，与引擎原生文件模板区分。
+- 产出：新增 `research/spec-compat.md`（11 项可直接使用、17 项需改写、2 项不适用；每项附命令与引用）；补充 `research/sources.md` 的固定 helper 来源；仅更新任务板中 T-015 行。报告包含 T-037 适配建议和 Windows 验证清单。
+- 验证：check-refs、check-public、git diff --check 通过；核对 30 行编号、表格列数与分类计数。check-public 只扫描索引，因此另对四个新增/修改文件的工作区内容执行相同路径/凭据模式及本机用户名检查。
+- 没做完 / 边界：本次是源码评估，未在 Windows 运行；wf 2.692.3 与 is 所用 2.675.0 不同，实际构建需复核；样本不是基于使用率的排名。任务认领和完成状态尚未提交/推送，遵守 AGENTS.md 的用户同意要求。按并行协作规则没有重写 handoff，也未改动其他 AI 的任务。
+- 下一步建议：T-037 参考报告改写共享文件访问和执行器；Codex 下一项是 T-042，先读取 mvp-plan，再从同步后的 develop 建立独立任务分支。T-015 的提交、推送及合并仍需用户同意。
