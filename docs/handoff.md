@@ -1,6 +1,6 @@
 # 当前交接状态
 
-更新：2026-10-14 · Claude Code/Opus 5.5（本轮整合者）。每次会话结束时重写本页，保持一屏可读。多个 AI 同时工作时，由整合者统一更新本页（`docs/workflow.md`“多个 AI 同时工作”）。
+更新：2026-10-15 · Claude Code/Opus 5.5（本轮整合者）。每次会话结束时重写本页，保持一屏可读。多个 AI 同时工作时，由整合者统一更新本页（`docs/workflow.md`“多个 AI 同时工作”）。
 
 ## 一句话
 
@@ -11,8 +11,8 @@
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
 | Claude Code（Mac） | T-036、T-037、T-038、T-039、T-049（POSIX 命令模拟）；使用说明 `docs/usage.md` | T-050 等用户 Fork；之后可以做 T-051 |
-| GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015、T-042（`docs/protocol.md` v1） | **T-043**（渲染器抽象和悬浮窗渲染器），已预留 |
-| Windows 上的 AI 和用户 | — | **T-035**（实测原版）→ **T-048**（实测我们的修改，清单已更新为 7 项）→ T-040（打包） |
+| GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015、T-042（`docs/protocol.md` v1） | **T-043**（渲染器抽象和悬浮窗渲染器），已预留，2026-10-15 时还没有开始 |
+| Codex/GPT-6（Windows）和用户 | T-035 的环境检查和受控终端冒烟测试（分支 `upstream/ai/codex/T-035`，`research/spike-inshellisense.md`） | **T-035 的 16 项 WT 人工清单，需要用户在 Windows Terminal 中逐项操作** → **T-048**（7 项）→ T-040（打包） |
 | 用户 | D-010、D-011 已决定 | T-050：在 GitHub 上 Fork microsoft/inshellisense，并在 PR 中签署 CLA |
 
 ### 交给 Windows 上那个 AI 的话
@@ -34,7 +34,8 @@
 ## 推送
 
 - `origin/develop`（用户的 fork）可以推送，已是最新。
-- `upstream/develop` 仍然返回 403。获得授权之前，可以从 fork 提 Pull Request（D-008）。
+- `upstream/develop`：Windows 端已把 Mac 的提交同步上去（35db2c0）。2026-10-15 用户说对方已经授权，但从 Mac 推送仍返回 403，可能是协作邀请还没有接受，或者本机保存的令牌没有这个仓库的权限。在此之前，两边通过 `origin/develop` 同步。
+- Windows 端合并 T-035 前要注意：`research/evidence.md` 中 E-005 前面多了一个空行，表格会断开。
 
 ## 注意
 
