@@ -13,11 +13,11 @@
 | T-035 | 实测原版 inshellisense（关卡） | done | windows, human | — | Codex/GPT-6（Windows）2026-10-14；环境/受控 PTY 检查通过；2026-10-15 同步 8fb0570，L1 346 通过、10 跳过、0 失败；材料已备齐，关卡通过；第 10 项拖动窗口后错位可清屏恢复，保留 T-056；15/16 用户确认可进入 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
 | T-048 | 在 Windows 上验证我们的修改（T-037 直接执行命令，T-039 引号和中文删除，T-049 POSIX 命令模拟） | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15 | 见 `docs/mvp-plan.md` 中的“T-048 人工清单” |
 | T-057 | 在用户的 Windows 上正式安装 PowerShell 7（`winget install Microsoft.PowerShell`），并设为 Windows Terminal 的默认配置文件 | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15；用户已同意，PowerShell 7.6.7 安装成功；WT 默认设置和新标签验证待完成 | 在用户自己的 WT 新标签中运行 `$PSVersionTable` 显示 7.x；`scripts/windows/check-env.ps1` 在该标签中运行，结果写入 `research/spike-inshellisense.md` |
-| T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本 | todo | windows | T-035, T-048, T-057 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本（脚本由 T-058 提供） | todo | windows | T-035, T-048, T-057, T-058 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-052 | 修复 Windows 本机 L1 测试的平台与环境假设 | done | any | — | Codex/GPT-6（Windows）2026-10-15；265 通过、10 跳过、0 失败，见 E-009 | 复现 `research/spike-inshellisense.md` E-008 的 11 个失败；路径断言同时验证分隔符和 PowerShell 引号，隔离 HOME/Git Bash 条件，明确非管理员符号链接夹具策略；保留行为覆盖，Windows 复验并记录结果 |
 
-| T-056 | 调查并修复 Windows 调整窗口后候选与输入位置错位 | todo | any | — | 复现：Windows 端；分析和修复：Mac 端（Claude） | 原版 T-035 第 10 项截图与复现见 research/spike-inshellisense.md；确认缩放/分屏触发方式及恢复性，修改版复现需核实运行版本后重测，再补回归测试并修复，Windows 复验；未确认前不归因于具体模块 |
+| T-056 | 调查并修复 Windows 调整窗口后候选与输入位置错位 | todo | any | — | 复现：Windows 端；分析和修复：Mac 端（Claude）。2026-10-15 Mac 上模拟无法复现（F-034），下一步在 Windows 上运行 `spikes/T-056-resize-sim/` | 原版 T-035 第 10 项截图与复现见 research/spike-inshellisense.md；确认缩放/分屏触发方式及恢复性，修改版复现需核实运行版本后重测，再补回归测试并修复，Windows 复验；未确认前不归因于具体模块 |
 
 ### 阶段 B：悬浮窗（复用阶段 A）
 
@@ -45,6 +45,7 @@
 
 | 编号 | 任务 | 负责人 | 产出 |
 | --- | --- | --- | --- |
+| T-058 | 安装和卸载脚本中与平台无关的部分 | Claude Code/Opus 5.5 2026-10-15 | `scripts/windows/install.ps1`、`uninstall.ps1`、`profile-file.ps1`、`test-install.ps1`（26 项检查，在 Mac 的 PowerShell 7.6.7 上通过；变异检查有效）。本地代码页的配置文件和真实的 PATH 修改，需要在 Windows 上验证（T-040） |
 | T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | 用户（Mac，Kiro 2.31.1）2026-10-15；Claude 记录 | 12 条一致，C-006 不一致（F-033，E-010）；`specs/completion.md` 第 8 节；C-002 源码预期勘误 |
 | T-013 | 弄清 F-006：`init zsh post` 为什么只输出 4 行 | Claude Code/Opus 5.5 2026-10-15 | 由 `Q_TERM`（figterm 设置）决定是否输出完整集成脚本；F-006 改为观察；E-007；target.md 注明 Kiro 已自动更新为 2.31.0 |
 | T-051 | custom generator 默认在 generator 的目录中执行命令，输出按 Fig 的规则清理（F-032） | Claude Code/Opus 5.5 2026-10-15 | `src/inshellisense/src/runtime/generator.ts`；`customGenerator.test.ts`（4 个）；T-048 清单第 8 项 |

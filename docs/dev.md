@@ -37,7 +37,7 @@ Windows 上的命令相同，在 PowerShell 中执行即可。
 | 环境诊断 | `node build/index.js doctor` | — |
 | 打包单文件程序 | `npm run package` | 使用 `scripts/pkg.ts`；在 Windows 上由 T-040 验证 |
 
-从源码运行时，`--version` 显示 `__VERSION__` 占位符，打包时才会替换成真实版本号。
+从源码运行时，`--version` 显示 `__VERSION__` 占位符，打包时才会替换成真实版本号。本项目的版本号带 `figwin` 后缀（例如 `0.0.4-figwin.1`），用来和原版 inshellisense（`0.0.4`）区分；`install.ps1` 会检查这一点。
 
 **Windows 上的 generator 执行方式（T-037、T-049）**，按顺序：
 
@@ -161,3 +161,5 @@ dotnet test OverlayHost.slnx      # 2026-10-15 在 Mac 上：70 个全部通过
 | `scripts/check-public.sh` | 提交前检查本机路径、凭据、大文件，以及 `local/` 是否被跟踪 |
 | `scripts/check-refs.py` | 检查文档中的源码引用是否有效 |
 | `scripts/windows/check-env.ps1` | Windows 环境检查（只读） |
+| `scripts/windows/install.ps1`、`uninstall.ps1` | 安装和卸载终端内补全（T-058）：复制程序、加入用户 PATH、运行 `is init pwsh`、备份并修改 `$PROFILE`；卸载时把 `$PROFILE` 逐字节恢复。支持 `-WhatIf` |
+| `scripts/windows/test-install.ps1` | 安装脚本的自测：只用临时目录和一个假的 `is`，不碰真实环境。在 Mac 上可以用 `~/.powershell/pwsh` 运行 |
