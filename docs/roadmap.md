@@ -30,7 +30,8 @@
   [Windows + 用户] T-021 原生悬浮窗演示 ─────────── 可以先单独看效果
   [Windows + 用户] T-019 光标定位 ──────────────── 关卡 ③
         ↓ T-043、T-019、T-021 完成
-  [Windows]        T-044 宿主集成 ──────────────── 里程碑 B1：第一次看到悬浮补全
+  [Mac，Claude]    T-053 宿主协议核心（已完成；src/overlay-host/）
+  [Windows]        T-044 宿主集成（实现 IOverlayPresenter）── 里程碑 B1：第一次看到悬浮补全
         ↓
   [Windows + 用户] T-045 端到端测试 → T-046 打包试用 ── 里程碑 B：悬浮窗版本可用
 
@@ -253,7 +254,7 @@ Windows 验收发现问题
 
 **第 4 步：T-044 宿主集成（T-019、T-021 完成后）**
 
-- 实现 `docs/protocol.md` 的服务端。如果 T-053（宿主协议核心）已在 Mac 上完成，直接引用它。
+- 协议核心已由 T-053 完成（`src/overlay-host/`）。T-044 只需实现 `IOverlayPresenter`，即窗格绑定、UIA 定位和原生窗口，见 `src/overlay-host/README.md`。
 - 先用 `spikes/T-043-fake-host/` 对照 inshellisense 发出的消息，再接入真正的窗口。按 B5 验收。
 
 **交给它的话：**
@@ -268,7 +269,7 @@ Windows 验收发现问题
    - 逐节对照 `docs/protocol.md`，检查 `src/inshellisense/src/overlay/` 和相关的上游改动，看是否有不符合协议、竞态或回退不完整的地方。
    - 每个问题先写一个会失败的测试，再新建任务或直接修复。修复时在 `CHANGES.md` 中记录。
    - 不修改协议；确实需要修改时，按 D-009 的规则先写决策。
-2. **T-053 宿主协议核心**（C# 类库，可以在 Mac 上开发）：
+2. **T-053 宿主协议核心**（已由 Claude 完成，以下保留作记录）：
    - 实现 `docs/protocol.md` 服务端一侧中与平台无关的部分：分帧、严格校验、会话和序号、show/hide/status 的状态机、租期、背压、debugState。
    - 用单元测试覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分。
    - 窗口、UIA 和命名管道的访问控制留给 Windows 上的 T-044，在类库中用接口隔开。

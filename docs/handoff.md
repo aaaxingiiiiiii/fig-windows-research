@@ -9,13 +9,13 @@
 路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。
 
 - 阶段 A 的代码已经完成，在 Windows 上构建成功，L1 测试全部通过（T-052）。现在等待用户在 Windows Terminal 中完成人工清单：T-035（16 项）和 T-048（8 项）。
-- 阶段 B：协议（T-042）和 inshellisense 一侧的悬浮窗渲染器（T-043）已完成；下一步是 Windows 上的 T-029、T-021、T-019，然后是宿主集成 T-044。
+- 阶段 B：协议（T-042）、inshellisense 一侧的悬浮窗渲染器（T-043）和宿主的协议核心（T-053，C#/.NET 10）已完成，并且在 Mac 上验证过两端可以互通。下一步是 Windows 上的 T-029、T-021、T-019，然后是 T-044：只需实现 `IOverlayPresenter`。
 
 ## 进度
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷 |
+| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043、T-053；记录 T-012；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷 |
 | Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | 按 `docs/roadmap.md` 第 8.1 节：和用户一起完成 T-035、T-048 的人工清单；用户不在时做 T-029、T-021 |
 | GPT/Codex（Mac） | T-015、T-042 | T-054（审查 T-043）→ T-055；T-053 需要先安装 .NET 8 SDK（见 `docs/roadmap.md` 第 8.2 节） |
 | 用户 | 对方仓库授权；inshellisense fork | T-035 和 T-048 的人工清单（Windows） |
@@ -29,7 +29,8 @@
 - F-006 已查明：Kiro 只有在 `Q_TERM` 已设置时，才输出完整的 shell 集成脚本（E-007）。本机的 Kiro 已自动更新为 2.31.0。
 - T-050 已取消：向 microsoft/inshellisense 提交的三个 PR（#486–#488）由用户要求撤销，已关闭（D-011）。在用户另行决定之前，不要向上游提交任何内容。补丁仍保存在 Mac 的 `local/upstream-pr/`。
 - T-012 已完成：13 项中 12 项与开源基线一致，只有 C-006 不一致（F-033）。
-- T-043：设置 `FIGWIN_OVERLAY_PIPE` 后，候选改为发给悬浮窗宿主；宿主异常时回到终端内绘制。在 Windows 上做 T-044 时，可以先用 `spikes/T-043-fake-host/` 检查消息（`docs/dev.md` 第 4 节）。
+- T-043：设置 `FIGWIN_OVERLAY_PIPE` 后，候选改为发给悬浮窗宿主；宿主异常时回到终端内绘制（`docs/dev.md` 第 4 节）。
+- T-053：宿主的协议核心在 `src/overlay-host/`，70 个测试；开发用宿主可以与真实的 inshellisense 联调（`src/overlay-host/README.md`）。宿主和 wt-driver 使用 .NET 10（D-012）。
 
 ## 推送
 

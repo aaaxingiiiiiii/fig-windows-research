@@ -306,3 +306,19 @@
 - 验证：Node 20.20.2；全量测试共 387 个：376 通过、10 跳过、1 个既有 `brewInstallMullvad` 环境失败；93 个快照通过。`npm run build`、`npm run lint`、`sh scripts/check-public.sh`、`python3 scripts/check-refs.py`（231 条，0 问题）通过。
 - 未知：模拟 win32 验证的是分流、参数和受控文件读取，不代替 Windows 原生路径、gh 登录/网络、scp 可执行程序和 PowerShell 交互验收。未安装 SDK 或其他软件；未开始 T-053（远端已由 Claude 认领）。
 - 下一步建议：Windows 端结合 T-048 验证上述改动；阶段 B 接续 T-053/T-044。本轮两个任务均完成并按任务分支合并、推送 upstream。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-053
+
+- 经用户同意，用官方的 `dotnet-install.sh` 把 .NET 10 SDK（10.0.402）安装到 `~/.dotnet`，没有修改系统目录。
+- 新增 `src/overlay-host/`，包含三个项目：
+  - `FigWin.OverlayHost.Core`：与平台无关的宿主协议核心；
+  - `FigWin.OverlayHost.Core.Tests`：70 个 xunit 测试；
+  - `FigWin.OverlayHost.DevHost`：开发用宿主，不画窗口。
+- 平台接口 `IOverlayPresenter` 的设计：`LocateAsync` 可以较慢、可取消；`ApplyAsync` 在实际显示后完成；`Hide` 不得同步等待 UI 线程，以免 UI 线程调用 `Suppress` 时死锁。核心负责顺序与竞态（P-03）。
+- 测试：
+  - 70 个全部通过，覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分，以及管道往返；
+  - 两次变异检查（去掉定位后的过期检查、去掉续租）都被测试发现。
+- 互通：用 node-pty 驱动真实的 inshellisense（T-043 客户端）连接开发用宿主。
+  - 正常情况：宿主收到候选和选中项，终端里不画候选框，Tab 正常插入；
+  - 定位延迟 300 ms 和定位失败：客户端都回到终端内绘制，插入正常。
+- 登记了测试用 NuGet 包的许可证（`research/sources.md`）。T-044 改为依赖 T-053，只需在 Windows 上实现 `IOverlayPresenter`。

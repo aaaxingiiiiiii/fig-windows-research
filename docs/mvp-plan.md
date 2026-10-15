@@ -122,7 +122,7 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 | **T-029** 自动测试工具 | windows | `tools/wt-driver`：用 `wt.exe` 启动指定 profile、用 SendInput 模拟按键、截图、用 UIA 读取终端控件的边界、读取宿主状态 | 能跑通一个脚本：打开 WT，输入 `echo hi`，截图并保存 |
 | **T-019** 光标定位 | windows, human | 在宿主中实现 `ICaretLocator`：UIA 优先，单元格换算作为后备（`research/caret-wt.md`） | 达到 `docs/overlay-design.md` 中 T-019 的通过标准；报告写入 `research/spike-caret.md` |
 | **T-021** 悬浮窗 | windows, human | 实现置顶、不激活、不接收鼠标的原生列表窗口；跟踪前台窗口、移动、最小化、窗格切换 | 达到 T-021 的通过标准；人工确认弹出时输入不中断 |
-| **T-044** 宿主集成 | windows | 管道服务端、按会话管理状态、定位后显示列表、向 inshellisense 报告定位失败；提供 `debugState` 供 wt-driver 读取 | 输入 `git ch` 时悬浮窗出现在光标下方，误差不超过半个字符；从收到消息到显示小于 30 ms |
+| **T-044** 宿主集成 | windows | 协议部分已由 T-053 完成（`src/overlay-host/`，含管道服务端、会话状态、debugState）。T-044 只需在 Windows 上实现 `IOverlayPresenter`：窗格绑定、UIA 定位、原生窗口（说明见 `src/overlay-host/README.md`） | 输入 `git ch` 时悬浮窗出现在光标下方，误差不超过半个字符；从收到消息到显示小于 30 ms |
 | **T-045** 端到端测试 | windows, human | 用 wt-driver 把 T-035 人工清单中可以自动化的项目写成 L2 测试，其余整理为 L3 清单 | L2 全部通过；用户完成 L3，没有阻断问题 |
 | **T-046** 打包与试用 | windows, human | 把宿主加入安装脚本，设置开机自启；用户试用一到两天 | 同 T-040、T-041 |
 
