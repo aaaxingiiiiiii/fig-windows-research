@@ -296,3 +296,13 @@
 - 验证：Node 20.20.2；完整 `npm test -- --ci --runInBand` 共 371 个：360 通过、10 跳过、1 失败。唯一失败为已记录的 `brewInstallMullvad` 本机 Homebrew 环境问题（`docs/dev.md`）；95 个悬浮窗用例全部通过，93 个快照通过。`npm run build` 通过。`npm run lint`、`sh scripts/check-public.sh` 通过。
 - 未知：Mac 假宿主和本机套接字测试不能证明 Windows 命名管道、UIA、WT 焦点和真实键盘效果；这些仍按原任务 T-019/T-021/T-044/T-045 验收。本轮没有遗留未修复的已复现问题。
 - 下一步：T-055；本轮不启动 T-053；合并时读到远端 D-012 已改用 .NET 10，T-053 已由 Claude 认领。
+
+## 2026-10-15 · Codex/GPT-6（Mac）· T-055
+
+- 做了：从同步后的 develop 建立 `ai/codex/T-055`，认领状态推送 upstream；完成 gh、scp、dotnet 三项兼容性工作，更新 `research/spec-compat.md` 和 `src/inshellisense/CHANGES.md`，没有重写 handoff。
+- 观察（证据：`src/inshellisense/src/tests/figspec/windowsSpecCompat.test.ts`）：初次运行 15 个测试，gh 实际包 generator 的外层查询引号和 4 种 scp 远端操作数的本地枚举共 5 个失败。修复后加上嵌入引号/参数不变性用例，共 16 个全部通过。
+- 修复：新增 `src/runtime/windowsSpecCompat.ts`，只在 Windows 原生执行 gh GraphQL raw-field 查询时剥除外层 shell 单引号，保留变量、内部引号和 argv 边界；scp generator 对当前远端操作数不执行本地目录补全，保留盘符（包括盘符相对形式）、UNC、本地相对路径及远端源后的下一个本地操作数。Git Bash 回退和非 Windows 执行不改动。
+- 观察：dotnet 相对文件读取已由 T-049 满足；真实 spec 在两个不同 shell cwd（中文/空格路径）读取各自 CRLF launchSettings，缺文件保留静态候选，测试无原生进程调用，因此本轮只加验证，不重复改写。未扩展 `--project` 目标项目解析。
+- 验证：Node 20.20.2；全量测试共 387 个：376 通过、10 跳过、1 个既有 `brewInstallMullvad` 环境失败；93 个快照通过。`npm run build`、`npm run lint`、`sh scripts/check-public.sh`、`python3 scripts/check-refs.py`（231 条，0 问题）通过。
+- 未知：模拟 win32 验证的是分流、参数和受控文件读取，不代替 Windows 原生路径、gh 登录/网络、scp 可执行程序和 PowerShell 交互验收。未安装 SDK 或其他软件；未开始 T-053（远端已由 Claude 认领）。
+- 下一步建议：Windows 端结合 T-048 验证上述改动；阶段 B 接续 T-053/T-044。本轮两个任务均完成并按任务分支合并、推送 upstream。

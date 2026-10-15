@@ -84,12 +84,19 @@
 | `grep -iE 模式 文件` | 12（Dockerfile 构建阶段） | JS 正则；只接受带文件参数、选项为 `-i -E -v -q` 的用法 |
 | 固定的 `bash -c` 脚本 | 1（sed）、3–6（向上查找 package.json、node_modules/.bin、`npm root -g`）、22（cargo 的 grep 和 cut）、28（make 的 awk 和 sort） | 管道中的原生命令照常执行，文本处理改成 JS；`.bin` 中的 `.cmd`、`.ps1` 等启动器去重 |
 
+### T-055 补充验证（2026-10-15）
+
+**观察（模拟 win32，非 Windows 实测）**：实际锁定的 `@withfig/autocomplete` 2.675.0 中，gh 的仓库 generator 仍传入 `query='…'`；原生 argv 会保留这对引号。现在只对 `gh[.exe] api graphql` 的 `-f` / `--raw-field` 查询参数去掉外层单引号，保留 `$`、内部引号和参数边界；其他参数、命令和 Git Bash 回退不变。证据：`src/inshellisense/src/tests/figspec/windowsSpecCompat.test.ts` 中加载实际包的 gh generator、检查原生执行参数及后处理结果的测试。
+
+**观察（模拟 win32）**：scp 的本地 generator 原先也会对远端操作数枚举本地目录。现在对当前未完成的 `host:path`、`user@host:path`、带方括号的 IPv6 和 `scp://` 地址跳过这些 generator；不建立 SSH 连接，也不声称支持远端文件枚举。盘符路径（含 `C:relative`）、UNC、冒号前已有路径分隔符的相对路径仍走本地补全；已完成的远端源不影响后续本地操作数。证据：同一测试文件的 scp 用例，用受控目录读取验证分流。单字母加冒号在 Windows 补全中按盘符优先处理；此分类不保证本机 scp 可执行程序接受所有路径写法。
+
+**观察（模拟 win32）**：dotnet 的 `cat Properties/launchSettings.json` 已由 T-049 在 Node 中按 generator 的 cwd 读取。本轮用两个不同 cwd（含中文、空格）、CRLF JSON、缺失文件及真实 dotnet spec 验证，分别返回对应 profile，缺文件保留静态候选，未启动 dotnet/cat/Bash；无需再改实现。范围是当前 shell cwd 的相对读取，未扩展为解析 `dotnet run --project` 的目标项目。
+
+本轮新增 16 个测试：`npm test -- --ci --runInBand src/tests/figspec/windowsSpecCompat.test.ts`。gh 进程被测试桩替换，scp 目录读取被隔离；没有使用个人账号、SSH 主机或网络查询。Windows 文件系统/原生程序/PowerShell 实际交互仍待对应机器验收。
+
 仍未处理的项：
-- gh 的 GraphQL 参数引号。
 - rustup 的 find/sed。
 - npm 的网络搜索（curl.exe 可以直接执行，需要实测）。
-- dotnet 的 `cat` 使用的相对路径。custom generator 的默认目录和输出换行已由 T-051 修复（F-032），但 dotnet 的路径还没有在 Windows 上验证。
-- scp 中 `host:path` 与盘符冒号的区分。
 - python 和 node 的 `generateSpec` 探测：当前引擎不调用 `generateSpec`，所以没有模拟。
 
 这些都没有在 Windows 上运行过，由 T-048 第 4 至 6 项验证。

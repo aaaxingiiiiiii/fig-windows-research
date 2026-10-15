@@ -11,6 +11,7 @@ import { CommandToken } from "./parser.js";
 import { getPathSeparator, gitBashPath, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { emulatePosixCommand } from "./posixEmulation.js";
+import { nativeGhArgs } from "./windowsSpecCompat.js";
 
 export type ExecuteShellCommandTTYResult = {
   code: number | null;
@@ -150,7 +151,8 @@ export const buildExecuteShellCommand = (timeout: number, signal?: AbortSignal):
     }
     const options: ProcessOptions = { cwd, env: { ...process.env, ...env, ISTERM: "1" }, signal };
     const requiresPosixShell = process.platform === "win32" && posixShellCommands.has(command.toLowerCase());
-    const result = requiresPosixShell ? undefined : await runProcess(command, args, options, timeout);
+    const nativeArgs = process.platform === "win32" ? nativeGhArgs(command, args) : args;
+    const result = requiresPosixShell ? undefined : await runProcess(command, nativeArgs, options, timeout);
     if (result != null && (process.platform !== "win32" || !result.notFound)) {
       if (process.platform === "win32") log.debug({ msg: "generator command ran natively", command });
       return toOutput(result);
