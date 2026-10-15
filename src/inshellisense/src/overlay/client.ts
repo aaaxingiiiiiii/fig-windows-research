@@ -60,7 +60,6 @@ export class OverlayClient {
   #handshakeDone = false;
   #sendSeq = 0;
   #receiveSeq = 0;
-  #lastHostMessageAt = 0;
 
   #blocked = false;
   #controlQueue: Buffer[] = [];
@@ -70,6 +69,7 @@ export class OverlayClient {
 
   #welcomeTimer?: NodeJS.Timeout;
   #heartbeatTimer?: NodeJS.Timeout;
+  #leaseTimer?: NodeJS.Timeout;
   #ackTimer?: NodeJS.Timeout;
   #retryTimer?: NodeJS.Timeout;
   #retryIndex = 0;
@@ -162,9 +162,9 @@ export class OverlayClient {
     this.#socket = undefined;
     const wasConnected = this.#handshakeDone;
     this.#handshakeDone = false;
-    for (const timer of [this.#welcomeTimer, this.#ackTimer]) if (timer != null) clearTimeout(timer);
+    for (const timer of [this.#welcomeTimer, this.#ackTimer, this.#leaseTimer]) if (timer != null) clearTimeout(timer);
     if (this.#heartbeatTimer != null) clearInterval(this.#heartbeatTimer);
-    this.#welcomeTimer = this.#ackTimer = this.#heartbeatTimer = undefined;
+    this.#welcomeTimer = this.#ackTimer = this.#heartbeatTimer = this.#leaseTimer = undefined;
     this.#controlQueue = [];
     this.#pendingSnapshot = undefined;
     this.#latestShow = undefined;
@@ -212,7 +212,8 @@ export class OverlayClient {
         return;
       }
       this.#receiveSeq = message.seq;
-      this.#lastHostMessageAt = Date.now();
+      if (this.#leaseTimer != null) clearTimeout(this.#leaseTimer);
+      this.#leaseTimer = setTimeout(() => this.#close("lease-expired"), this.#timing.leaseMs);
       this.#handle(message);
     }
   }
@@ -256,10 +257,6 @@ export class OverlayClient {
 
   #heartbeat(): void {
     if (this.#socket == null || !this.#handshakeDone) return;
-    if (Date.now() - this.#lastHostMessageAt > this.#timing.leaseMs) {
-      this.#close("lease-expired");
-      return;
-    }
     // 背压时不排队心跳：对方本来就收不到，租期会让双方各自清理
     if (!this.#blocked) this.#write(this.#envelope("ping", {}));
   }
@@ -275,6 +272,7 @@ export class OverlayClient {
 
   #enqueueSnapshot(snapshot: PendingSnapshot): void {
     // 只保留最新的待发送快照；hide 自然撤销此前待发送的 show（第 3 节）
+    this.#latestShow = undefined;
     this.#pendingSnapshot = snapshot;
     if (!this.#blocked) this.#flush();
     else if (this.#queuedBytes() > MAX_QUEUED_BYTES) this.#close("resource-limit");

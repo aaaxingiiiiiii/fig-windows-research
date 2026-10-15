@@ -27,9 +27,9 @@
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
 | T-021 | 原生悬浮列表窗口：置顶、不激活、跟随 WT | todo | windows, human | — | | 同上 |
-| T-053 | 宿主协议核心（C# 类库，`src/overlay-host/`）：分帧、严格校验、会话和序号、状态机、租期、背压、debugState；窗口和 UIA 用接口隔开 | doing | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-053`；用户同意在 Mac 上安装 .NET SDK） | 宿主一侧的 P-01 至 P-04、P-08、P-11、P-12 单元测试通过（`dotnet test`）；见 `docs/roadmap.md` 第 8.2 节 |
-| T-054 | 独立审查 T-043：对照 `docs/protocol.md` 检查 inshellisense 一侧的悬浮窗实现 | doing | any | T-043 | Codex/GPT-6 2026-10-15（Mac，分支 `ai/codex/T-054`） | 每个问题都有一个会失败的测试，并已修复或登记为任务；结论写入 log |
-| T-044 | 宿主集成：管道服务端、定位并显示、报告失败、`debugState` | todo | windows | T-042, T-019, T-021；有 T-053 时直接引用 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-053 | 宿主协议核心（C# 类库，`src/overlay-host/`）：分帧、严格校验、会话和序号、状态机、租期、背压、debugState；窗口和 UIA 用接口隔开 | done | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-053`） | `FigWin.OverlayHost.Core`、70 个 xunit 测试（覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分）、`FigWin.OverlayHost.DevHost`；在 Mac 上与真实 inshellisense 互通（正常、慢定位、定位失败）；`src/overlay-host/README.md` |
+| T-054 | 独立审查 T-043：对照 `docs/protocol.md` 检查 inshellisense 一侧的悬浮窗实现 | done | any | T-043 | Codex/GPT-6 2026-10-15（Mac，分支 `ai/codex/T-054`） | 10 类问题均先以测试复现再修复；新增 14 个回归用例，悬浮窗 95 个通过；全量 360 通过、10 跳过、1 个既有 Homebrew 失败；详见 log 的 T-054 记录 |
+| T-044 | 宿主集成：实现 `IOverlayPresenter`（窗格绑定、UIA 定位、原生窗口），接入 T-053 的核心 | todo | windows | T-053, T-019, T-021 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-045 | 端到端测试（L2 自动测试，加上 L3 人工清单） | todo | windows, human | T-043, T-044, T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-046 | 把宿主加入安装脚本，用户试用 | todo | windows, human | T-045, T-040 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 
@@ -38,13 +38,13 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
-| T-055 | 补齐 `research/spec-compat.md` 中“仍未处理的项”：gh 的 GraphQL 参数引号、scp 的 `host:path` 与盘符、dotnet 的 `launchSettings.json` 相对路径 | todo | any | — | 预留：Codex/GPT（Mac） | 模拟 win32 的测试通过；改动记入 `CHANGES.md` |
-| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | doing | mac-kiro, human | — | 用户 2026-10-15 完成 13 项（Kiro 2.31.1），Claude 记录 | 已记录 10 项（E-010、F-033）。**剩下 3 项需要用户重测**：C-008（先 `cd` 进 `local/t012`）、C-003（末尾有没有空格）、C-012（空命令行按 Enter 是否出现新的提示符） |
+| T-055 | 补齐 `research/spec-compat.md` 中“仍未处理的项”：gh 的 GraphQL 参数引号、scp 的 `host:path` 与盘符、dotnet 的 `launchSettings.json` 相对路径 | done | any | — | Codex/GPT-6 2026-10-15（Mac，分支 `ai/codex/T-055`） | 16 个模拟 win32 测试通过；修复 gh 原生 argv 和 scp 远端/本地分流，验证 dotnet 按 shell cwd 读取（已有 T-049 满足）；更新 spec-compat、CHANGES 和 log；Windows 原生效果待实测 |
 
 ## 已完成
 
 | 编号 | 任务 | 负责人 | 产出 |
 | --- | --- | --- | --- |
+| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | 用户（Mac，Kiro 2.31.1）2026-10-15；Claude 记录 | 12 条一致，C-006 不一致（F-033，E-010）；`specs/completion.md` 第 8 节；C-002 源码预期勘误 |
 | T-013 | 弄清 F-006：`init zsh post` 为什么只输出 4 行 | Claude Code/Opus 5.5 2026-10-15 | 由 `Q_TERM`（figterm 设置）决定是否输出完整集成脚本；F-006 改为观察；E-007；target.md 注明 Kiro 已自动更新为 2.31.0 |
 | T-051 | custom generator 默认在 generator 的目录中执行命令，输出按 Fig 的规则清理（F-032） | Claude Code/Opus 5.5 2026-10-15 | `src/inshellisense/src/runtime/generator.ts`；`customGenerator.test.ts`（4 个）；T-048 清单第 8 项 |
 | T-049 | Windows 上用 Node 模拟 spec 中常用的 POSIX 命令（`ls -1ApL`、`cat`、`grep` 和 9 条 `bash -c` 脚本），generator 上下文补上 HOME | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/runtime/posixEmulation.ts`、`utils.ts`、`generator.ts`；`posixEmulation.test.ts`（31 个）；T-048 清单第 4 至 6 项；F-032、T-051 |

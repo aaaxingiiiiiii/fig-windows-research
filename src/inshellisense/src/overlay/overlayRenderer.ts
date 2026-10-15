@@ -51,6 +51,7 @@ export class OverlayRenderer implements Renderer {
   #current?: Snapshot;
   #lastSent?: Snapshot;
   #confirmed?: ShowToken;
+  #selectionConfirmed = false;
   #pendingHideReason?: HideReason;
   #preserve = false;
   #resizeTimer?: NodeJS.Timeout;
@@ -64,6 +65,7 @@ export class OverlayRenderer implements Renderer {
       onConnected: () => this.#activate(),
       onShown: (token) => {
         this.#confirmed = token;
+        this.#selectionConfirmed = true;
       },
       onHidden: () => {
         this.#confirmed = undefined;
@@ -87,10 +89,14 @@ export class OverlayRenderer implements Renderer {
   get canAcceptSuggestion(): boolean {
     if (!this.#overlayActive) return this.#terminal.canAcceptSuggestion;
     const current = this.#current;
-    return this.hasVisibleSuggestions && current?.kind === "show" && this.#confirmed?.selectionKey === current.selectionKey;
+    return this.#selectionConfirmed && this.hasVisibleSuggestions && current?.kind === "show" && this.#confirmed?.selectionKey === current.selectionKey;
   }
 
   async handleBufferChange(bufferType: TerminalBuffer): Promise<void> {
+    if (bufferType === "alternate" && this.#overlayActive) {
+      this.#current = { kind: "hide", reason: "alternate-buffer" };
+      this.#send(this.#current);
+    }
     await this.#terminal.handleBufferChange(bufferType);
     this.#sync();
   }
@@ -183,6 +189,7 @@ export class OverlayRenderer implements Renderer {
       this.#client.sendHide(snapshot.reason);
     } else {
       if (last?.kind === "show" && last.selectionKey === snapshot.selectionKey && JSON.stringify(last.body) === JSON.stringify(snapshot.body)) return;
+      this.#selectionConfirmed = false;
       this.#client.sendShow(snapshot.body, { listKey: snapshot.listKey, selectionKey: snapshot.selectionKey });
     }
     this.#lastSent = snapshot;

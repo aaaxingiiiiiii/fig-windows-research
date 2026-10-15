@@ -86,7 +86,8 @@ const candidateTypes: Record<string, CandidateType> = {
   shortcut: "shortcut",
 };
 
-export const toCandidateType = (type: string | undefined): CandidateType => (type != null && candidateTypes[type]) || "other";
+export const toCandidateType = (type: string | undefined): CandidateType =>
+  type != null && Object.hasOwn(candidateTypes, type) ? candidateTypes[type] : "other";
 
 // ---- 快照 ----
 
@@ -110,8 +111,10 @@ export const buildSnapshot = (input: SnapshotInput): Snapshot => {
   if (cursor.hidden || rows < 1 || cols < 1 || rows > 4096 || cols > 4096) return { kind: "hide", reason: "empty" };
   if (cursor.cursorX < 0 || cursor.cursorX >= cols || cursor.cursorY < 0 || cursor.cursorY >= rows) return { kind: "hide", reason: "empty" };
 
-  const page = display.page.slice(0, MAX_CANDIDATES);
-  const selectedIndex = page.length === 0 ? null : Math.min(Math.max(display.selectedIndex ?? 0, 0), page.length - 1);
+  const selected = Math.min(Math.max(display.selectedIndex ?? 0, 0), Math.max(0, display.page.length - 1));
+  const offset = Math.min(Math.floor(selected / MAX_CANDIDATES) * MAX_CANDIDATES, Math.max(0, display.page.length - MAX_CANDIDATES));
+  const page = display.page.slice(offset, offset + MAX_CANDIDATES);
+  const selectedIndex = page.length === 0 ? null : selected - offset;
   const totalCount = Math.max(display.totalCount, display.pageStart + page.length);
 
   for (const limits of shrinkSteps) {
@@ -125,7 +128,7 @@ export const buildSnapshot = (input: SnapshotInput): Snapshot => {
     const body: ShowBody = {
       candidates,
       selectedIndex: candidates.length === 0 ? null : selectedIndex,
-      pageStart: candidates.length === 0 ? 0 : display.pageStart,
+      pageStart: candidates.length === 0 ? 0 : display.pageStart + offset,
       totalCount: candidates.length === 0 ? 0 : totalCount,
       argumentDescription,
       cursor: { row: cursor.cursorY, col: cursor.cursorX },
@@ -138,7 +141,7 @@ export const buildSnapshot = (input: SnapshotInput): Snapshot => {
       kind: "show",
       body,
       listKey,
-      selectionKey: `${listKey}\u0000${body.selectedIndex == null ? "" : display.pageStart + body.selectedIndex}`,
+      selectionKey: `${listKey}\u0000${body.selectedIndex == null ? "" : body.pageStart + body.selectedIndex}`,
       hasCandidates: candidates.length > 0,
     };
   }

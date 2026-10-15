@@ -292,3 +292,59 @@
 - 收到 T-035 第 8–16 项批量反馈；8/9/11/12/14 用户报通过，13 暂按无丢字/延迟理解。第 10 项缩放错位登记 T-056，待确认恢复性；15/16 用户报可用但截图未显示接受后结果，待补充。三个截图已保存 local/evidence，关卡未标完成。
 
 - T-035 追问：拖动窗口触发错位，取消并清屏后可恢复；中文、a$b、it's 目录均确认能进入。按无阻断问题标准关卡通过，保留 T-056，第 10 项未改成通过；准备进入 T-048。
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-012 重测、D-012
+
+- 用户重测了 C-003、C-008、C-012，截图移到 `local/evidence/T-012/`。三项都与开源基线一致：
+  - C-003：`checkout` 的参数是可选的，所以不加空格；
+  - C-008：`My\ Docs/`、`'a&b'/`；
+  - C-012：文字回答与截图不一致，按截图记录。
+- T-012 完成：12 项一致，只有 C-006 不一致（F-033）。
+- D-012：宿主和 wt-driver 改用 .NET 10。.NET 8 的支持在 2026-11-10 结束。在 Windows 端开工前已推送。用户同意在 Mac 上安装 .NET SDK，T-053 由 Claude 认领。
+
+## 2026-10-15 · Codex/GPT-6（Mac）· T-054
+
+- 做了：同步 `upstream/develop`，在 `ai/codex/T-054` 独立对照协议第 2–7 节审查 T-043；第 8 节 debugState 及服务端窗格/定位/权限仍由 T-053/T-044 验证。没有修改协议或 handoff。
+- 观察（失败测试 → 修复）：以下 10 类问题各有失败用例；新增 14 个测试，并扩展原有 manager/client 集成测试。证据为 `src/inshellisense/src/tests/overlay/` 中名称以 `T-054` 开头的测试及“集成”用例，可运行 `npm test -- --ci --runInBand src/tests/overlay` 复验。
+
+| 协议条款 | 观察到的问题 | 修复及测试文件 |
+| --- | --- | --- |
+| 第 4 节 | welcome 接受非 200/600 的时间常量 | 严格匹配 v1，`protocol.test.ts`（2 个） |
+| 第 2、6 节 | 数组 state 被对象键隐式转换后误接受 | 检查 string 及自有枚举键，`protocol.test.ts`（1 个） |
+| 第 5 节 | 未知候选类型 constructor / __proto__ 命中原型属性 | 仅映射自有键，其余 other，`snapshot.test.ts`（2 个） |
+| 第 5 节、P-06 | 页长超过 20 时截掉真实选中项，宿主显示第 19 项而 Node 接受后面的项 | 选取包含真实选中项的子页，更新 pageStart 和页内索引，`snapshot.test.ts`（1 个） |
+| 第 7 节、P-08 | 600 ms 租期等到下一心跳轮询才关闭，最晚约 800 ms | 每条有效消息重设独立租期定时器，`client.test.ts`（1 个，包含非心跳边界消息） |
+| 第 6 节、P-12 | 新 show/hide 尚在背压队列时，旧 shown 仍确认旧目标 | 入队即撤销旧确认目标，`client.test.ts`（2 个） |
+| 第 6 节、P-06 | 选择 A→B→A 时复用首次 A 的 shown | 每次发送 show 都撤销接受权限，保留同列表选择权限，`overlayRenderer.test.ts`（1 个） |
+| 第 6 节、P-09 | alternate-buffer 隐藏等待异步终端清理完成 | 先 hide 再 await 清理，`overlayRenderer.test.ts`（1 个） |
+| 第 6 节 | 命令/cwd 改变后旧候选可能重新发出并被确认，回退也可能重画旧候选 | manager 绑定生成上下文；显示、接受和异步提交前复核，`overlayRenderer.test.ts`（2 个） |
+| 第 6 节、P-09 | 接受后至 PTY 回显前仍可再次插入同一候选 | 立即消耗快照并同步渲染，`overlayRenderer.test.ts`（1 个及集成测试） |
+
+- 验证：Node 20.20.2；完整 `npm test -- --ci --runInBand` 共 371 个：360 通过、10 跳过、1 失败。唯一失败为已记录的 `brewInstallMullvad` 本机 Homebrew 环境问题（`docs/dev.md`）；95 个悬浮窗用例全部通过，93 个快照通过。`npm run build` 通过。`npm run lint`、`sh scripts/check-public.sh` 通过。
+- 未知：Mac 假宿主和本机套接字测试不能证明 Windows 命名管道、UIA、WT 焦点和真实键盘效果；这些仍按原任务 T-019/T-021/T-044/T-045 验收。本轮没有遗留未修复的已复现问题。
+- 下一步：T-055；本轮不启动 T-053；合并时读到远端 D-012 已改用 .NET 10，T-053 已由 Claude 认领。
+
+## 2026-10-15 · Codex/GPT-6（Mac）· T-055
+
+- 做了：从同步后的 develop 建立 `ai/codex/T-055`，认领状态推送 upstream；完成 gh、scp、dotnet 三项兼容性工作，更新 `research/spec-compat.md` 和 `src/inshellisense/CHANGES.md`，没有重写 handoff。
+- 观察（证据：`src/inshellisense/src/tests/figspec/windowsSpecCompat.test.ts`）：初次运行 15 个测试，gh 实际包 generator 的外层查询引号和 4 种 scp 远端操作数的本地枚举共 5 个失败。修复后加上嵌入引号/参数不变性用例，共 16 个全部通过。
+- 修复：新增 `src/runtime/windowsSpecCompat.ts`，只在 Windows 原生执行 gh GraphQL raw-field 查询时剥除外层 shell 单引号，保留变量、内部引号和 argv 边界；scp generator 对当前远端操作数不执行本地目录补全，保留盘符（包括盘符相对形式）、UNC、本地相对路径及远端源后的下一个本地操作数。Git Bash 回退和非 Windows 执行不改动。
+- 观察：dotnet 相对文件读取已由 T-049 满足；真实 spec 在两个不同 shell cwd（中文/空格路径）读取各自 CRLF launchSettings，缺文件保留静态候选，测试无原生进程调用，因此本轮只加验证，不重复改写。未扩展 `--project` 目标项目解析。
+- 验证：Node 20.20.2；全量测试共 387 个：376 通过、10 跳过、1 个既有 `brewInstallMullvad` 环境失败；93 个快照通过。`npm run build`、`npm run lint`、`sh scripts/check-public.sh`、`python3 scripts/check-refs.py`（231 条，0 问题）通过。
+- 未知：模拟 win32 验证的是分流、参数和受控文件读取，不代替 Windows 原生路径、gh 登录/网络、scp 可执行程序和 PowerShell 交互验收。未安装 SDK 或其他软件；未开始 T-053（远端已由 Claude 认领）。
+- 下一步建议：Windows 端结合 T-048 验证上述改动；阶段 B 接续 T-053/T-044。本轮两个任务均完成并按任务分支合并、推送 upstream。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-053
+
+- 经用户同意，用官方的 `dotnet-install.sh` 把 .NET 10 SDK（10.0.402）安装到 `~/.dotnet`，没有修改系统目录。
+- 新增 `src/overlay-host/`，包含三个项目：
+  - `FigWin.OverlayHost.Core`：与平台无关的宿主协议核心；
+  - `FigWin.OverlayHost.Core.Tests`：70 个 xunit 测试；
+  - `FigWin.OverlayHost.DevHost`：开发用宿主，不画窗口。
+- 平台接口 `IOverlayPresenter` 的设计：`LocateAsync` 可以较慢、可取消；`ApplyAsync` 在实际显示后完成；`Hide` 不得同步等待 UI 线程，以免 UI 线程调用 `Suppress` 时死锁。核心负责顺序与竞态（P-03）。
+- 测试：
+  - 70 个全部通过，覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分，以及管道往返；
+  - 两次变异检查（去掉定位后的过期检查、去掉续租）都被测试发现。
+- 互通：用 node-pty 驱动真实的 inshellisense（T-043 客户端）连接开发用宿主。
+  - 正常情况：宿主收到候选和选中项，终端里不画候选框，Tab 正常插入；
+  - 定位延迟 300 ms 和定位失败：客户端都回到终端内绘制，插入正常。
+- 登记了测试用 NuGet 包的许可证（`research/sources.md`）。T-044 改为依赖 T-053，只需在 Windows 上实现 `IOverlayPresenter`。

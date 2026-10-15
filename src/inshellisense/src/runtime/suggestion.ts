@@ -10,6 +10,7 @@ import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
 import { escapePath } from "./utils.js";
+import { isScpRemotePath } from "./windowsSpecCompat.js";
 import { addPathSeparator, endsWithPathSeparator, getPathDirname, removePathSeparator, Shell } from "../utils/shell.js";
 import { getConfig } from "../utils/config.js";
 
@@ -219,6 +220,8 @@ const generatorSuggestions = async (
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
   const tokens = allTokens.map((t) => t.token);
   const activeToken = allTokens.at(-1)?.complete === false ? allTokens.at(-1)?.token ?? "" : "";
+  // scp has no remote directory generator: never substitute local files for a remote operand.
+  if (process.platform === "win32" && allTokens[0]?.token === "scp" && isScpRemotePath(activeToken)) return [];
   signal?.throwIfAborted();
   return (
     await Promise.all(

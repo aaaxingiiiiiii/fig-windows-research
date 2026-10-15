@@ -353,3 +353,27 @@ test("真实套接字往返：握手、show、shown（Mac 上是 Unix 域套接�
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("T-054 lease expires at 600 ms, including messages between heartbeat ticks", () => {
+  const { socket, handshake, events } = setup();
+  handshake();
+  jest.advanceTimersByTime(200);
+  jest.advanceTimersByTime(75);
+  socket().host("pong", { forSeq: lastSeq(socket(), "ping") });
+  jest.advanceTimersByTime(599);
+  expect(events).toEqual(["connected"]);
+  jest.advanceTimersByTime(1);
+  expect(events).toEqual(["connected", "closed:lease-expired"]);
+});
+
+test.each(["show", "hide"])("T-054 pending %s invalidates the previous shown even before drain", (kind) => {
+  const { client, socket, handshake, shown } = setup();
+  handshake();
+  socket().accepting = false;
+  client.sendShow(body("a"), token("A"));
+  const seq = lastSeq(socket(), "show");
+  if (kind === "show") client.sendShow(body("b"), token("B"));
+  else client.sendHide("dismiss");
+  socket().host("status", { forSeq: seq, state: "shown", reason: "ok", caretSource: "uia" });
+  expect(shown).toEqual([]);
+});

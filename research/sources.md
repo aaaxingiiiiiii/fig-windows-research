@@ -21,6 +21,17 @@
 | --- | --- | --- | --- | --- |
 | `src/inshellisense/` | `is`（microsoft/inshellisense） | commit `8dcc9ca`，0.0.4 | MIT（目录内的 `LICENSE`） | T-036；改动记录在该目录的 `CHANGES.md` |
 
+悬浮窗宿主（`src/overlay-host/`，T-053）通过 NuGet 引用、只用于测试的包。不复制它们的源码，许可证按本机缓存中的 nuspec 核实（2026-10-15）：
+
+| 包 | 版本 | 许可证 |
+| --- | --- | --- |
+| xunit | 2.9.3 | Apache-2.0 |
+| xunit.runner.visualstudio | 3.1.4 | Apache-2.0 |
+| Microsoft.NET.Test.Sdk | 17.14.1 | MIT |
+| Microsoft.Extensions.TimeProvider.Testing | 10.11.0 | MIT |
+
+核心类库 `FigWin.OverlayHost.Core` 只依赖 .NET 10 自带的库。
+
 ## 闭源对象
 
 | 对象 | 用途 | 限制 |

@@ -137,7 +137,23 @@ inshellisense 一侧的悬浮窗支持。协议见 `docs/protocol.md`，宿主�
 
 P-03、P-05、P-10 只涉及宿主。
 
-## 5. 仓库脚本
+## 5. 悬浮窗宿主（T-053，`src/overlay-host/`）
+
+C#/.NET 10（D-012）。与平台无关的协议核心、测试和开发用宿主都可以在 Mac 上构建和运行；Windows 专用的部分（窗口、UIA）由 T-044 完成。
+
+```sh
+cd src/overlay-host
+dotnet build OverlayHost.slnx
+dotnet test OverlayHost.slnx      # 2026-10-15 在 Mac 上：70 个全部通过
+```
+
+- Mac 上的 SDK 在 `~/.dotnet`，用官方的 `dotnet-install.sh --channel 10.0` 安装（10.0.402）。
+- 结构、平台接口 `IOverlayPresenter` 的线程约定，以及与 inshellisense 联调的方法，见 `src/overlay-host/README.md`。
+- 开发用宿主（`FigWin.OverlayHost.DevHost`）与假宿主（`spikes/T-043-fake-host/`）的区别：
+  - 开发用宿主使用真实的协议核心，用来检查两端的实现能否互通；
+  - 假宿主只按固定方式回复，用来模拟不回复等异常情况。
+
+## 6. 仓库脚本
 
 | 脚本 | 用途 |
 | --- | --- |

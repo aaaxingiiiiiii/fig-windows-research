@@ -97,3 +97,11 @@ describe("P-02 非法输入", () => {
     expect(parseHostMessage(JSON.stringify(status({ extra: { future: true } })), identity, true).t).toBe("status");
   });
 });
+
+test.each([{ heartbeatMs: 201 }, { leaseMs: 601 }])("T-054 v1 welcome rejects changed timing: %j", (extra) => {
+  expect(() => parseHostMessage(JSON.stringify({ ...welcome, ...extra }), identity, false)).toThrow(ProtocolError);
+});
+
+test("T-054 status.state must be a string, not a coercible array", () => {
+  expect(() => parseHostMessage(JSON.stringify(status({ state: ["shown"], caretSource: "none" })), identity, true)).toThrow(ProtocolError);
+});

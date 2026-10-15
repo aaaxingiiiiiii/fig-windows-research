@@ -37,3 +37,9 @@ coverage/
 *.log
 __pycache__/
 .venv/
+
+# .NET build output (src/overlay-host)
+bin/
+obj/
+*.user
+TestResults/
