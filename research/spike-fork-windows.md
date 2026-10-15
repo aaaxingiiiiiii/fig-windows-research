@@ -20,3 +20,14 @@
 本批反馈：4 无包名；5 图中有 staged.txt/tracked.txt，未展示 --staged；6 图中 npm run 已被执行，仅 node 候选有 demo.js；8 图中 npm run -w 缺末尾空格，仍在选项候选阶段。以上均不直接登记为修改版代码缺陷。截图保存 local/evidence/T-048-version-check-1.png 至 -4.png，含个人路径不公开。
 
 下一步：在全新 WT 标签显式启动本仓库 build/index.js -s pwsh -V，先核实相关进程和日志，再批量重测。L1 376 通过的自动结果仍有效；人工 1–8 项保持待确认。
+
+
+## 无人值守引擎集成验证
+
+使用最新构建、Shell.Pwsh、正式安装的 PowerShell 7.6.7，直接验证实际候选、替换内容与 cd 执行结果。13 项检查全部通过：分支 1 项、中文/特殊字符路径 6 项、全局包 1 项、git diff/--staged 2 项、npm scripts/node 文件 2 项、workspaces 1 项。复现入口 spikes/T-048-engine-check/check.mjs，结果 local/evidence/T-048-engine.json；日志 T-048-engine.log。
+
+第 4 项首次按清单要求 npm 包名时失败；npm ls -g 表明本机全局安装的是 pnpm 与 rea-agents，npm 本体不在该全局 prefix。改为核对实际安装列表后通过；不安装额外软件来凑通过条件。需整合者确认清单的 npm 示例说明，不擅自修改原清单。
+
+这些是引擎与原生命令集成证据，不代表 WT 人工 1–8 项已通过。无人值守期间保留人工关卡待确认。
+
+日志核对：git 原生执行 8 次、npm 原生执行 2 次；Node 模拟 bash 4 次、cat 1 次、ls 2 次；未出现 Git Bash 回退日志。最新全量 L1 376 通过、10 跳过、0 失败，93 快照通过，构建成功。
