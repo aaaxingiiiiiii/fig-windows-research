@@ -19,7 +19,6 @@
 阶段 A：终端内版本
   ┌ [Windows + 用户] T-035 实测原版 inshellisense ── 关卡 ①（进行中）
   ├ [Windows + 用户] T-048 实测我们的修改 ──────── 关卡 ②（可与 T-035 同一次完成）
-  └ [用户]           T-050 向上游提交 PR（Fork、签署 CLA；不阻塞）
         ↓ T-035、T-048 通过
   [Windows]        T-040 打包、安装、卸载
         ↓
@@ -42,9 +41,9 @@
 
 | 端 | 当前 / 下一个任务 | 之后 | 说明 |
 | --- | --- | --- | --- |
-| Windows：AI 和用户 | T-035（自动检查已完成，等待用户完成 16 项人工清单）→ T-048 | T-040 → T-029 → T-021 → T-019 → T-044 → T-045 → T-046 | 凡是要看画面、用输入法、调缩放的步骤，都需要用户坐在 Windows Terminal 前操作 |
+| Windows：AI 和用户 | T-035（自动检查已完成，等待用户完成 16 项人工清单）→ T-048；用户不在时做 T-029、T-021（见第 8.1 节） | T-040 → T-029 → T-021 → T-019 → T-044 → T-045 → T-046 | 凡是要看画面、用输入法、调缩放的步骤，都需要用户坐在 Windows Terminal 前操作 |
 | Mac：Claude（整合者） | T-043 已完成；等待 Windows 验收结果 | 修复 Windows 验收中发现的缺陷（代码类任务的 env 为 any）；合并各端分支；重写 `docs/handoff.md` | 不能运行 Windows 程序；修复后由 Windows 端复验 |
-| Mac：GPT | T-043 已改派给 Claude（2026-10-15） | 待安排 | 在独立的 worktree 中工作 |
+| Mac：GPT | T-054（审查 T-043） | T-055；T-053（需要用户同意在 Mac 上安装 .NET 8 SDK） | 在独立的 worktree 中工作，见第 8.2 节 |
 | 用户 | T-035、T-048 的人工清单 | T-050、T-041、T-045 的 L3 清单、T-046；处理仓库权限 | 每项只需回答“是”或“否”，回答“否”时附截图 |
 
 ### 两端如何同步代码
@@ -212,6 +211,77 @@ Windows 验收发现问题
 1. **用户 + Windows 端的 AI**：在 Windows Terminal 中完成 T-035 的 16 项和 T-048 的 8 项，一次大约 1–2 小时。这是目前唯一的瓶颈。
 2. **Mac · Claude**：T-043 已完成。
 3. **Mac · Claude**：之后处理 T-035、T-048 中发现的缺陷。
-4. **用户（Mac）**：T-012，按 `specs/completion.md` 第 8 节的清单在 Kiro 中操作，约 10–15 分钟。
-5. **用户**：T-050，打开三个预填好的 PR 页面并点击创建，再按机器人的提示签署 CLA。
+4. **用户（Mac）**：T-012 剩下的 3 项重测（C-003、C-008、C-012），约 5 分钟。
 6. T-035、T-048 通过后，**Windows 端**开始 T-040；同时开始 T-029、T-021，为阶段 B 做准备。
+
+## 8. 交给各端 AI 的工作包
+
+用户把下面某一节的“交给它的话”复制给对应的 AI 即可。每个工作包都按 `AGENTS.md` 的规则执行：开工前同步 develop（第 2 节）；一个任务一个分支；结束时更新 board 和 log；不要重写 `docs/handoff.md`；安装软件前先征得用户同意。
+
+### 8.1 Windows 端的 GPT
+
+**前提**：
+
+- Windows 上还没有安装 .NET SDK（E-005）。T-029、T-021、T-019、T-044 都需要 .NET 8 SDK，安装前先征得用户同意。
+- Node 22 和 Git 已经具备。
+
+**第 1 步：和用户一起完成两个关卡（需要用户在场，大约 1–2 小时，优先做）**
+
+1. 同步 develop，运行 L1：在 `src/inshellisense/` 下执行 `npm ci`、`npm run build`、`npm test -- --ci`，与上一次在 Windows 上的结果（E-009）对比。
+2. 在用户开始之前准备好测试材料，不要让用户自己建：
+   - 一个测试文件夹，里面有这些子文件夹：`My Docs`、`a&b`、`a$b`、`it's`、`it's dir`、`` a`b ``、`中文目录`；
+   - 一个 git 仓库：有一个已提交后又修改过的文件，和一个新建并 `git add` 的文件；
+   - 一个 npm 项目：`package.json` 中带 `scripts` 和 `workspaces`，并有一个子文件夹。
+3. 请用户打开一个新的 Windows Terminal 标签页。按第 4 节 A1，用原版启动器（`spikes/T-035-baseline/README.md`）做 T-035 的 16 项：
+   - 每次只告诉用户一项操作，等用户回答“是”或“否”；
+   - 回答“否”时请用户截图，截图存到 `local/evidence/`。
+4. 换成我们的版本（`node build/index.js -s pwsh -V`），按第 4 节 A2 做 T-048 的 8 项。日志在 `%USERPROFILE%\.inshellisense\log\inshellisense.log`。
+5. 把结果写入 `research/spike-inshellisense.md` 和 `research/spike-fork-windows.md`，按第 3 节登记证据，按 A1、A2 判定两个关卡是否通过：
+   - 代码缺陷：按第 6 节新建任务，env 填 `any`，交给 Mac 端修复；
+   - 关卡不通过：写入 `docs/decisions.md`，交给用户决定。
+6. 提交并推送到 develop。
+
+**第 2 步：不需要用户在场的准备工作（用户没空时先做）**
+
+1. T-029 自动测试工具 `tools/wt-driver`：启动 WT 和 pwsh、发送按键、截图、用 UIA 读取终端控件的边界。验收见第 5 节 B2。
+2. T-021 原生悬浮窗演示：只显示固定的候选列表，不接补全。先做出来，下次用户在场时按 B3 的 7 项验收。
+3. T-019 光标定位（依赖 T-029）：按 `docs/windows-setup.md` 的测量方法做。需要改缩放、接第二块显示器的组合，等用户在场时再测。
+
+**第 3 步：两个关卡都通过后**
+
+- T-040 打包、安装、卸载，按 A3 验收。最好在 Windows Sandbox 中进行。
+- 交给用户试用（T-041，按 A4 记录）。
+
+**第 4 步：T-044 宿主集成（T-019、T-021 完成后）**
+
+- 实现 `docs/protocol.md` 的服务端。如果 T-053（宿主协议核心）已在 Mac 上完成，直接引用它。
+- 先用 `spikes/T-043-fake-host/` 对照 inshellisense 发出的消息，再接入真正的窗口。按 B5 验收。
+
+**交给它的话：**
+
+> 同步 develop（`git fetch --all`，然后合并对方仓库的 develop），阅读 AGENTS.md、docs/handoff.md，以及 docs/roadmap.md 的第 3 至 6 节和第 8.1 节，按第 8.1 节的顺序工作：用户在场时先做第 1 步，和用户一起完成 T-035、T-048 的人工清单；用户不在时做第 2 步，即 T-029、T-021。安装 .NET 8 SDK 等软件前先征得用户同意。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，结束时更新 board 和 log，不要重写 handoff.md。
+
+### 8.2 Mac 端的 GPT
+
+在当前这台 Mac 上可以做的事，按价值排序：
+
+1. **T-054 独立审查 T-043**：
+   - 逐节对照 `docs/protocol.md`，检查 `src/inshellisense/src/overlay/` 和相关的上游改动，看是否有不符合协议、竞态或回退不完整的地方。
+   - 每个问题先写一个会失败的测试，再新建任务或直接修复。修复时在 `CHANGES.md` 中记录。
+   - 不修改协议；确实需要修改时，按 D-009 的规则先写决策。
+2. **T-053 宿主协议核心**（C# 类库，可以在 Mac 上开发）：
+   - 实现 `docs/protocol.md` 服务端一侧中与平台无关的部分：分帧、严格校验、会话和序号、show/hide/status 的状态机、租期、背压、debugState。
+   - 用单元测试覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分。
+   - 窗口、UIA 和命名管道的访问控制留给 Windows 上的 T-044，在类库中用接口隔开。
+   - 代码放在 `src/overlay-host/`。
+   - **需要先征得用户同意，在 Mac 上安装 .NET 8 SDK**。
+3. **T-055 补齐 spec 兼容性的余项**（`research/spec-compat.md` 中“仍未处理的项”）：
+   - gh 的 GraphQL 参数引号；
+   - scp 中区分 `host:path` 和盘符；
+   - dotnet 的 `launchSettings.json` 相对路径。
+   - 用模拟 win32 的测试验证，改动记入 `CHANGES.md`。
+
+**交给它的话：**
+
+> 在 ../fig-windows-research-codex 中同步 develop（`git fetch --all`，合并 upstream/develop），阅读 AGENTS.md、docs/handoff.md 和 docs/roadmap.md 的第 8.2 节。先做 T-054：对照 docs/protocol.md 审查 T-043 的实现，把问题写成会失败的测试，再修复或登记为新任务。然后做 T-055。T-053 需要在 Mac 上安装 .NET 8 SDK，等用户同意后再开始。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，推送到 upstream；结束时更新 board 和 log，不要重写 handoff.md。
+

@@ -15,10 +15,10 @@
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷；T-050 的三个分支已推送，等用户创建 PR |
-| Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | 和用户一起完成 T-035、T-048 的人工清单 → T-040 |
-| GPT/Codex（Mac） | T-015、T-042 | 暂无安排（T-043 已改派） |
-| 用户 | 对方仓库授权；inshellisense fork | T-035 和 T-048 的人工清单（Windows）；T-012 的人工清单（Mac，约 15 分钟）；T-050 创建 PR 并签署 CLA |
+| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷 |
+| Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | 按 `docs/roadmap.md` 第 8.1 节：和用户一起完成 T-035、T-048 的人工清单；用户不在时做 T-029、T-021 |
+| GPT/Codex（Mac） | T-015、T-042 | T-054（审查 T-043）→ T-055；T-053 需要先安装 .NET 8 SDK（见 `docs/roadmap.md` 第 8.2 节） |
+| 用户 | 对方仓库授权；inshellisense fork | T-035 和 T-048 的人工清单（Windows）；T-012 剩下的 3 项重测（Mac） |
 
 ## 关键结论（本轮新增）
 
@@ -27,7 +27,8 @@
   - Windows：265 个通过，10 个跳过，0 个失败（E-009）。
 - Windows 上补全文件夹时，结尾的分隔符是 `\`，例如 `'My Docs\'`；PowerShell 可以正常使用这种写法。
 - F-006 已查明：Kiro 只有在 `Q_TERM` 已设置时，才输出完整的 shell 集成脚本（E-007）。本机的 Kiro 已自动更新为 2.31.0。
-- T-050：三个修复分支都在用户的 inshellisense fork 上，PR 说明和预填链接在 Mac 的 `local/upstream-pr/`。
+- T-050 已取消：向 microsoft/inshellisense 提交的三个 PR（#486–#488）由用户要求撤销，已关闭（D-011）。在用户另行决定之前，不要向上游提交任何内容。补丁仍保存在 Mac 的 `local/upstream-pr/`。
+- T-012：13 项中 9 项与源码规则一致，C-006 不一致，3 项待重测（F-033）。
 - T-043：设置 `FIGWIN_OVERLAY_PIPE` 后，候选改为发给悬浮窗宿主；宿主异常时回到终端内绘制。在 Windows 上做 T-044 时，可以先用 `spikes/T-043-fake-host/` 检查消息（`docs/dev.md` 第 4 节）。
 
 ## 推送

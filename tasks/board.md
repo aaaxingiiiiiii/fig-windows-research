@@ -25,7 +25,9 @@
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
 | T-021 | 原生悬浮列表窗口：置顶、不激活、跟随 WT | todo | windows, human | — | | 同上 |
-| T-044 | 宿主集成：管道服务端、定位并显示、报告失败、`debugState` | todo | windows | T-042, T-019, T-021 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-053 | 宿主协议核心（C# 类库，`src/overlay-host/`）：分帧、严格校验、会话和序号、状态机、租期、背压、debugState；窗口和 UIA 用接口隔开 | todo | any | T-042 | 预留：Codex/GPT（Mac）；**需要用户同意在 Mac 上安装 .NET 8 SDK** | 宿主一侧的 P-01 至 P-04、P-08、P-11、P-12 单元测试通过（`dotnet test`）；见 `docs/roadmap.md` 第 8.2 节 |
+| T-054 | 独立审查 T-043：对照 `docs/protocol.md` 检查 inshellisense 一侧的悬浮窗实现 | todo | any | T-043 | 预留：Codex/GPT（Mac） | 每个问题都有一个会失败的测试，并已修复或登记为任务；结论写入 log |
+| T-044 | 宿主集成：管道服务端、定位并显示、报告失败、`debugState` | todo | windows | T-042, T-019, T-021；有 T-053 时直接引用 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-045 | 端到端测试（L2 自动测试，加上 L3 人工清单） | todo | windows, human | T-043, T-044, T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-046 | 把宿主加入安装脚本，用户试用 | todo | windows, human | T-045, T-040 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 
@@ -34,8 +36,8 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
-| T-050 | 向 microsoft/inshellisense 提交修复（D-011）：PowerShell 引号、宽字符删除数、custom generator 的目录和输出 | doing | human | — | Claude Code/Opus 5.5 2026-10-15 准备并推送分支；用户创建 PR、签 CLA | 三个分支已推送到用户的 inshellisense fork（`fix/pwsh-path-quoting`、`fix/wide-char-backspace`、`fix/custom-generator-cwd`）；PR 说明和预填链接在 Mac 的 `local/upstream-pr/`。完成标准：三个 PR 已创建；合并后在 `src/inshellisense/CHANGES.md` 中注明 PR 编号 |
-| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013（本机已自动更新到 2.31.0） | todo | mac-kiro, human | — | 用户在 Mac 上操作，AI 记录 | 按 `specs/completion.md` 第 8 节的“T-012 人工清单”逐项回答；每条用例的“Kiro 观察”一栏都有结果、版本和证据编号 |
+| T-055 | 补齐 `research/spec-compat.md` 中“仍未处理的项”：gh 的 GraphQL 参数引号、scp 的 `host:path` 与盘符、dotnet 的 `launchSettings.json` 相对路径 | todo | any | — | 预留：Codex/GPT（Mac） | 模拟 win32 的测试通过；改动记入 `CHANGES.md` |
+| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | doing | mac-kiro, human | — | 用户 2026-10-15 完成 13 项（Kiro 2.31.1），Claude 记录 | 已记录 10 项（E-010、F-033）。**剩下 3 项需要用户重测**：C-008（先 `cd` 进 `local/t012`）、C-003（末尾有没有空格）、C-012（空命令行按 Enter 是否出现新的提示符） |
 
 ## 已完成
 
@@ -49,6 +51,7 @@
 | T-038 | 规格用例自动化：C-001 至 C-013 和新增的 W-001 至 W-009，整理与 Fig 的差异 | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/tests/figspec/figspec.test.ts`；`specs/completion.md` 第 9、10 节；F-029 至 F-031 |
 | T-036 | 引入 inshellisense 源码到 `src/inshellisense/`，在 Mac 上跑通构建和测试，编写 `docs/dev.md` | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/`（含 `UPSTREAM`、`CHANGES.md`）、`docs/dev.md`；F-028 |
 | T-047 | 路线修订为“先 inshellisense，后悬浮窗”；建立 `develop` 分支；重写实现计划 | Claude Code/Opus 5.5 2026-10-14 | `docs/mvp-plan.md`（新版）；D-007、D-008；旧计划存档 |
+| T-050 | （取消）向 microsoft/inshellisense 提交修复：PR #486–#488 创建后由用户取消，已关闭（D-011） | — | — |
 | T-020、T-022 至 T-028、T-030 至 T-033 | （取消）PSReadLine 路线的任务，被 D-007 取代；需要时可以在 `docs/archive/` 中查看原计划 | — | — |
 | T-034 | 制定最小实现方案、分阶段步骤与测试分层、模块间协议草案 | Claude Code/Opus 5.5 2026-10-14 | `docs/mvp-plan.md`、`docs/protocol.md`；D-006；F-025 至 F-027 |
 | T-017 | （合并）PowerShell 分词与转义规则并入 T-028 | — | — |
