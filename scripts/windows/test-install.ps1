@@ -19,7 +19,7 @@ function Assert-True([bool]$Condition, [string]$Message) {
 }
 
 # 假的 is：Windows 上是 .cmd，其他系统上是 sh 脚本
-$sourceLine = "if ( Test-Path 'C:\Users\测试\.inshellisense\init\pwsh\init.ps1' -PathType Leaf ) { . 'C:\Users\测试\.inshellisense\init\pwsh\init.ps1' }"
+$sourceLine = "if ( Test-Path 'D:\示例目录\.inshellisense\init\pwsh\init.ps1' -PathType Leaf ) { . 'D:\示例目录\.inshellisense\init\pwsh\init.ps1' }"
 if ($IsWindows) {
     $fakeName = 'is.cmd'
     $fake = Join-Path $root 'fake-is.cmd'
