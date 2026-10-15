@@ -36,7 +36,7 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
-| T-055 | 补齐 `research/spec-compat.md` 中“仍未处理的项”：gh 的 GraphQL 参数引号、scp 的 `host:path` 与盘符、dotnet 的 `launchSettings.json` 相对路径 | todo | any | — | 预留：Codex/GPT（Mac） | 模拟 win32 的测试通过；改动记入 `CHANGES.md` |
+| T-055 | 补齐 `research/spec-compat.md` 中“仍未处理的项”：gh 的 GraphQL 参数引号、scp 的 `host:path` 与盘符、dotnet 的 `launchSettings.json` 相对路径 | doing | any | — | Codex/GPT-6 2026-10-15（Mac，分支 `ai/codex/T-055`） | 模拟 win32 的测试通过；改动记入 `CHANGES.md` |
 
 ## 已完成
 
