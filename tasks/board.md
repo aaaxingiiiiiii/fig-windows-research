@@ -10,7 +10,7 @@
 
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-035 | 实测原版 inshellisense（关卡） | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-14；环境/受控 PTY 检查通过；2026-10-15 同步并完成修改版 L1 预检（失败见 T-052），WT 人工验收待完成 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
+| T-035 | 实测原版 inshellisense（关卡） | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-14；环境/受控 PTY 检查通过；2026-10-15 同步 8fb0570，L1 346 通过、10 跳过、0 失败；材料已备齐，WT 人工第 1 项待用户反馈 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
 | T-048 | 在 Windows 上验证我们的修改（T-037 直接执行命令，T-039 引号和中文删除，T-049 POSIX 命令模拟） | todo | windows, human | — | | 见 `docs/mvp-plan.md` 中的“T-048 人工清单” |
 | T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本 | todo | windows | T-035, T-048 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |

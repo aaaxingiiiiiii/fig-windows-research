@@ -75,3 +75,12 @@ T-035 的 16 项 Windows Terminal 人工清单仍待完成；T-048 仅完成上�
 本轮只改测试：PowerShell 期望使用本机目录分隔符，完整保留引号、特殊字符和删除数断言；Windows 的目录链接夹具使用不需要管理员权限的 junction，继续验证跟随链接；HOME 明确模拟非 Windows 平台；Git Bash 探测用 mock 隔离本机安装，并验证原生命令不触发回退、bash 在回退不可用时返回 127。没有跳过新失败，也没有修改运行时实现。Mac 本机尚未复验。
 
 T-052 已完成。T-035/T-048 的 Windows Terminal 人工验收仍未完成，不能用本次 L1 成功代替。
+
+
+## 2026-10-15：最新 develop 人工验收准备
+
+观察（E-011）：已同步双方 develop 到 8fb0570，工作分支 ai/codex/T-035。锁定依赖安装、构建成功；Windows L1 346 通过、10 跳过、0 失败，93 快照通过。相比 E-009 新增 81 个通过用例；Mac 文档中的总数 357 与本机 356 不同，不能等同为失败。
+
+材料位于 local/acceptance/T-035-20261015：七个特殊名称/中文目录；git-demo 有 main、demo-feature 分支，tracked.txt 已提交再修改、staged.txt 新增并暂存；npm-demo 含 scripts、child、demo.js、packages/a 与 packages/b workspaces。材料仅在本机，不提交。未安装系统软件或修改启动配置。
+
+人工清单第 1 项等待用户在新 Windows Terminal 标签页启动原版并反馈提示符、报错和耗时；未收到反馈，不填通过。其余项按清单逐项进行。

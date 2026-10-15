@@ -265,3 +265,9 @@
   - T-053：宿主协议核心，需要在 Mac 上安装 .NET 8 SDK；
   - T-054：独立审查 T-043；
   - T-055：spec 兼容性余项。
+
+
+## 2026-10-15 · Codex/GPT-6（Windows）· T-035 人工验收准备
+- 同步 origin/mac 的 develop（8fb0570），在 ai/codex/T-035 继续；阅读最新 roadmap 第 3–6 节和 8.1 节。
+- 安装锁定项目依赖、构建及 L1 完成：346 通过、10 跳过、0 失败，E-011。人工测试目录、git 和 npm/workspaces 材料已备齐。
+- T-035 保持 doing，第 1 项待用户在 WT 操作反馈；T-048 尚未开始。未安装 SDK，未改 handoff.md。
