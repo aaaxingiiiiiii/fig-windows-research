@@ -431,3 +431,8 @@
 ## 2026-10-15 · Codex/GPT-6（Windows）· T-056
 - 正式 pwsh 7.6.7 + Windows ConPTY 运行 Claude 的 resize-sim：普通组通过，wrap 连续两次失败，均在尺寸恢复后再输入 e 时 aligned=false，光标行混入 line4。
 - E-012 和 research/spike-fork-windows.md 有完整尺寸/光标表与复现命令；原始日志保留 local/evidence。T-056 已复现，待 Mac Claude 分析，未擅自改动运行时或判定修复。
+
+
+## 2026-10-15 · Codex/GPT-6（Windows）· T-058 Windows 复验
+- 使用已安装的 PowerShell 7.6.7 执行 scripts/windows/test-install.ps1，退出码 0，26 项全部通过。包含不存在 profile、UTF-8 BOM/CRLF/中文、UTF-16LE、安装后用户追加内容四组。
+- 自测在临时目录中使用假的 is，未修改真实用户 profile 或 PATH；不能代替 T-040 真实单文件安装验收。日志 local/evidence/T-058-windows-selftest.txt；E-013。
