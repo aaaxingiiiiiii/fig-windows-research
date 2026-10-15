@@ -14,7 +14,7 @@
 | T-048 | 在 Windows 上验证我们的修改（T-037 直接执行命令，T-039 引号和中文删除，T-049 POSIX 命令模拟） | todo | windows, human | — | | 见 `docs/mvp-plan.md` 中的“T-048 人工清单” |
 | T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本 | todo | windows | T-035, T-048 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
-| T-052 | 修复 Windows 本机 L1 测试的平台与环境假设 | todo | any | — | | 复现 `research/spike-inshellisense.md` E-008 的 11 个失败；路径断言同时验证分隔符和 PowerShell 引号，隔离 HOME/Git Bash 条件，明确非管理员符号链接夹具策略；保留行为覆盖，Windows 复验并记录结果 |
+| T-052 | 修复 Windows 本机 L1 测试的平台与环境假设 | doing | any | — | Codex/GPT-6（Windows）2026-10-15 | 复现 `research/spike-inshellisense.md` E-008 的 11 个失败；路径断言同时验证分隔符和 PowerShell 引号，隔离 HOME/Git Bash 条件，明确非管理员符号链接夹具策略；保留行为覆盖，Windows 复验并记录结果 |
 
 ### 阶段 B：悬浮窗（复用阶段 A）
 
