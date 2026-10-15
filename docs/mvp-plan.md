@@ -118,7 +118,7 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 | 任务 | env | 实现步骤 | 测试与完成标准 |
 | --- | --- | --- | --- |
 | **T-042** 悬浮窗协议 | any | 新写 `docs/protocol.md`：inshellisense → 宿主，使用命名管道和 JSON 行；消息包括会话、显示或隐藏、候选列表（名称、说明、类型）、选中项、光标单元格、终端的行数和列数 | 由 T-043 和 T-044 的负责人共同遵守；修改时升级版本号 |
-| **T-043** 渲染抽象 | any | 在 inshellisense 中把显示部分（`is:src/ui/suggestionManager.ts#L177`、`is:src/isterm/pty.ts` 中的补丁逻辑）抽象为接口：终端渲染器保持现状；新增悬浮窗渲染器，按协议发送消息；连接失败或宿主报告定位失败时，自动回到终端渲染 | L1 测试：渲染器切换和回退逻辑；用一个假的管道服务端检查发出的消息 |
+| **T-043** 渲染抽象（已完成，见 `docs/dev.md` 第 4 节） | any | 在 inshellisense 中把显示部分（`is:src/ui/suggestionManager.ts#L177`、`is:src/isterm/pty.ts` 中的补丁逻辑）抽象为接口：终端渲染器保持现状；新增悬浮窗渲染器，按协议发送消息；连接失败或宿主报告定位失败时，自动回到终端渲染 | L1 测试：渲染器切换和回退逻辑；用一个假的管道服务端检查发出的消息 |
 | **T-029** 自动测试工具 | windows | `tools/wt-driver`：用 `wt.exe` 启动指定 profile、用 SendInput 模拟按键、截图、用 UIA 读取终端控件的边界、读取宿主状态 | 能跑通一个脚本：打开 WT，输入 `echo hi`，截图并保存 |
 | **T-019** 光标定位 | windows, human | 在宿主中实现 `ICaretLocator`：UIA 优先，单元格换算作为后备（`research/caret-wt.md`） | 达到 `docs/overlay-design.md` 中 T-019 的通过标准；报告写入 `research/spike-caret.md` |
 | **T-021** 悬浮窗 | windows, human | 实现置顶、不激活、不接收鼠标的原生列表窗口；跟踪前台窗口、移动、最小化、窗格切换 | 达到 T-021 的通过标准；人工确认弹出时输入不中断 |

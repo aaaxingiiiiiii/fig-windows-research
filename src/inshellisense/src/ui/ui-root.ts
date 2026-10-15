@@ -12,6 +12,7 @@ import type { KeyPressEvent } from "./suggestionManager.js";
 import { BatchScheduler } from "./batchScheduler.js";
 import { SuggestionRenderer } from "./suggestionRenderer.js";
 import { StdioProxy } from "./stdioProxy.js";
+import { createRenderer } from "../overlay/overlayRenderer.js";
 
 const writeOutput = (data: string) => {
   if (data.length === 0) return;
@@ -24,7 +25,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   const [isterm, { SuggestionManager }] = await Promise.all([import("../isterm/index.js"), import("./suggestionManager.js")]);
   const term = await isterm.default.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
   const suggestions = new SuggestionManager(term, shell);
-  const renderer = new SuggestionRenderer(term, suggestions, writeOutput);
+  // fig-windows-research T-043: the overlay renderer is used when FIGWIN_OVERLAY_PIPE is set, otherwise the terminal renderer
+  const renderer = createRenderer(term, suggestions, new SuggestionRenderer(term, suggestions, writeOutput));
   let commandStateVersion = term.getCommandStateVersion();
   let backspaceEchoPending = false;
 
@@ -85,7 +87,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
       return;
     }
 
-    const inputHandled = suggestions.update(press, renderer.hasVisibleSuggestions);
+    renderer.noteKeypress?.(press);
+    const inputHandled = suggestions.update(press, renderer.hasVisibleSuggestions, renderer.canAcceptSuggestion);
     if (renderer.hasVisibleSuggestions && inputHandled) {
       term.noop();
     } else if (!inputHandled) {
@@ -99,6 +102,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   });
 
   term.onExit(({ exitCode }) => {
+    renderer.dispose?.();
     process.stdin.removeListener("data", handleInput);
     writeOutput(stdio.dispose());
     if (!stdinStartedInRawMode) process.stdin.setRawMode(false);

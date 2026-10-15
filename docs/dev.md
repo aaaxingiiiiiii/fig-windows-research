@@ -73,11 +73,71 @@ npm test -- --ci                                                                
 - 已知缺陷用 `test.failing` 写出正确的期望，修复后改为 `test`。不要为了让测试通过而改动期望。
 - 新增用例时，同步更新 `specs/completion.md` 的第 9 节或第 10 节。
 
-2026-10-15 在 Mac 上的结果（T-051 之后，`npm test -- --ci`）：全部测试 275 个，264 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 62 个（规格用例 22 个、执行方式 5 个、POSIX 模拟 31 个、custom generator 4 个），全部按预期执行；只剩 2 个 `test.failing`。
+2026-10-15 在 Mac 上的结果（T-043 之后，`npm test -- --ci`）：全部测试 357 个，346 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 144 个，全部按预期执行；只剩 2 个 `test.failing`：
+
+- 规格用例 22 个；
+- 执行方式 5 个（Windows 端的 T-052 又修改过）；
+- POSIX 模拟 32 个；
+- custom generator 4 个；
+- 悬浮窗 81 个。
 
 建议加上 `--ci`。不加时，jest 会为失败的 `brewInstallMullvad` 新写一个快照，把 `__snapshots__/runtime.test.ts.snap` 改掉；出现这种改动时，用 `git checkout` 还原，不要提交。
 
-## 4. 仓库脚本
+## 4. 悬浮窗渲染器（T-043）
+
+inshellisense 一侧的悬浮窗支持。协议见 `docs/protocol.md`，宿主由 T-044 实现。
+
+**启用方式**：设置环境变量 `FIGWIN_OVERLAY_PIPE`，值为宿主的端点：
+
+- Windows 上是 `\\.\pipe\<名称>`；
+- 其他系统上是 Unix 域套接字的路径。
+
+没有设置时，行为与原来完全相同。
+
+**代码**（`src/inshellisense/src/overlay/`）：
+
+| 文件 | 作用 |
+| --- | --- |
+| `json.ts` | 严格的 JSON 解析：拒绝重复键、嵌套超过 16 层、未配对的代理项 |
+| `protocol.ts` | 常量、消息类型、按行分帧（处理半包、合包、CRLF，限制单行字节数）、校验宿主消息 |
+| `snapshot.ts` | 从候选页、命令状态和光标单元格生成 show 或 hide；清洗文字；超长时依次缩短 |
+| `client.ts` | 连接与协议状态：握手、心跳与租期、show 的 100 ms 确认超时、背压时只保留最新快照、有界队列、按 1 s、2 s、5 s 重连 |
+| `overlayRenderer.ts` | 渲染器接口 `Renderer`；`OverlayRenderer` 在终端渲染和悬浮窗之间切换；`createRenderer` 按环境变量选择 |
+
+对上游文件的改动：
+
+- `suggestionManager.ts`：增加 `getDisplayState()`、候选列表版本号，以及 `update()` 的 `allowAccept` 参数。
+- `suggestionRenderer.ts`：增加 `setSuggestionsEnabled()` 和 `canAcceptSuggestion`。
+- `ui-root.ts`：改用 `createRenderer`，并在退出时调用 `dispose()`。
+
+详见 `src/inshellisense/CHANGES.md`。
+
+**按键规则**：
+
+- 只有宿主确认当前候选列表已经显示（收到 shown），才拦截 ↑、↓、Esc 和接受键。
+- 按 ↑、↓ 改变选中项后，列表仍然可见，可以继续选择。但在宿主确认新的选中项之前，接受键会被吞掉，不插入任何内容，以免插入用户还没看到的候选。
+- 只有参数说明、没有候选时，不拦截按键。
+
+**宿主异常时**：
+
+- 以下情况都会回到终端内绘制，并按退避间隔重连：
+  - 宿主不存在；
+  - 100 ms 内没有确认 show；
+  - 600 ms 没有任何消息；
+  - 报告 suppressed 或 failed；
+  - 发来不合法的消息。
+- 宿主一直不确认或一直报告失败时，每次重连后大约有 100 ms，候选交给了宿主，按键直接进入 shell。所以 T-044 的宿主必须及时回复 status。
+
+**手动检查**：`spikes/T-043-fake-host/` 中有一个假的宿主，它不画窗口，只回复协议消息并打印收到的消息。用法见其中的 README。
+
+**测试**：`src/tests/overlay/` 中共 81 个，对应 `docs/protocol.md` 第 10 节的 P-01、P-02、P-04、P-06、P-07、P-08、P-09、P-11、P-12 在客户端一侧的部分。其中包括：
+
+- 一次真实套接字的往返；
+- 一个集成测试：真实的 SuggestionManager 和客户端连在一起，走完 `git ch` → ↓ → 确认前按 Tab 被吞掉 → 确认后插入。
+
+P-03、P-05、P-10 只涉及宿主。
+
+## 5. 仓库脚本
 
 | 脚本 | 用途 |
 | --- | --- |

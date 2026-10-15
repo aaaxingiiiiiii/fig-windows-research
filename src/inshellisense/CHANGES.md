@@ -22,3 +22,8 @@
 | 2026-10-15 | T-051 | `src/runtime/generator.ts` | 传给 custom generator 的 executeShellCommand 经 `buildCustomExecuteCommand` 包装：没有给出 cwd 时使用 generator 的目录；stdout、stderr 按 Fig 的 cleanOutput 清理（CRLF 换成 LF，去掉 `ESC[?25h` 和首尾的空行） | 原来在 inshellisense 进程的目录中执行，并把带换行的原始输出交给 spec，例如 npm 的 workspaces 候选会读错 package.json（F-032） | 是（与平台无关） |
 | 2026-10-15 | T-051 | `src/tests/figspec/customGenerator.test.ts` | 新增 4 个测试：默认目录、显式目录、输出清理、npm workspaces 候选 | 防止回归 | 否 |
 | 2026-10-15 | T-052 | `src/tests/figspec/{figspec,posixEmulation,executeCommand}.test.ts` | 路径期望使用本机分隔符并保留完整引号断言；Windows 链接夹具使用 junction；显式模拟 darwin/linux 的 HOME 行为；mock Git Bash 探测以隔离安装状态，并断言原生命令不走回退 | 修复 Windows 本机 11 个测试环境假设失败，保留覆盖 | 否 |
+| 2026-10-15 | T-043 | `src/overlay/`（`json.ts`、`protocol.ts`、`snapshot.ts`、`client.ts`、`overlayRenderer.ts`） | 新增。悬浮窗协议 v1 的客户端和悬浮窗渲染器（renderer 角色）；设置 `FIGWIN_OVERLAY_PIPE` 时启用，否则不影响原有行为 | 阶段 B（D-007、`docs/protocol.md`） | 否 |
+| 2026-10-15 | T-043 | `src/ui/suggestionManager.ts` | 分页计算提取为 `getPage()`（`render()` 的结果不变）；新增 `getDisplayState()` 和候选列表版本号（`#setSuggestBlob`）；`update()` 新增参数 `allowAccept`，为 false 时吞掉接受键而不插入 | 悬浮窗渲染器需要结构化的当前页；宿主确认之前不能接受新的选中项（协议第 6 节） | 否 |
+| 2026-10-15 | T-043 | `src/ui/suggestionRenderer.ts` | 新增 `setSuggestionsEnabled()`：关闭时清掉已画的候选，只透传 PTY 输出；打开时按当前状态重画。新增 `canAcceptSuggestion`（等于 `hasVisibleSuggestions`） | 悬浮窗接管显示和回退 | 否 |
+| 2026-10-15 | T-043 | `src/ui/ui-root.ts` | 改用 `createRenderer()` 选择渲染器；按键先交给 `noteKeypress()`，`update()` 传入 `canAcceptSuggestion`；退出时调用 `dispose()` | 同上 | 否 |
+| 2026-10-15 | T-043 | `src/tests/overlay/`（4 个文件） | 新增 81 个测试 | 协议第 10 节中客户端一侧的验收用例 | 否 |

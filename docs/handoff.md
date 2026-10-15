@@ -9,13 +9,13 @@
 路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。
 
 - 阶段 A 的代码已经完成，在 Windows 上构建成功，L1 测试全部通过（T-052）。现在等待用户在 Windows Terminal 中完成人工清单：T-035（16 项）和 T-048（8 项）。
-- 阶段 B：协议已完成（T-042）。T-043 由 Claude 在 Mac 上进行。
+- 阶段 B：协议（T-042）和 inshellisense 一侧的悬浮窗渲染器（T-043）已完成；下一步是 Windows 上的 T-029、T-021、T-019，然后是宿主集成 T-044。
 
 ## 进度
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013；`docs/usage.md`、`docs/roadmap.md` | **T-043**（分支 `ai/claude/T-043`，用户改派）；T-050 的三个分支已推送 |
+| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷；T-050 的三个分支已推送，等用户创建 PR |
 | Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | 和用户一起完成 T-035、T-048 的人工清单 → T-040 |
 | GPT/Codex（Mac） | T-015、T-042 | 暂无安排（T-043 已改派） |
 | 用户 | 对方仓库授权；inshellisense fork | T-035 和 T-048 的人工清单（Windows）；T-012 的人工清单（Mac，约 15 分钟）；T-050 创建 PR 并签署 CLA |
@@ -23,11 +23,12 @@
 ## 关键结论（本轮新增）
 
 - 测试结果：
-  - Mac：`npm test -- --ci` 共 276 个，265 个通过，10 个跳过，1 个失败（本机 Homebrew 环境问题）。
+  - Mac：`npm test -- --ci` 共 357 个（T-043 新增 81 个），346 个通过，10 个跳过，1 个失败（本机 Homebrew 环境问题）。
   - Windows：265 个通过，10 个跳过，0 个失败（E-009）。
 - Windows 上补全文件夹时，结尾的分隔符是 `\`，例如 `'My Docs\'`；PowerShell 可以正常使用这种写法。
 - F-006 已查明：Kiro 只有在 `Q_TERM` 已设置时，才输出完整的 shell 集成脚本（E-007）。本机的 Kiro 已自动更新为 2.31.0。
 - T-050：三个修复分支都在用户的 inshellisense fork 上，PR 说明和预填链接在 Mac 的 `local/upstream-pr/`。
+- T-043：设置 `FIGWIN_OVERLAY_PIPE` 后，候选改为发给悬浮窗宿主；宿主异常时回到终端内绘制。在 Windows 上做 T-044 时，可以先用 `spikes/T-043-fake-host/` 检查消息（`docs/dev.md` 第 4 节）。
 
 ## 推送
 

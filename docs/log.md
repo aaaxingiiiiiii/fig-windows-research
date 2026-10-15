@@ -228,3 +228,22 @@
   - 三个分支已推送到用户的 fork。预填好标题和说明的 PR 链接保存在 Mac 的 `local/upstream-pr/links.txt`，由用户确认创建并签署 CLA。
 - T-012：在 `specs/completion.md` 第 8 节新增给用户的 13 项人工清单，“Kiro 观察”一栏改为注明版本；在 Mac 的 `local/t012/` 中准备了 `My Docs`、`a&b` 两个文件夹和一个 git 仓库。
 - 按用户要求，T-043 由 GPT 改派给 Claude，已认领。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-043
+
+- 用户把 T-043 从 GPT 改派给 Claude。实现了悬浮窗协议 v1 的客户端和悬浮窗渲染器（`src/inshellisense/src/overlay/`），上游文件 `suggestionManager.ts`、`suggestionRenderer.ts`、`ui-root.ts` 各有少量改动，已记入 CHANGES.md。没有设置 `FIGWIN_OVERLAY_PIPE` 时，原有的 276 个测试结果不变。
+- 按键规则：
+  - 宿主确认当前列表后，才拦截候选按键；
+  - 选中项变化后、宿主确认之前，接受键被吞掉，不插入；
+  - 只有参数说明时不拦截。
+  - 这些规则符合 `docs/protocol.md` 第 6 节，没有修改协议。
+- 测试：新增 81 个（`src/tests/overlay/`）。
+  - 覆盖 P-01、P-02、P-04、P-06 至 P-09、P-11、P-12 在客户端一侧的部分；
+  - 包括一次真实套接字的往返，以及真实 SuggestionManager 加客户端的集成用例；
+  - 两次变异检查（放宽接受条件、接受旧 show 的确认）都被测试发现。
+  - 全部测试共 357 个，346 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；lint 和构建通过。
+- 端到端：新增假宿主 `spikes/T-043-fake-host/`。用 node-pty 驱动真实的 inshellisense（`-s zsh`），检查了四种情况：
+  - 宿主正常：终端里不画候选框，宿主收到 show，↓ 加 Tab 插入 cherry-pick；
+  - 宿主不回复、宿主报告失败、宿主不存在：候选回到终端里，插入正常。
+- 观察到的副作用：宿主一直不确认或一直报告失败时，每次重连后约 100 ms 内，候选交给了宿主，按键直接进入 shell。已写入 dev.md，提醒 T-044 的宿主必须及时回复。
+- 没有在 Windows 上运行；命名管道和 C# 宿主由 T-044 验证。

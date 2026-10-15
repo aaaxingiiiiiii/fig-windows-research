@@ -41,6 +41,7 @@ export class SuggestionRenderer {
   #skipNextPtyRender = false;
   #resizeRepaint?: NodeJS.Timeout;
   #resizePending = false;
+  #suggestionsEnabled = true;
 
   constructor(term: ISTerm, suggestions: SuggestionManager, writeOutput: (data: string) => void) {
     this.#term = term;
@@ -52,6 +53,24 @@ export class SuggestionRenderer {
 
   get hasVisibleSuggestions(): boolean {
     return this.#visible;
+  }
+
+  get canAcceptSuggestion(): boolean {
+    return this.#visible;
+  }
+
+  // fig-windows-research T-043: while the overlay renderer shows the suggestions, the terminal only passes PTY data
+  // through. Disabling clears suggestions already drawn; enabling draws the current suggestions again (fallback).
+  setSuggestionsEnabled(enabled: boolean): void {
+    if (this.#suggestionsEnabled === enabled) return;
+    this.#suggestionsEnabled = enabled;
+    if (!enabled) {
+      if (!this.#term.isAlternateBuffer()) this.#clearNormalBufferSuggestions();
+      this.#visible = false;
+      this.#resetCache();
+      return;
+    }
+    this.renderSuggestionUpdate(false);
   }
 
   async handleBufferChange(bufferType: TerminalBuffer): Promise<void> {
@@ -133,7 +152,7 @@ export class SuggestionRenderer {
         cursor: { hidden: cursorHidden, shift: cursorShift, cursorX },
         command,
       } = snapshot;
-      const suggestions = this.#suggestions.render(direction, cursorX);
+      const suggestions = this.#suggestionsEnabled ? this.#suggestions.render(direction, cursorX) : [];
       const fitsViewport = suggestions.length <= lines && suggestions.every(({ startX, length }) => startX >= 0 && startX + length <= this.#term.cols);
 
       if (!fitsViewport || (!previouslyVisible && suggestions.length === 0)) {

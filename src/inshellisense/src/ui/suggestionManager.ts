@@ -11,6 +11,7 @@ import { getConfig } from "../utils/config.js";
 import { calculateReplacement, applyReplacement } from "../runtime/replacement.js";
 import { getCommandCacheKey } from "../runtime/parser.js";
 import { initializeRuntime } from "../runtime/initialize.js";
+import type { DisplayState } from "../overlay/snapshot.js";
 
 type SuggestionRuntime = Pick<Awaited<ReturnType<typeof initializeRuntime>>, "getSuggestions"> &
   Partial<Pick<Awaited<ReturnType<typeof initializeRuntime>>, "clearTransientSuggestionState">>;
@@ -24,6 +25,13 @@ export const getMaxLines = () => borderWidth + Math.max(getMaxSuggestions(), des
 export const MIN_WIDTH = borderWidth + descriptionWidth;
 
 export type KeyPressEvent = [string | null | undefined, KeyPress];
+
+// fig-windows-research T-043: the current page, shared by the terminal renderer and the overlay display state.
+const getPage = (suggestions: Suggestion[], activeSuggestionIdx: number, maxSuggestions: number) => {
+  const page = Math.min(Math.floor(activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
+  const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
+  return { pagedSuggestions, activePagedSuggestionIndex: activeSuggestionIdx % maxSuggestions, pageStart: (page - 1) * maxSuggestions };
+};
 
 type KeyPress = {
   sequence: string;
@@ -42,6 +50,7 @@ export class SuggestionManager {
   #abortController?: AbortController;
   #runtime?: Promise<SuggestionRuntime>;
   #requestVersion = 0;
+  #listVersion = 0;
 
   constructor(terminal: ISTerm, shell: Shell, runtime?: Promise<SuggestionRuntime>) {
     this.#term = terminal;
@@ -70,7 +79,7 @@ export class SuggestionManager {
     const commandCleared = this.#commandKey.length !== 0 || this.#abortController != null;
     this.invalidate();
     this.#commandKey = "";
-    this.#suggestBlob = undefined;
+    this.#setSuggestBlob(undefined);
     this.#activeSuggestionIdx = 0;
     this.#hideSuggestions = false;
     if (commandCleared) {
@@ -103,7 +112,7 @@ export class SuggestionManager {
     }
     if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
       const changed = this.#suggestBlob != null || this.#activeSuggestionIdx !== 0;
-      this.#suggestBlob = undefined;
+      this.#setSuggestBlob(undefined);
       this.#activeSuggestionIdx = 0;
       return changed;
     }
@@ -117,7 +126,7 @@ export class SuggestionManager {
         return false;
       }
       this.#commandKey = commandKey;
-      this.#suggestBlob = suggestionBlob;
+      this.#setSuggestBlob(suggestionBlob);
       this.#activeSuggestionIdx = 0;
       return true;
     } catch (e) {
@@ -131,6 +140,28 @@ export class SuggestionManager {
         this.#abortController = undefined;
       }
     }
+  }
+
+  #setSuggestBlob(blob: SuggestionBlob | undefined): void {
+    if (blob === this.#suggestBlob) return;
+    this.#suggestBlob = blob;
+    this.#listVersion += 1;
+  }
+
+  /** fig-windows-research T-043: the current page for the overlay renderer (same paging as render()). */
+  getDisplayState(): DisplayState | undefined {
+    if (!this.#suggestBlob) return undefined;
+    const { suggestions, argumentDescription } = this.#suggestBlob;
+    const activeSuggestionIdx = Math.min(this.#activeSuggestionIdx, Math.max(suggestions.length - 1, 0));
+    const { pagedSuggestions, activePagedSuggestionIndex, pageStart } = getPage(suggestions, activeSuggestionIdx, getMaxSuggestions());
+    return {
+      page: pagedSuggestions,
+      selectedIndex: pagedSuggestions.length === 0 ? null : activePagedSuggestionIndex,
+      pageStart: pagedSuggestions.length === 0 ? 0 : pageStart,
+      totalCount: suggestions.length,
+      argumentDescription,
+      listVersion: this.#listVersion,
+    };
   }
 
   private _renderArgumentDescription(description: string | undefined) {
@@ -180,10 +211,7 @@ export class SuggestionManager {
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
-    const maxSuggestions = getMaxSuggestions();
-    const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
-    const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
-    const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
+    const { pagedSuggestions, activePagedSuggestionIndex } = getPage(suggestions, this.#activeSuggestionIdx, getMaxSuggestions());
     const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || argumentDescription || "";
     const { swapDescription, padding } = this._calculatePadding(activeDescription, cursorX);
 
@@ -219,7 +247,9 @@ export class SuggestionManager {
     return ui;
   }
 
-  update(keyPress: KeyPress, allowBindings = true): boolean {
+  // fig-windows-research T-043: allowAccept=false swallows the accept key without inserting, used while the overlay
+  // has not yet confirmed the selected suggestion (docs/protocol.md section 6).
+  update(keyPress: KeyPress, allowBindings = true, allowAccept = true): boolean {
     const { name, shift, ctrl } = keyPress;
     if (name == "return") {
       this.#term.clearCommand(); // clear the current command on enter
@@ -241,13 +271,17 @@ export class SuggestionManager {
     } = getConfig().bindings;
 
     if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
-      this.#suggestBlob = undefined;
+      this.#setSuggestBlob(undefined);
       this.#hideSuggestions = true;
     } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
     } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
+      if (!allowAccept) {
+        log.debug({ msg: "accept deferred until the overlay confirms the selection", ...keyPress });
+        return true;
+      }
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
       if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {
         return false;
