@@ -11,7 +11,7 @@
 | F-003 | Kiro 2.30.0 的 `init zsh pre` 与开源 `pre.sh` 只在二进制名占位符上不同 | 观察 | E-003；`aq:crates/fig_integrations/src/shell/scripts/pre.sh` | 只比较了 zsh pre |
 | F-004 | Kiro 2.30.0 前端使用与开源前端相同的设置键和 spec CDN | 观察 | E-002；`aq:packages/autocomplete-parser/src/loadHelpers.ts#L33` | 只做了字符串统计，没有比较逻辑 |
 | F-005 | Kiro 2.30.0 的补全链路沿用开源代码，开源代码可作为行为基线 | 推断 | F-003、F-004 | 用 T-012 的运行时用例验证 |
-| F-006 | `kiro-cli init zsh post` 在非交互环境中只输出 4 行，而开源 `post.zsh` 有 193 行并输出 OSC 697。原因未知 | 未知 | E-003 | T-013 |
+| F-006 | Kiro 的 `init <shell> post` 只有在环境变量 `Q_TERM` 已设置时，才输出完整的集成脚本（含 OSC 697 钩子）；否则只输出设置 PATH 的几行。`Q_TERM` 由 PTY 包装程序（figterm，即 `kiro-cli-term`）设置。因此只有被 figterm 包装的 shell 才会安装提示符钩子。开源 1.19.7 没有这个判断（`aq:crates/q_cli/src/cli/init.rs#L121-L295`），总是输出完整脚本。有 `Q_TERM` 时，zsh 脚本与开源 `post.zsh` 只有三处不同：开头增加 `Q_SHELL` 赋值；`get-shell` 的错误输出被丢弃；别名改为经标准输入传给 `pre-cmd --alias-stdin`，不再放进命令行参数 | 观察（Kiro 2.31.0） | E-003、E-007 | T-013 已完成。原先“非交互环境”的推测不成立：在伪终端中运行同样只有 4 行；只设置 `QTERM_SESSION_ID` 也不改变输出 |
 | F-007 | Kiro 2.30.0 的 `init` 只接受 bash、zsh、fish、nu，不支持 PowerShell 和 cmd | 观察 | E-003 | 只检查了命令行参数 |
 | F-008 | 补全链路为：figterm 用 PTY 包装 shell → shell 输出 OSC 697 标记 → figterm 在影子终端中取出缓冲区 → 通过 protobuf 和 Unix socket 发给桌面端 → 推送给 webview 前端 | 观察 | `architecture.md` | 来自开源基线 |
 | F-009 | 插入的方式是向 PTY 写入“光标移动 + 退格 × N + 文本 + 可选的回车”；前端用 `ESC[D` 实现 `{cursor}` 占位 | 观察 | `aq:crates/fig_proto/src/figterm.rs#L4-L30`、`aq:packages/autocomplete-app/src/state/insertion.ts#L25-L90` | 退格字节在 Windows 各 shell 上的效果未测 |

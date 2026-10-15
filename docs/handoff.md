@@ -12,7 +12,7 @@
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac） | T-036、T-037、T-038、T-039、T-049（POSIX 命令模拟）、T-051（custom generator 的目录和输出）；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果，修复其中发现的缺陷；T-050 等用户 Fork |
+| Claude Code（Mac） | T-036、T-037、T-038、T-039、T-049（POSIX 命令模拟）、T-051（custom generator 的目录和输出）；`docs/usage.md`、`docs/roadmap.md` | T-013 已完成（F-006 查明）；等待 Windows 验收结果，修复其中发现的缺陷；T-050 等用户 Fork |
 | GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015、T-042（`docs/protocol.md` v1） | **T-043**（渲染器抽象和悬浮窗渲染器），已预留，2026-10-15 时还没有开始 |
 | Codex/GPT-6（Windows）和用户 | T-035 的环境检查和受控终端冒烟测试（分支 `upstream/ai/codex/T-035`，`research/spike-inshellisense.md`） | **T-035 的 16 项 WT 人工清单，需要用户在 Windows Terminal 中逐项操作** → **T-048**（8 项）→ T-040（打包） |
 | 用户 | D-010、D-011 已决定 | T-050：在 GitHub 上 Fork microsoft/inshellisense，并在 PR 中签署 CLA |

@@ -6,6 +6,7 @@
 
 - “Fig”目前没有可以独立运行的原版。本机安装的是它的后继产品 **Kiro CLI 2.30.0**（Fig → Amazon Q Developer CLI → Kiro CLI），bundle ID 仍为 `com.amazon.codewhisperer`。
 - Fig 补全功能的源码已经开源（见 `sources.md` 中的 `aq`，版本 1.19.7）。因此本项目以开源源码作为主要依据，以 Kiro 2.30.0 作为运行时对照。
+- 2026-10-15 观察到本机的 Kiro 已自动更新为 **2.31.0**（`kiro-cli --version`）。下表的版本信息和 E-001 的哈希只对应 2.30.0。之后的观察要注明实际版本；需要固定版本时，先关闭自动更新，或者在报告中写明更新时间。
 
 ## 运行时对象（闭源，仅做黑盒观察）
 
@@ -51,7 +52,7 @@
 | F-003 | `kiro-cli init zsh pre` 的输出与 `aq:crates/fig_integrations/src/shell/scripts/pre.sh` 只在模板占位符（二进制名）和一处 `2>/dev/null` 上不同 | 观察 | E-003 与源码 diff |
 | F-004 | Kiro 前端打包文件中使用与开源前端相同的设置键（如 `autocomplete.immediatelyExecuteAfterSpace`、`insertCommonPrefix`），以及相同的 spec CDN `https://specs.q.us-east-1.amazonaws.com/` | 观察 | E-002；`aq:packages/autocomplete-parser/src/loadHelpers.ts#L33` |
 | F-005 | 从 F-003 和 F-004 推断：Kiro 2.30.0 的补全链路沿用开源代码，可以把开源代码当作行为基线；但 1.19.7 到 2.30.0 之间的具体改动未知 | 推断 | 需要用 `specs/completion.md` 中的运行时用例验证 |
-| F-006 | `kiro-cli init zsh post` 在非交互、非 figterm 的环境中只输出 4 行（设置 PATH）；开源版 `post.zsh` 有 193 行，并会发送 OSC 697 序列。原因未知 | 未知 | E-003；待 T-013 验证 |
+| F-006 | `init <shell> post` 只有在 `Q_TERM` 已设置（即运行在 figterm 中）时才输出完整的集成脚本；否则只设置 PATH。开源 1.19.7 没有这个判断 | 观察（2.31.0） | E-007；详见 `findings.md` |
 
 ## 私有记录
 
