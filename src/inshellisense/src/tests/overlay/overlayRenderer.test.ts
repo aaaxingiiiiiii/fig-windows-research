@@ -28,7 +28,7 @@ const fakeTerminal = () => {
   const terminal = {
     hasVisibleSuggestions: false,
     canAcceptSuggestion: false,
-    handleBufferChange: async (type: "normal" | "alternate") => void calls.push(`buffer:${type}`),
+    handleBufferChange: async (type: "normal" | "alternate"): Promise<void> => void calls.push(`buffer:${type}`),
     renderPtyData: (data: string) => void calls.push(`pty:${data}`),
     renderSuggestionUpdate: () => void calls.push("update"),
     resize: (c: number, r: number) => void calls.push(`resize:${c}x${r}`),
@@ -316,8 +316,91 @@ test("集成：真实的 SuggestionManager 和客户端；`git ch` → ↓ → �
     socket.shown();
     expect(press("tab")).toBe(true);
     expect(writes).toEqual(["erry-pick "]);
+    expect(manager.getDisplayState()).toBeUndefined();
+    expect(press("tab")).toBe(false);
+    expect(writes).toEqual(["erry-pick "]);
   } finally {
     client.dispose();
     jest.useRealTimers();
   }
+});
+
+test("T-054 returning to a previously confirmed selection still needs a new shown", () => {
+  const { host, state, renderer } = setup();
+  host.connect();
+  host.shown();
+  state.display!.selectedIndex = 1;
+  renderer.renderSuggestionUpdate(false);
+  state.display!.selectedIndex = 0;
+  renderer.renderSuggestionUpdate(false);
+  expect(renderer.hasVisibleSuggestions).toBe(true);
+  expect(renderer.canAcceptSuggestion).toBe(false);
+  host.shown();
+  expect(renderer.canAcceptSuggestion).toBe(true);
+});
+
+test("T-054 alternate buffer hides before asynchronous terminal cleanup finishes", async () => {
+  const { host, state, renderer, terminal } = setup();
+  host.connect();
+  host.shown();
+  let finish!: () => void;
+  terminal.handleBufferChange = () =>
+    new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+  state.alternate = true;
+  const cleanup = renderer.handleBufferChange("alternate");
+  try {
+    expect(host.sent.at(-1)).toEqual({ t: "hide", reason: "alternate-buffer" });
+    expect(renderer.hasVisibleSuggestions).toBe(false);
+  } finally {
+    finish();
+    await cleanup;
+  }
+});
+
+test.each(["command", "cwd"])("T-054 stale suggestions cannot be shown or accepted after %s changes", async (change) => {
+  const writes: string[] = [];
+  let commandText = "git ch";
+  const term = {
+    cwd: "/fixture/one",
+    write: (value: string) => writes.push(value),
+    getCommandState: () => ({ commandText, cursorTerminated: true }),
+  };
+  const manager = new SuggestionManager(
+    term as unknown as ISTerm,
+    Shell.Bash,
+    Promise.resolve({
+      getSuggestions: async () => ({ suggestions: [suggestion("checkout")] }),
+    }),
+  );
+  await manager.exec();
+  expect(manager.getDisplayState()).toBeDefined();
+  if (change === "command") commandText = "git s";
+  else term.cwd = "/fixture/two";
+  expect(manager.getDisplayState()).toBeUndefined();
+  expect(manager.render("below", 0)).toEqual([]);
+  expect(manager.update(key("tab"), true, true)).toBe(false);
+  expect(writes).toEqual([]);
+});
+
+test("T-054 acceptance consumes the snapshot before delayed PTY echo", async () => {
+  const writes: string[] = [];
+  const term = {
+    cwd: "/fixture",
+    write: (value: string) => writes.push(value),
+    getCommandState: () => ({ commandText: "git ", cursorTerminated: true }),
+  };
+  const manager = new SuggestionManager(
+    term as unknown as ISTerm,
+    Shell.Bash,
+    Promise.resolve({
+      getSuggestions: async () => ({ suggestions: [suggestion("checkout")] }),
+    }),
+  );
+  await manager.exec();
+  expect(manager.update(key("tab"), true, true)).toBe(true);
+  expect(manager.getDisplayState()).toBeUndefined();
+  expect(manager.update(key("tab"), true, true)).toBe(false);
+  expect(writes).toEqual(["checkout "]);
 });

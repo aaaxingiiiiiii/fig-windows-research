@@ -265,3 +265,25 @@
   - T-053：宿主协议核心，需要在 Mac 上安装 .NET 8 SDK；
   - T-054：独立审查 T-043；
   - T-055：spec 兼容性余项。
+
+## 2026-10-15 · Codex/GPT-6（Mac）· T-054
+
+- 做了：同步 `upstream/develop`，在 `ai/codex/T-054` 独立对照协议第 2–7 节审查 T-043；第 8 节 debugState 及服务端窗格/定位/权限仍由 T-053/T-044 验证。没有修改协议或 handoff。
+- 观察（失败测试 → 修复）：以下 10 类问题各有失败用例；新增 14 个测试，并扩展原有 manager/client 集成测试。证据为 `src/inshellisense/src/tests/overlay/` 中名称以 `T-054` 开头的测试及“集成”用例，可运行 `npm test -- --ci --runInBand src/tests/overlay` 复验。
+
+| 协议条款 | 观察到的问题 | 修复及测试文件 |
+| --- | --- | --- |
+| 第 4 节 | welcome 接受非 200/600 的时间常量 | 严格匹配 v1，`protocol.test.ts`（2 个） |
+| 第 2、6 节 | 数组 state 被对象键隐式转换后误接受 | 检查 string 及自有枚举键，`protocol.test.ts`（1 个） |
+| 第 5 节 | 未知候选类型 constructor / __proto__ 命中原型属性 | 仅映射自有键，其余 other，`snapshot.test.ts`（2 个） |
+| 第 5 节、P-06 | 页长超过 20 时截掉真实选中项，宿主显示第 19 项而 Node 接受后面的项 | 选取包含真实选中项的子页，更新 pageStart 和页内索引，`snapshot.test.ts`（1 个） |
+| 第 7 节、P-08 | 600 ms 租期等到下一心跳轮询才关闭，最晚约 800 ms | 每条有效消息重设独立租期定时器，`client.test.ts`（1 个，包含非心跳边界消息） |
+| 第 6 节、P-12 | 新 show/hide 尚在背压队列时，旧 shown 仍确认旧目标 | 入队即撤销旧确认目标，`client.test.ts`（2 个） |
+| 第 6 节、P-06 | 选择 A→B→A 时复用首次 A 的 shown | 每次发送 show 都撤销接受权限，保留同列表选择权限，`overlayRenderer.test.ts`（1 个） |
+| 第 6 节、P-09 | alternate-buffer 隐藏等待异步终端清理完成 | 先 hide 再 await 清理，`overlayRenderer.test.ts`（1 个） |
+| 第 6 节 | 命令/cwd 改变后旧候选可能重新发出并被确认，回退也可能重画旧候选 | manager 绑定生成上下文；显示、接受和异步提交前复核，`overlayRenderer.test.ts`（2 个） |
+| 第 6 节、P-09 | 接受后至 PTY 回显前仍可再次插入同一候选 | 立即消耗快照并同步渲染，`overlayRenderer.test.ts`（1 个及集成测试） |
+
+- 验证：Node 20.20.2；完整 `npm test -- --ci --runInBand` 共 371 个：360 通过、10 跳过、1 失败。唯一失败为已记录的 `brewInstallMullvad` 本机 Homebrew 环境问题（`docs/dev.md`）；95 个悬浮窗用例全部通过，93 个快照通过。`npm run build` 通过。ESLint 通过，修正新增格式后复验 lint；提交前运行公开检查。
+- 未知：Mac 假宿主和本机套接字测试不能证明 Windows 命名管道、UIA、WT 焦点和真实键盘效果；这些仍按原任务 T-019/T-021/T-044/T-045 验收。本轮没有遗留未修复的已复现问题。
+- 下一步：T-055；T-053 等用户同意安装 .NET 8 SDK 后才开始。

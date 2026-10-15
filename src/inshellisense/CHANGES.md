@@ -27,3 +27,5 @@
 | 2026-10-15 | T-043 | `src/ui/suggestionRenderer.ts` | 新增 `setSuggestionsEnabled()`：关闭时清掉已画的候选，只透传 PTY 输出；打开时按当前状态重画。新增 `canAcceptSuggestion`（等于 `hasVisibleSuggestions`） | 悬浮窗接管显示和回退 | 否 |
 | 2026-10-15 | T-043 | `src/ui/ui-root.ts` | 改用 `createRenderer()` 选择渲染器；按键先交给 `noteKeypress()`，`update()` 传入 `canAcceptSuggestion`；退出时调用 `dispose()` | 同上 | 否 |
 | 2026-10-15 | T-043 | `src/tests/overlay/`（4 个文件） | 新增 81 个测试 | 协议第 10 节中客户端一侧的验收用例 | 否 |
+| 2026-10-15 | T-054 | `src/overlay/{client,protocol,snapshot,overlayRenderer}.ts`、`src/tests/overlay/` | 审查协议后新增 14 个先失败再修复的回归用例：严格 welcome/state/类型映射、600 ms 租期、背压旧确认、大页选中项、选择绕回旧项、异步备用缓冲清理、过期命令/目录及重复接受；扩展真实 manager/client 集成测试 | 修复协议第 2、4–7 节的偏差；协议字段和版本不变 | 否 |
+| 2026-10-15 | T-054 | `src/ui/suggestionManager.ts`、`src/ui/ui-root.ts` | 候选绑定生成时的命令和 cwd；变化后拒绝旧候选显示/接受，异步结果提交时复核；接受后立即撤销快照；按键处理后立即同步渲染，cwd 单独变化也触发重新生成 | 防止宿主确认旧内容后插入过期候选，以及 PTY 回显前重复插入；终端回退同样检查上下文 | 部分可以（候选生命周期修复） |

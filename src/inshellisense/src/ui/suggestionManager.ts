@@ -51,6 +51,7 @@ export class SuggestionManager {
   #runtime?: Promise<SuggestionRuntime>;
   #requestVersion = 0;
   #listVersion = 0;
+  #displayContext?: { commandText: string; cwd: string };
 
   constructor(terminal: ISTerm, shell: Shell, runtime?: Promise<SuggestionRuntime>) {
     this.#term = terminal;
@@ -95,8 +96,9 @@ export class SuggestionManager {
   private async _loadSuggestions(): Promise<boolean> {
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
+    const cwd = this.#term.cwd;
     const commandKey = commandText ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
-    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && !commandState.hasOutput) {
+    if (commandKey.length !== 0 && commandKey === this.#commandKey && this.#hasCurrentSuggestions() && !this.#hideSuggestions && !commandState.hasOutput) {
       return false;
     }
     // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
@@ -121,11 +123,17 @@ export class SuggestionManager {
     try {
       const { getSuggestions } = await this._getRuntime();
       abortController.signal.throwIfAborted();
-      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, abortController.signal);
-      if (abortController.signal.aborted || ownVersion !== this.#requestVersion) {
+      const suggestionBlob = await getSuggestions(commandText, cwd, this.#shell, abortController.signal);
+      if (
+        abortController.signal.aborted ||
+        ownVersion !== this.#requestVersion ||
+        cwd !== this.#term.cwd ||
+        commandText !== this.#term.getCommandState().commandText
+      ) {
         return false;
       }
       this.#commandKey = commandKey;
+      this.#displayContext = { commandText, cwd };
       this.#setSuggestBlob(suggestionBlob);
       this.#activeSuggestionIdx = 0;
       return true;
@@ -148,9 +156,15 @@ export class SuggestionManager {
     this.#listVersion += 1;
   }
 
+  // A candidate's replacement range is valid only in the command and directory that produced it.
+  #hasCurrentSuggestions(): boolean {
+    const command = this.#term.getCommandState();
+    return this.#displayContext?.commandText === command.commandText && this.#displayContext?.cwd === this.#term.cwd && !command.hasOutput;
+  }
+
   /** fig-windows-research T-043: the current page for the overlay renderer (same paging as render()). */
   getDisplayState(): DisplayState | undefined {
-    if (!this.#suggestBlob) return undefined;
+    if (!this.#suggestBlob || !this.#hasCurrentSuggestions()) return undefined;
     const { suggestions, argumentDescription } = this.#suggestBlob;
     const activeSuggestionIdx = Math.min(this.#activeSuggestionIdx, Math.max(suggestions.length - 1, 0));
     const { pagedSuggestions, activePagedSuggestionIndex, pageStart } = getPage(suggestions, activeSuggestionIdx, getMaxSuggestions());
@@ -206,7 +220,7 @@ export class SuggestionManager {
   }
 
   render(direction: "above" | "below", cursorX: number): ISTermPatch[] {
-    if (!this.#suggestBlob) {
+    if (!this.#suggestBlob || !this.#hasCurrentSuggestions()) {
       return [];
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
@@ -260,7 +274,7 @@ export class SuggestionManager {
       this.#hideSuggestions = name == "up" || name == "down";
     }
 
-    if (!allowBindings || !this.#suggestBlob) {
+    if (!allowBindings || !this.#suggestBlob || !this.#hasCurrentSuggestions()) {
       return false;
     }
     const {
@@ -271,6 +285,7 @@ export class SuggestionManager {
     } = getConfig().bindings;
 
     if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
+      this.invalidate();
       this.#setSuggestBlob(undefined);
       this.#hideSuggestions = true;
     } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
@@ -290,6 +305,8 @@ export class SuggestionManager {
       if (action == null) {
         return false;
       }
+      this.invalidate();
+      this.#setSuggestBlob(undefined);
       this.#term.write(applyReplacement(action));
     } else if (name == "return" || (name == "c" && ctrl)) {
       this.#term.clearCommand();

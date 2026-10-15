@@ -28,6 +28,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   // fig-windows-research T-043: the overlay renderer is used when FIGWIN_OVERLAY_PIPE is set, otherwise the terminal renderer
   const renderer = createRenderer(term, suggestions, new SuggestionRenderer(term, suggestions, writeOutput));
   let commandStateVersion = term.getCommandStateVersion();
+  let commandCwd = term.cwd;
   let backspaceEchoPending = false;
 
   const stdinStartedInRawMode = process.stdin.isRaw;
@@ -69,8 +70,9 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
       }
 
       const nextCommandStateVersion = term.getCommandStateVersion();
-      if (nextCommandStateVersion !== commandStateVersion) {
+      if (nextCommandStateVersion !== commandStateVersion || term.cwd !== commandCwd) {
         commandStateVersion = nextCommandStateVersion;
+        commandCwd = term.cwd;
         suggestions.invalidate();
         suggestionScheduler.request();
       }
@@ -89,7 +91,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
 
     renderer.noteKeypress?.(press);
     const inputHandled = suggestions.update(press, renderer.hasVisibleSuggestions, renderer.canAcceptSuggestion);
-    if (renderer.hasVisibleSuggestions && inputHandled) {
+    renderer.renderSuggestionUpdate(backspaceEchoPending);
+    if (inputHandled) {
       term.noop();
     } else if (!inputHandled) {
       if (press.name === "backspace") {

@@ -137,3 +137,16 @@ describe("文字清洗", () => {
     expect(snapshot.body.candidates[0].name.startsWith("0")).toBe(true);
   });
 });
+
+test("T-054 wire page keeps the actual selected candidate beyond index 19", () => {
+  const page = Array.from({ length: 30 }, (_, i) => suggestion(`s${i}`));
+  const snapshot = buildSnapshot(input({ display: display({ page, selectedIndex: 24, pageStart: 30, totalCount: 60 }) }));
+  if (snapshot.kind !== "show") throw new Error("expected show");
+  expect(snapshot.body.candidates).toHaveLength(20);
+  expect(snapshot.body.candidates[snapshot.body.selectedIndex!].name).toBe("s24");
+  expect(snapshot.body.pageStart + snapshot.body.selectedIndex!).toBe(54);
+});
+
+test.each(["constructor", "__proto__"])("T-054 unknown Fig type %s maps to other", (type) => {
+  expect(toCandidateType(type)).toBe("other");
+});

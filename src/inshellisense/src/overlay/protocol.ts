@@ -140,13 +140,18 @@ export const parseHostMessage = (line: string, identity: { session: string; conn
 
   switch (message.t) {
     case "welcome":
-      if (!isUuid(message.hostInstance) || !isPositiveInteger(message.heartbeatMs) || !isPositiveInteger(message.leaseMs)) {
+      if (!isUuid(message.hostInstance) || message.heartbeatMs !== timing.heartbeatMs || message.leaseMs !== timing.leaseMs) {
         throw new ProtocolError("invalid welcome");
       }
       break;
     case "status": {
       const state = message.state as StatusState;
-      if (!isNonNegativeInteger(message.forSeq) || !(state in statusReasons) || !statusReasons[state].includes(message.reason as string)) {
+      if (
+        !isNonNegativeInteger(message.forSeq) ||
+        typeof state !== "string" ||
+        !Object.hasOwn(statusReasons, state) ||
+        !statusReasons[state].includes(message.reason as string)
+      ) {
         throw new ProtocolError("invalid status");
       }
       if (!caretSources.includes(message.caretSource as string)) throw new ProtocolError("invalid caretSource");
