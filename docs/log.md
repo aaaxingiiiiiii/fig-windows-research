@@ -436,3 +436,11 @@
 ## 2026-10-15 · Codex/GPT-6（Windows）· T-058 Windows 复验
 - 使用已安装的 PowerShell 7.6.7 执行 scripts/windows/test-install.ps1，退出码 0，26 项全部通过。包含不存在 profile、UTF-8 BOM/CRLF/中文、UTF-16LE、安装后用户追加内容四组。
 - 自测在临时目录中使用假的 is，未修改真实用户 profile 或 PATH；不能代替 T-040 真实单文件安装验收。日志 local/evidence/T-058-windows-selftest.txt；E-013。
+
+
+## 2026-10-15 · Codex/GPT-6（Windows）· .NET 10、T-029
+- 用户明确同意安装 .NET 10 SDK。winget 系统安装被取消（1602），改为微软官方脚本将 10.0.402 安装在 local/tools/dotnet，不修改系统 PATH；E-014。首次 CLI 会初始化本机 .NET 缓存；后续运行禁用遥测。
+- 宿主协议 Windows 测试 70/70 通过，与 Mac 结果一致。
+- 新增 tools/wt-driver：专用随机标题窗口、固定 echo hi、逐次检查前台与目标身份、UIA TextPattern 实际输出检查、终端边界与截图、仅关闭自己创建的窗口。
+- 初版 UIA 误选标题文本控件；改为在支持 TextPattern 的候选中找专用 prompt 后，连续三次通过，E-015；没有通过超时或忽略错误来凑通过。最终构建零警告/零错误。
+- T-029 达到当前 smoke 标准；宿主 debugState 接入留 T-044，真实补全/缩放/输入法验收不因此通过。
