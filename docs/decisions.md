@@ -115,3 +115,16 @@
   - 2026-10-15 用户同意追加第三个 PR：T-051（custom generator 的默认目录和输出清理，F-032）。
 - 做法：从上游最新的 `main` 建分支（2026-10-15 时仍是 8dcc9ca，与本仓库固定的版本相同），提交时使用本仓库的 git 身份。PR 从用户 GitHub 账号下的 inshellisense fork 发出；分支由 AI 推送，PR 由用户在预填好标题和说明的页面上确认创建。微软要求贡献者签署 CLA，需要用户本人在 PR 中按机器人的提示签署，AI 不代签。
 - 合并后：在 `src/inshellisense/CHANGES.md` 的对应行注明上游 PR 编号；以后同步上游时，这几处改动可以直接用上游版本。
+
+## D-012 悬浮窗宿主和测试工具使用 .NET 10
+
+- 状态：已采用（2026-10-15，T-053 开始前的技术细化；不改变 D-007 的路线）
+- 原因：.NET 8 的官方支持在 2026-11-10 结束；.NET 10 是长期支持版，支持到 2028 年 11 月。
+- 决定：
+  - 宿主（`src/overlay-host/`）和 wt-driver 都使用 .NET 10 SDK。
+  - 与平台无关的类库目标为 `net10.0`，可以在 Mac 上构建和测试；Windows 专用部分（窗口、UIA）目标为 `net10.0-windows`。
+- 安装：
+  - Windows：`winget install Microsoft.DotNet.SDK.10`。
+  - Mac：用微软官方的 `dotnet-install.sh` 安装到用户目录（`~/.dotnet`），不修改系统目录。
+  - 安装前都要先征得用户同意。
+

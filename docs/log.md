@@ -266,6 +266,15 @@
   - T-054：独立审查 T-043；
   - T-055：spec 兼容性余项。
 
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-012 重测、D-012
+
+- 用户重测了 C-003、C-008、C-012，截图移到 `local/evidence/T-012/`。三项都与开源基线一致：
+  - C-003：`checkout` 的参数是可选的，所以不加空格；
+  - C-008：`My\ Docs/`、`'a&b'/`；
+  - C-012：文字回答与截图不一致，按截图记录。
+- T-012 完成：12 项一致，只有 C-006 不一致（F-033）。
+- D-012：宿主和 wt-driver 改用 .NET 10。.NET 8 的支持在 2026-11-10 结束。在 Windows 端开工前已推送。用户同意在 Mac 上安装 .NET SDK，T-053 由 Claude 认领。
+
 ## 2026-10-15 · Codex/GPT-6（Mac）· T-054
 
 - 做了：同步 `upstream/develop`，在 `ai/codex/T-054` 独立对照协议第 2–7 节审查 T-043；第 8 节 debugState 及服务端窗格/定位/权限仍由 T-053/T-044 验证。没有修改协议或 handoff。
@@ -284,6 +293,6 @@
 | 第 6 节 | 命令/cwd 改变后旧候选可能重新发出并被确认，回退也可能重画旧候选 | manager 绑定生成上下文；显示、接受和异步提交前复核，`overlayRenderer.test.ts`（2 个） |
 | 第 6 节、P-09 | 接受后至 PTY 回显前仍可再次插入同一候选 | 立即消耗快照并同步渲染，`overlayRenderer.test.ts`（1 个及集成测试） |
 
-- 验证：Node 20.20.2；完整 `npm test -- --ci --runInBand` 共 371 个：360 通过、10 跳过、1 失败。唯一失败为已记录的 `brewInstallMullvad` 本机 Homebrew 环境问题（`docs/dev.md`）；95 个悬浮窗用例全部通过，93 个快照通过。`npm run build` 通过。ESLint 通过，修正新增格式后复验 lint；提交前运行公开检查。
+- 验证：Node 20.20.2；完整 `npm test -- --ci --runInBand` 共 371 个：360 通过、10 跳过、1 失败。唯一失败为已记录的 `brewInstallMullvad` 本机 Homebrew 环境问题（`docs/dev.md`）；95 个悬浮窗用例全部通过，93 个快照通过。`npm run build` 通过。`npm run lint`、`sh scripts/check-public.sh` 通过。
 - 未知：Mac 假宿主和本机套接字测试不能证明 Windows 命名管道、UIA、WT 焦点和真实键盘效果；这些仍按原任务 T-019/T-021/T-044/T-045 验收。本轮没有遗留未修复的已复现问题。
-- 下一步：T-055；T-053 等用户同意安装 .NET 8 SDK 后才开始。
+- 下一步：T-055；本轮不启动 T-053；合并时读到远端 D-012 已改用 .NET 10，T-053 已由 Claude 认领。
