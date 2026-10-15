@@ -2,7 +2,7 @@
 
 更新：2026-10-15 · Claude Code/Opus 5.5（本轮整合者）。每次会话结束时重写本页，保持一屏可读。多个 AI 同时工作时，由整合者统一更新本页（`docs/workflow.md`“多个 AI 同时工作”）。
 
-后续工作的顺序、分工、每一步的验收方法，以及两端如何同步代码，见 **`docs/roadmap.md`**。
+后续工作的顺序、分工、每一步的验收方法，以及两端如何同步代码，见 **`docs/roadmap.md`**。Windows 端当前要做的事见 **`docs/windows-next.md`**；用户只需对那边的 AI 说“同步 develop，读 docs/windows-next.md，按顺序做”。
 
 ## 一句话
 

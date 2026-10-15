@@ -16,7 +16,7 @@
 
 ## 每次会话开始
 
-1. 依次读取 `docs/handoff.md`（当前状态）、`tasks/board.md`（任务板）和 `docs/workflow.md`（流程细则）。如果认领的是实现任务，还要读 `docs/mvp-plan.md`；阶段 B 的任务还要读 `docs/protocol.md`（由 T-042 编写）。做验收、安排后续工作或在两端之间同步代码时，读 `docs/roadmap.md`（后续顺序、分工、验收流程）。
+1. 依次读取 `docs/handoff.md`（当前状态）、`tasks/board.md`（任务板）和 `docs/workflow.md`（流程细则）。如果认领的是实现任务，还要读 `docs/mvp-plan.md`；阶段 B 的任务还要读 `docs/protocol.md`（由 T-042 编写）。做验收、安排后续工作或在两端之间同步代码时，读 `docs/roadmap.md`（后续顺序、分工、验收流程）。**在 Windows 上工作的 AI，先读 `docs/windows-next.md`（当前要做的事，按顺序执行）。**
 2. 若用户未指定任务，选择 board 中第一条满足以下条件的任务：状态为 `todo`、依赖均已 `done`、`env` 与本机能力相符、没有标注 `decision:user`。
 3. 把该任务改为 `doing`，填写负责人（工具/模型）和日期。
 4. 若需要源码，运行 `sh scripts/fetch-sources.sh`，在 `local/sources/` 获得固定版本。

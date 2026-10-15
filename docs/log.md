@@ -354,3 +354,14 @@
 - 合并 Windows 端的 T-035：按 A1 判定关卡通过；第 10 项拖动窗口后候选错位，清屏可以恢复，登记为 T-056；T-048 已认领，尚无结果。
 - 发现：用户自己的 WT 中找不到 `pwsh.exe`，T-035 用的是 Windows 端 AI 工具自带的 PowerShell 7.6.5（临时修改 PATH）。之前环境检查中的“PowerShell 7.6.5”也来自 AI 工具自带的版本。新增 T-057（安装 PowerShell 7 并设为 WT 默认，需要用户决定），T-040 改为依赖它；windows-setup.md 注明环境检查必须在用户自己的终端中运行。
 - 更新 roadmap 第 7 节：T-057 → T-048（在最新 develop 上，含 T-054、T-055）→ 复现 T-056 → T-040；阶段 B 的准备照常。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· Windows 端工作指令
+
+- 应用户要求，把交给 Windows 端 AI 的话写成文件 `docs/windows-next.md`，使用户只需说“同步 develop，读 docs/windows-next.md，按顺序做”。内容按顺序包括：
+  - T-057：先问用户是否安装 PowerShell 7；
+  - T-048：在最新 develop 上做 8 项，日志由 AI 自己读；
+  - T-056：复现 5 种窗口变化，记录恢复方法和日志；
+  - T-040；
+  - 用户不在时做阶段 B 的准备；
+  - 结束时的流程，以及遇到问题时的处理。
+- AGENTS.md、handoff、roadmap 第 8.1 节和 README 都指向这个文件；该文件由整合者维护，其他 AI 不修改。
