@@ -143,3 +143,8 @@ T-052 已完成。T-035/T-048 的 Windows Terminal 人工验收仍未完成，�
 用户确认：第 10 项触发方式是拖动窗口大小；取消输入并 Clear-Host 后，回复“回复”（按语境理解为恢复）。第 15 项接受补全并回车后能进入中文目录；第 16 项 a$b 与 it's 两个目录都能进入。后两项依据用户明确反馈，不以候选截图代替执行证据，未取得实际插入文本。
 
 关卡结论：按 roadmap A1 的“没有阻断问题即通过”，T-035 通过，保留非阻断缺陷 T-056（调整窗口后错位，可清屏恢复）。不是 16 项全部无缺陷：第 10 项为失败，分屏行为没有独立确认；第 13 项“没有”按无丢字/延迟理解。原版已知路径缺陷本轮未被用户复现，不能据此删除修改版回归测试。启动使用临时 PATH 下的 Agent PowerShell，未验证永久安装配置。
+
+
+## T-057：正式安装 PowerShell 7
+
+用户明确同意安装并设为默认。2026-10-15 通过 winget 官方源安装 Microsoft.PowerShell，安装包版本 7.6.7.0，哈希校验通过，安装退出码 0；Get-AppxPackage 确认为 Microsoft.PowerShell 应用包，应用包内 pwsh 执行 PSVersionTable 实测 7.6.7（常规 Program Files/PowerShell/7 路径不适用于本次安装）。安装后用该二进制执行环境脚本，日志在 local/evidence/T-057-installed-env.txt；此为 Agent 发起的验证，尚不能代替用户 WT 新标签验证。按 windows-next 第 1 节，默认配置通过 WT 设置界面由用户选择，不直接编辑 settings.json；未修改用户 PowerShell 启动脚本。T-057 保持 doing，待设置和新标签验证。

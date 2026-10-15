@@ -378,3 +378,8 @@
 ## 2026-10-15 · Codex/GPT-6（Windows）· 同步 Claude 工作流
 - 同步双方 develop 0374081，保留两端日志和 T-056 分工，并保留版本归属更正。
 - 已读 windows-next.md：从 T-057 开始。确认 winget 可用，常规 PowerShell 7 安装路径仍不存在；安装与 WT 默认设置待用户明确同意，未执行安装或修改配置。
+
+
+## 2026-10-15 · Codex/GPT-6（Windows）· T-057
+- 用户明确同意安装 PowerShell 7 并设为 WT 默认；winget 安装 7.6.7 成功，正式二进制验证和环境脚本执行完成。
+- 待用户在 WT 设置界面选择默认配置并重新打开验证；不直接编辑 settings.json，不修改启动脚本；任务保持 doing。

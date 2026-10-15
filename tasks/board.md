@@ -12,7 +12,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | T-035 | 实测原版 inshellisense（关卡） | done | windows, human | — | Codex/GPT-6（Windows）2026-10-14；环境/受控 PTY 检查通过；2026-10-15 同步 8fb0570，L1 346 通过、10 跳过、0 失败；材料已备齐，关卡通过；第 10 项拖动窗口后错位可清屏恢复，保留 T-056；15/16 用户确认可进入 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
 | T-048 | 在 Windows 上验证我们的修改（T-037 直接执行命令，T-039 引号和中文删除，T-049 POSIX 命令模拟） | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15 | 见 `docs/mvp-plan.md` 中的“T-048 人工清单” |
-| T-057 | 在用户的 Windows 上正式安装 PowerShell 7（`winget install Microsoft.PowerShell`），并设为 Windows Terminal 的默认配置文件 | todo | windows, human, decision:user | — | 需要用户同意后由 Windows 端执行 | 在用户自己的 WT 新标签中运行 `$PSVersionTable` 显示 7.x；`scripts/windows/check-env.ps1` 在该标签中运行，结果写入 `research/spike-inshellisense.md` |
+| T-057 | 在用户的 Windows 上正式安装 PowerShell 7（`winget install Microsoft.PowerShell`），并设为 Windows Terminal 的默认配置文件 | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15；用户已同意，PowerShell 7.6.7 安装成功；WT 默认设置和新标签验证待完成 | 在用户自己的 WT 新标签中运行 `$PSVersionTable` 显示 7.x；`scripts/windows/check-env.ps1` 在该标签中运行，结果写入 `research/spike-inshellisense.md` |
 | T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本 | todo | windows | T-035, T-048, T-057 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-052 | 修复 Windows 本机 L1 测试的平台与环境假设 | done | any | — | Codex/GPT-6（Windows）2026-10-15；265 通过、10 跳过、0 失败，见 E-009 | 复现 `research/spike-inshellisense.md` E-008 的 11 个失败；路径断言同时验证分隔符和 PowerShell 引号，隔离 HOME/Git Bash 条件，明确非管理员符号链接夹具策略；保留行为覆盖，Windows 复验并记录结果 |
