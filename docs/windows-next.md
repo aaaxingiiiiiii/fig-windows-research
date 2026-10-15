@@ -75,6 +75,20 @@
 
 T-035 第 10 项发现的问题：拖动窗口大小后，候选和输入位置错开，清屏可以恢复。这一步只负责复现和记录，分析和修复由 Mac 端完成。
 
+**先做不需要用户的自动检查**（F-034：Mac 上无法复现，怀疑与 ConPTY 有关）。在最新 develop 构建好修改版之后，在仓库根目录运行：
+
+```powershell
+node spikes/T-056-resize-sim/resize-sim.cjs pwsh
+node spikes/T-056-resize-sim/resize-sim.cjs pwsh --wrap
+```
+
+两条命令各运行 2 次，把完整输出存到 `local/evidence/T-056-sim-*.txt`，结论写入报告。脚本输出的含义：
+
+- 有 `aligned: false`：内层 ConPTY 能复现，Mac 端可以照此修复。用户的手动复现可以从简。
+- 全部 `aligned: true`：问题在 Windows Terminal 一侧，按下面的步骤请用户手动复现。
+
+用户在场时的手动复现：
+
 1. 用修改版（`node build/index.js -s pwsh -V`）。开始前记下窗口的行数和列数：`$Host.UI.RawUI.WindowSize`。
 2. 请用户依次尝试下面几种情况，每种都回答“错位”或“正常”，错位时截图：
    1. 输入 `git ch`，候选出现后，拖动窗口右边缘把窗口变窄；

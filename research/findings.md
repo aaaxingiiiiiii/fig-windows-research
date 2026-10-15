@@ -39,6 +39,7 @@
 | F-031 | inshellisense 与 Fig 有 7 处做法不同：Tab 行为、Enter 行为、Esc 后的显示、光标在行中时是否显示、路径的引号风格、`--opt=` 的插入、↑ 在第一项时的行为，以及是否补全命令名 | 观察 | `specs/completion.md` 第 9 节 | 是否改成 Fig 风格由用户决定 |
 | F-032 | custom generator 执行命令时，inshellisense 与 Fig 有两处不同：① 没有给出 cwd 时，Fig 使用终端的当前目录，inshellisense 使用自身进程的目录；② Fig 会清理输出（CRLF 换成 LF，去掉首尾的空行），inshellisense 只对 script generator 的输出做 `trim()`，custom generator 拿到的是原始输出。因此 npm 的 workspaces 候选把 `npm prefix` 的输出（带换行）直接拼进路径，读取失败 | 观察（源码） | Fig：`aq:crates/figterm/src/message.rs#L61-L93`、`aq:crates/figterm/src/message.rs#L459-L464`、`aq:packages/api-bindings-wrappers/src/executeCommand.ts#L11-L17`；inshellisense：`is:src/runtime/generator.ts#L33`、`is:src/runtime/generator.ts#L42` | T-051 已修复：没有给出目录时使用 generator 的目录（与 script generator 相同，输入路径时是解析后的目录），输出按 Fig 的规则清理 |
 | F-033 | Kiro 2.31.1 的运行时行为与开源基线一致：13 条规格用例中 12 条一致。包括：Tab 插入公共前缀；只剩一个候选时完整插入，按 `shouldAddSpace` 决定是否加空格；Enter 插入选中项、不执行；Esc 后保持隐藏；`ls \| git ch` 只解析最后一段；bash 路径写成 `My\ Docs/`、`'a&b'/`；`--chmod=` 插入后光标停在 `=` 后；没有 spec 的命令不显示；在第一项按 ↑ 关闭窗口；默认不补全命令名。**唯一不一致**的是 C-006：光标在单词中间时 Kiro 仍然显示窗口 | 观察 | E-010；`specs/completion.md` 第 8 节 | 支持 F-005（开源代码可以作为行为基线）。C-006 需要回到源码核对；`docs/usage.md` 第 3 节的“Fig 的做法”一栏已按实测修正 |
+| F-034 | T-056（改变窗口大小后候选错位）在 Mac 上无法复现：外层用 xterm-headless 代替终端，内层用 unix pty 运行 zsh 或 pwsh，加不加会折行的长内容，共 4 组，改变窗口大小后候选框都紧贴光标。所以问题很可能与 Windows 有关：内层 ConPTY 在大小改变时的重绘，或者 Windows Terminal 自己的折行方式 | 推断 | `spikes/T-056-resize-sim/`；T-035 第 10 项 | 在 Windows 上运行同一个模拟器，内层就是 ConPTY，可以区分是 ConPTY 的问题还是 WT 的问题；见 `docs/windows-next.md` 第 3 步 |
 
 ## 注意
 
