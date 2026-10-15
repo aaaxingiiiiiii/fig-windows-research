@@ -76,7 +76,7 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 | **T-049** 模拟 spec 中的 POSIX 命令 | any | 新增 `src/runtime/posixEmulation.ts`：Windows 上用 Node 模拟 `ls -1ApL`（filepaths helper）、`cat`、`grep`，以及 git、npm/yarn/pnpm/npx、cargo、make 的固定 `bash -c` 管道；管道中的原生命令照常执行。generator 上下文在 Windows 上补上 HOME | Mac 上模拟 win32 的测试通过（已完成）；Windows 上的验证见 T-048 第 4 至 6 项 |
 | **T-038** 规格用例自动化 | any | 把 C-001 至 C-013 改写为针对 inshellisense 引擎的测试，并逐条标注与 Fig 行为不同的地方；新增 pwsh 规则用例，至少包括：带空格的路径、单引号、反引号、中文路径、`;` 之后的命令 | 测试通过；与 Fig 的差异记入 `specs/completion.md` 的新一节“inshellisense 与 Fig 的差异” |
 | **T-039** 修复 pwsh 插入缺陷 | any | ① 路径加引号的条件改为“含空格或 PowerShell 特殊字符”，pwsh 中的单引号写成 `''`（F-029）；② 删除数按字符计算，不按显示宽度（F-030）；③ Fig 风格的差异（`specs/completion.md` 第 9 节）等用户决定后再改 | W-002 至 W-005、W-008、W-009 由 `test.failing` 改为 `test` 并通过；`npm test` 没有新增失败；改动记入 `CHANGES.md`，并标注可提交上游 |
-| **T-040** 打包与安装 | windows | ① 用 inshellisense 自带的打包脚本（`is:scripts/pkg.ts`）生成 win-x64 单文件程序；② 编写 `install.ps1`：修改 `$PROFILE` 前先备份，把初始化语句加到最后一行；③ 编写 `uninstall.ps1`；④ 更新 `docs/usage.md` 第 1 节（安装、自动启动、卸载） | 在一台干净的 Windows 上能安装、使用、卸载，`$PROFILE` 能恢复原样；验收清单见 `docs/roadmap.md` 的 A3 |
+| **T-040** 打包与安装 | windows | ① 用 inshellisense 自带的打包脚本（`is:scripts/pkg.ts`）生成 win-x64 单文件程序；②③ `install.ps1`、`uninstall.ps1` 已由 T-058 写好并在 Mac 上自测，T-040 在 Windows 上验证；④ 更新 `docs/usage.md` 第 1 节（安装、自动启动、卸载） | 在一台干净的 Windows 上能安装、使用、卸载，`$PROFILE` 能恢复原样；验收清单见 `docs/roadmap.md` 的 A3 |
 | **T-041** 试用 | human | 用户日常使用一到两天，把问题登记为新任务；对照 `docs/usage.md` 第 3 节，逐条决定与 Fig 的差异是否要改（D-010） | 没有导致无法输入或误执行命令的问题；记录方式见 `docs/roadmap.md` 的 A4 |
 
 ### T-035 人工清单

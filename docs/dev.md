@@ -161,3 +161,5 @@ dotnet test OverlayHost.slnx      # 2026-10-15 在 Mac 上：70 个全部通过
 | `scripts/check-public.sh` | 提交前检查本机路径、凭据、大文件，以及 `local/` 是否被跟踪 |
 | `scripts/check-refs.py` | 检查文档中的源码引用是否有效 |
 | `scripts/windows/check-env.ps1` | Windows 环境检查（只读） |
+| `scripts/windows/install.ps1`、`uninstall.ps1` | 安装和卸载终端内补全（T-058）：复制程序、加入用户 PATH、运行 `is init pwsh`、备份并修改 `$PROFILE`；卸载时把 `$PROFILE` 逐字节恢复。支持 `-WhatIf` |
+| `scripts/windows/test-install.ps1` | 安装脚本的自测：只用临时目录和一个假的 `is`，不碰真实环境。在 Mac 上可以用 `~/.powershell/pwsh` 运行 |

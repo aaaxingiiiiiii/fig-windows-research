@@ -88,12 +88,15 @@ T-035 第 10 项发现的问题：拖动窗口大小后，候选和输入位置�
 
 ## 4. T-040：打包和安装（T-048 通过、T-057 完成之后）
 
-按 `docs/mvp-plan.md` 中 T-040 的步骤和 `docs/roadmap.md` 第 4 节 A3 的 7 项清单进行：
+安装和卸载脚本已由 Mac 端完成（T-058），T-040 只需要打包、在 Windows 上验证，并写使用说明：
 
-- 修改用户的 `$PROFILE` 之前，先问用户；
-- 最好在 Windows Sandbox 中验证安装和卸载；
-- 完成后更新 `docs/usage.md` 第 1 节；
-- 然后告诉用户可以开始试用（T-041，记录方式见 A4）。
+1. 打包：在 `src/inshellisense/` 下运行 `npm run package`，生成 `pkg/inshellisense-win32-x64.exe`。用 `<exe> --version` 确认能运行。
+2. 运行脚本的自测：`pwsh -NoProfile -File scripts/windows/test-install.ps1`。Mac 上的结果是 26 项全部通过。这个自测只用临时目录，不碰真实的配置文件和 PATH。
+3. 按 `docs/roadmap.md` 第 4 节 A3 的 7 项清单验证 `scripts/windows/install.ps1` 和 `uninstall.ps1`：
+   - **修改用户真实的 `$PROFILE` 和 PATH 不在 D-013 的授权范围内**，要先问用户；
+   - 最好在 Windows Sandbox 中验证，这样不会影响用户的环境；
+   - A3 第 4 项“没有 Node 也能用”，在 Sandbox 中最容易验证。
+4. 完成后更新 `docs/usage.md` 第 1 节：安装、卸载、升级的命令。然后告诉用户可以开始试用（T-041，记录方式见 A4）。
 
 ## 5. 用户不在时：阶段 B 的准备
 

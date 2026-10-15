@@ -18,7 +18,7 @@
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043、T-053；记录 T-012；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷 |
+| Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043、T-053、T-058；记录 T-012；`docs/usage.md`、`docs/roadmap.md`、`docs/windows-next.md` | 等待 Windows 验收结果并修复其中的缺陷 |
 | Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | T-035 已通过；下一步：T-057（等用户同意）→ T-048（最新 develop）→ 复现 T-056；用户不在时做 T-029、T-021 |
 | GPT/Codex（Mac） | T-015、T-042 | T-054（审查 T-043）→ T-055；T-053 需要先安装 .NET 8 SDK（见 `docs/roadmap.md` 第 8.2 节） |
 | 用户 | 对方仓库授权；inshellisense fork | 决定是否在 Windows 上安装 PowerShell 7（T-057）；T-048 的人工清单 |
@@ -34,6 +34,9 @@
 - T-012 已完成：13 项中 12 项与开源基线一致，只有 C-006 不一致（F-033）。
 - T-043：设置 `FIGWIN_OVERLAY_PIPE` 后，候选改为发给悬浮窗宿主；宿主异常时回到终端内绘制（`docs/dev.md` 第 4 节）。
 - T-053：宿主的协议核心在 `src/overlay-host/`，70 个测试；开发用宿主可以与真实的 inshellisense 联调（`src/overlay-host/README.md`）。宿主和 wt-driver 使用 .NET 10（D-012）。
+
+- T-058：安装和卸载脚本已写好，在 Mac 上自测通过。T-040 只需在 Windows 上打包和验证。
+- D-013：用户外出期间授权整合者按推荐方案处理需要确认的事项。已按此授权的事项：Windows 上安装 PowerShell 7 并设为默认、安装 .NET 10 SDK；Mac 上把 PowerShell 7.6.7 安装到 `~/.powershell`。
 
 ## 推送
 

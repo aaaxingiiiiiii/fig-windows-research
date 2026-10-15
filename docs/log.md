@@ -385,3 +385,13 @@
 - 合并 Windows 端的 T-048 提交：上次实际运行的是原版，修改版的结果已作废。`docs/windows-next.md` 更新为第 2 版：
   - T-057 不必再问用户；
   - T-048 开始前先用 `--version` 确认是修改版（应显示 `__VERSION__`），并检查日志位置。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-058
+
+- 按 D-013，把 PowerShell 7.6.7 安装到 `~/.powershell`。安装包从 GitHub 官方发布页下载，SHA-256 与发布页的 hashes.sha256 一致。
+- 新增 `scripts/windows/install.ps1`、`uninstall.ps1`、`profile-file.ps1`、`test-install.ps1`：
+  - 安装：把程序复制为 `is.exe`；在用户 PATH 的最前面加入安装目录；运行 `is init pwsh`；备份 `$PROFILE` 后，在最后追加标记注释和初始化语句；重复安装只更新程序。
+  - 卸载：配置文件在安装后没有改过时，逐字节恢复；安装前没有这个文件时删除它；改过时只删除安装时加入的两行，并提示。卸载时还会从 PATH 中删除安装目录，删除安装时新建的数据目录，最后删除安装目录。
+  - 保留原来的编码：UTF-8（带或不带 BOM）、UTF-16，以及本地代码页。
+- 自测：26 项检查在 Mac 上全部通过，覆盖没有配置文件、UTF-8 BOM 加 CRLF 加中文、UTF-16 LE、安装后又被修改、重复安装五种情况。变异检查（去掉逐字节恢复）有 2 项失败，说明自测有效。
+- 本地代码页的配置文件、真实 PATH 的修改，以及打包后的程序，需要在 Windows 上由 T-040 验证。`docs/windows-next.md` 第 4 步已相应更新。
