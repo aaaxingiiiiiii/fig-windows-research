@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="FigWin.OverlayHost.Core.Tests/FigWin.OverlayHost.Core.Tests.csproj" />
+  <Project Path="FigWin.OverlayHost.Core/FigWin.OverlayHost.Core.csproj" />
+  <Project Path="FigWin.OverlayHost.DevHost/FigWin.OverlayHost.DevHost.csproj" />
+</Solution>

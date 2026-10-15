@@ -25,9 +25,9 @@
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
 | T-021 | 原生悬浮列表窗口：置顶、不激活、跟随 WT | todo | windows, human | — | | 同上 |
-| T-053 | 宿主协议核心（C# 类库，`src/overlay-host/`）：分帧、严格校验、会话和序号、状态机、租期、背压、debugState；窗口和 UIA 用接口隔开 | doing | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-053`；用户同意在 Mac 上安装 .NET SDK） | 宿主一侧的 P-01 至 P-04、P-08、P-11、P-12 单元测试通过（`dotnet test`）；见 `docs/roadmap.md` 第 8.2 节 |
+| T-053 | 宿主协议核心（C# 类库，`src/overlay-host/`）：分帧、严格校验、会话和序号、状态机、租期、背压、debugState；窗口和 UIA 用接口隔开 | done | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-053`） | `FigWin.OverlayHost.Core`、70 个 xunit 测试（覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分）、`FigWin.OverlayHost.DevHost`；在 Mac 上与真实 inshellisense 互通（正常、慢定位、定位失败）；`src/overlay-host/README.md` |
 | T-054 | 独立审查 T-043：对照 `docs/protocol.md` 检查 inshellisense 一侧的悬浮窗实现 | doing | any | T-043 | Codex/GPT-6 2026-10-15（Mac，分支 `ai/codex/T-054`） | 每个问题都有一个会失败的测试，并已修复或登记为任务；结论写入 log |
-| T-044 | 宿主集成：管道服务端、定位并显示、报告失败、`debugState` | todo | windows | T-042, T-019, T-021；有 T-053 时直接引用 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-044 | 宿主集成：实现 `IOverlayPresenter`（窗格绑定、UIA 定位、原生窗口），接入 T-053 的核心 | todo | windows | T-053, T-019, T-021 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-045 | 端到端测试（L2 自动测试，加上 L3 人工清单） | todo | windows, human | T-043, T-044, T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-046 | 把宿主加入安装脚本，用户试用 | todo | windows, human | T-045, T-040 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 

@@ -1,0 +1,12 @@
+<Project>
+  <!-- fig-windows-research：悬浮窗宿主（T-053、T-044）的公共设置。.NET 10（D-012）。 -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Authors>fig-windows-research contributors</Authors>
+    <Copyright>Copyright (c) fig-windows-research contributors</Copyright>
+  </PropertyGroup>
+</Project>

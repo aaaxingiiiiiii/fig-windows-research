@@ -274,3 +274,19 @@
   - C-012：文字回答与截图不一致，按截图记录。
 - T-012 完成：12 项一致，只有 C-006 不一致（F-033）。
 - D-012：宿主和 wt-driver 改用 .NET 10。.NET 8 的支持在 2026-11-10 结束。在 Windows 端开工前已推送。用户同意在 Mac 上安装 .NET SDK，T-053 由 Claude 认领。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-053
+
+- 经用户同意，用官方的 `dotnet-install.sh` 把 .NET 10 SDK（10.0.402）安装到 `~/.dotnet`，没有修改系统目录。
+- 新增 `src/overlay-host/`，包含三个项目：
+  - `FigWin.OverlayHost.Core`：与平台无关的宿主协议核心；
+  - `FigWin.OverlayHost.Core.Tests`：70 个 xunit 测试；
+  - `FigWin.OverlayHost.DevHost`：开发用宿主，不画窗口。
+- 平台接口 `IOverlayPresenter` 的设计：`LocateAsync` 可以较慢、可取消；`ApplyAsync` 在实际显示后完成；`Hide` 不得同步等待 UI 线程，以免 UI 线程调用 `Suppress` 时死锁。核心负责顺序与竞态（P-03）。
+- 测试：
+  - 70 个全部通过，覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分，以及管道往返；
+  - 两次变异检查（去掉定位后的过期检查、去掉续租）都被测试发现。
+- 互通：用 node-pty 驱动真实的 inshellisense（T-043 客户端）连接开发用宿主。
+  - 正常情况：宿主收到候选和选中项，终端里不画候选框，Tab 正常插入；
+  - 定位延迟 300 ms 和定位失败：客户端都回到终端内绘制，插入正常。
+- 登记了测试用 NuGet 包的许可证（`research/sources.md`）。T-044 改为依赖 T-053，只需在 Windows 上实现 `IOverlayPresenter`。
