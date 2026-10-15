@@ -45,6 +45,11 @@ if ($PSCmdlet.ShouldProcess($target, '复制程序')) {
     if (-not $IsWindows) { chmod +x $target }
 }
 Write-Host "程序：$target"
+if (-not $WhatIfPreference) {
+    $version = "$(& $target --version)".Trim()
+    if ($version -notlike '*figwin*') { Write-Warning "程序的版本是 $version，不是本项目的构建（应包含 figwin）。是否误用了原版 inshellisense？" }
+    else { Write-Host "版本：$version" }
+}
 
 if ($alreadyInstalled) {
     Write-Host '已经安装过：只更新了程序，没有修改 PATH 和配置文件。'

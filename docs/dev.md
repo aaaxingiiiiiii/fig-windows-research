@@ -37,7 +37,7 @@ Windows 上的命令相同，在 PowerShell 中执行即可。
 | 环境诊断 | `node build/index.js doctor` | — |
 | 打包单文件程序 | `npm run package` | 使用 `scripts/pkg.ts`；在 Windows 上由 T-040 验证 |
 
-从源码运行时，`--version` 显示 `__VERSION__` 占位符，打包时才会替换成真实版本号。
+从源码运行时，`--version` 显示 `__VERSION__` 占位符，打包时才会替换成真实版本号。本项目的版本号带 `figwin` 后缀（例如 `0.0.4-figwin.1`），用来和原版 inshellisense（`0.0.4`）区分；`install.ps1` 会检查这一点。
 
 **Windows 上的 generator 执行方式（T-037、T-049）**，按顺序：
 

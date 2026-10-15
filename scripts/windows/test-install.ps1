@@ -24,12 +24,12 @@ if ($IsWindows) {
     $fakeName = 'is.cmd'
     $fake = Join-Path $root 'fake-is.cmd'
     Set-Content -LiteralPath $fake -Encoding utf8 -Value @(
-        '@echo off', 'chcp 65001 >nul', 'mkdir "%FIGWIN_TEST_DATA%" 2>nul', 'echo.', "echo $($sourceLine.Replace('%', '%%'))")
+        '@echo off', 'chcp 65001 >nul', 'if "%1"=="--version" (echo 0.0.4-figwin.test& exit /b 0)', 'mkdir "%FIGWIN_TEST_DATA%" 2>nul', 'echo.', "echo $($sourceLine.Replace('%', '%%'))")
 }
 else {
     $fakeName = 'is'
     $fake = Join-Path $root 'fake-is.sh'
-    Set-Content -LiteralPath $fake -Encoding utf8 -Value @('#!/bin/sh', 'mkdir -p "$FIGWIN_TEST_DATA"', 'echo', "printf '%s\n' `"$($sourceLine.Replace('"', '\"'))`"")
+    Set-Content -LiteralPath $fake -Encoding utf8 -Value @('#!/bin/sh', 'if [ "$1" = "--version" ]; then echo 0.0.4-figwin.test; exit 0; fi', 'mkdir -p "$FIGWIN_TEST_DATA"', 'echo', "printf '%s\n' `"$($sourceLine.Replace('"', '\"'))`"")
     chmod +x $fake
 }
 

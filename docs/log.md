@@ -403,3 +403,9 @@
 - Mac 上 4 组全部对齐：zsh、pwsh 7.6.7，以及各自加会折行的长内容。记为 F-034（推断）：问题与 Windows 有关，可能是 ConPTY 的重绘，也可能是 WT 的折行方式。
 - 调试中的两个发现：模拟的外层终端必须回复光标位置查询，否则 PSReadLine 会一直等待；Mac 上偶尔有一次 inshellisense 中途退出，没能复现，已写进 README。
 - `docs/windows-next.md` 第 3 步改为先在 Windows 上运行这个模拟器，不需要用户在场；能复现就交给 Mac 修复，不能复现再请用户手动复现。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-040 准备
+
+- 在 Mac 上运行 `npm run package`：打包流程能处理我们的改动，生成了 macOS 版的单文件程序，约 125 MB。用临时用户目录运行它，`--version`、`init zsh`、`complete "git ch"` 都正常。
+- 原来打包后的版本号与原版相同（都是 0.0.4）。按 D-013 的推荐方案改为 `0.0.4-figwin.1`，记入 CHANGES.md；`install.ps1` 会检查版本号中是否包含 figwin，不包含时给出警告；自测脚本的假程序会相应回答 `--version`。
+- 改版本号之后，全部测试中有一次多了 1–2 个失败，但没有出现在逐条结果中；之后连续 3 次都只剩 `brewInstallMullvad`。判断为偶发，原因没有查明。

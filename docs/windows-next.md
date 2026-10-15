@@ -104,7 +104,7 @@ node spikes/T-056-resize-sim/resize-sim.cjs pwsh --wrap
 
 安装和卸载脚本已由 Mac 端完成（T-058），T-040 只需要打包、在 Windows 上验证，并写使用说明：
 
-1. 打包：在 `src/inshellisense/` 下运行 `npm run package`，生成 `pkg/inshellisense-win32-x64.exe`。用 `<exe> --version` 确认能运行。
+1. 打包：在 `src/inshellisense/` 下运行 `npm run package`，生成 `pkg/inshellisense-win32-x64.exe`。用 `<exe> --version` 确认能运行，并且显示 `0.0.4-figwin.1`；原版显示 `0.0.4`。2026-10-15 已在 Mac 上验证过打包流程（生成 macOS 版，约 125 MB，`init` 和 `complete` 正常）。
 2. 运行脚本的自测：`pwsh -NoProfile -File scripts/windows/test-install.ps1`。Mac 上的结果是 26 项全部通过。这个自测只用临时目录，不碰真实的配置文件和 PATH。
 3. 按 `docs/roadmap.md` 第 4 节 A3 的 7 项清单验证 `scripts/windows/install.ps1` 和 `uninstall.ps1`：
    - **修改用户真实的 `$PROFILE` 和 PATH 不在 D-013 的授权范围内**，要先问用户；
