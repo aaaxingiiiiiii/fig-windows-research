@@ -43,7 +43,7 @@
 | --- | --- | --- | --- |
 | Windows：AI 和用户 | T-035（自动检查已完成，等待用户完成 16 项人工清单）→ T-048；用户不在时做 T-029、T-021（见第 8.1 节） | T-040 → T-029 → T-021 → T-019 → T-044 → T-045 → T-046 | 凡是要看画面、用输入法、调缩放的步骤，都需要用户坐在 Windows Terminal 前操作 |
 | Mac：Claude（整合者） | T-043 已完成；等待 Windows 验收结果 | 修复 Windows 验收中发现的缺陷（代码类任务的 env 为 any）；合并各端分支；重写 `docs/handoff.md` | 不能运行 Windows 程序；修复后由 Windows 端复验 |
-| Mac：GPT | T-054（审查 T-043） | T-055；T-053（需要用户同意在 Mac 上安装 .NET 8 SDK） | 在独立的 worktree 中工作，见第 8.2 节 |
+| Mac：GPT | T-054（审查 T-043） | T-055 | 在独立的 worktree 中工作，见第 8.2 节；T-053 已由 Claude 认领 |
 | 用户 | T-035、T-048 的人工清单 | T-050、T-041、T-045 的 L3 清单、T-046；处理仓库权限 | 每项只需回答“是”或“否”，回答“否”时附截图 |
 
 ### 两端如何同步代码
@@ -222,7 +222,7 @@ Windows 验收发现问题
 
 **前提**：
 
-- Windows 上还没有安装 .NET SDK（E-005）。T-029、T-021、T-019、T-044 都需要 .NET 8 SDK，安装前先征得用户同意。
+- Windows 上还没有安装 .NET SDK（E-005）。T-029、T-021、T-019、T-044 都需要 .NET 10 SDK，安装前先征得用户同意。
 - Node 22 和 Git 已经具备。
 
 **第 1 步：和用户一起完成两个关卡（需要用户在场，大约 1–2 小时，优先做）**
@@ -259,7 +259,7 @@ Windows 验收发现问题
 
 **交给它的话：**
 
-> 同步 develop（`git fetch --all`，然后合并对方仓库的 develop），阅读 AGENTS.md、docs/handoff.md，以及 docs/roadmap.md 的第 3 至 6 节和第 8.1 节，按第 8.1 节的顺序工作：用户在场时先做第 1 步，和用户一起完成 T-035、T-048 的人工清单；用户不在时做第 2 步，即 T-029、T-021。安装 .NET 8 SDK 等软件前先征得用户同意。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，结束时更新 board 和 log，不要重写 handoff.md。
+> 同步 develop（`git fetch --all`，然后合并对方仓库的 develop），阅读 AGENTS.md、docs/handoff.md，以及 docs/roadmap.md 的第 3 至 6 节和第 8.1 节，按第 8.1 节的顺序工作：用户在场时先做第 1 步，和用户一起完成 T-035、T-048 的人工清单；用户不在时做第 2 步，即 T-029、T-021。安装 .NET 10 SDK 等软件前先征得用户同意。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，结束时更新 board 和 log，不要重写 handoff.md。
 
 ### 8.2 Mac 端的 GPT
 
@@ -274,7 +274,7 @@ Windows 验收发现问题
    - 用单元测试覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分。
    - 窗口、UIA 和命名管道的访问控制留给 Windows 上的 T-044，在类库中用接口隔开。
    - 代码放在 `src/overlay-host/`。
-   - **需要先征得用户同意，在 Mac 上安装 .NET 8 SDK**。
+   - **需要先征得用户同意，在 Mac 上安装 .NET 10 SDK**。
 3. **T-055 补齐 spec 兼容性的余项**（`research/spec-compat.md` 中“仍未处理的项”）：
    - gh 的 GraphQL 参数引号；
    - scp 中区分 `host:path` 和盘符；
@@ -283,5 +283,5 @@ Windows 验收发现问题
 
 **交给它的话：**
 
-> 在 ../fig-windows-research-codex 中同步 develop（`git fetch --all`，合并 upstream/develop），阅读 AGENTS.md、docs/handoff.md 和 docs/roadmap.md 的第 8.2 节。先做 T-054：对照 docs/protocol.md 审查 T-043 的实现，把问题写成会失败的测试，再修复或登记为新任务。然后做 T-055。T-053 需要在 Mac 上安装 .NET 8 SDK，等用户同意后再开始。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，推送到 upstream；结束时更新 board 和 log，不要重写 handoff.md。
+> 在 ../fig-windows-research-codex 中同步 develop（`git fetch --all`，合并 upstream/develop），阅读 AGENTS.md、docs/handoff.md 和 docs/roadmap.md 的第 8.2 节。先做 T-054：对照 docs/protocol.md 审查 T-043 的实现，把问题写成会失败的测试，再修复或登记为新任务。然后做 T-055。T-053 已由 Claude 认领，不要做。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，推送到 upstream；结束时更新 board 和 log，不要重写 handoff.md。
 
