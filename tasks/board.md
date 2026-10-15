@@ -25,7 +25,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-042`） | `docs/protocol.md` v1、D-009：双向 JSON 行、会话/序号、显示快照、定位/回退、debugState、P-01 至 P-12；JSON 示例与引用检查通过，T-043/T-044 尚待实现 |
 | T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | done | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-043`；用户改派，原预留给 Codex/GPT） | `src/inshellisense/src/overlay/`；81 个 L1 测试；`spikes/T-043-fake-host/`；在 Mac 上用 node-pty 驱动真实 inshellisense 检查了 4 种宿主状态；`docs/dev.md` 第 4 节。Windows 命名管道和 C# 宿主由 T-044 验证 |
-| T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-029 | 自动测试工具 `tools/wt-driver` | doing | windows | — | Codex/GPT-6（Windows）2026-10-15 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
 | T-021 | 原生悬浮列表窗口：置顶、不激活、跟随 WT | todo | windows, human | — | | 同上 |
 | T-053 | 宿主协议核心（C# 类库，`src/overlay-host/`）：分帧、严格校验、会话和序号、状态机、租期、背压、debugState；窗口和 UIA 用接口隔开 | done | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-053`） | `FigWin.OverlayHost.Core`、70 个 xunit 测试（覆盖 P-01 至 P-04、P-08、P-11、P-12 在宿主一侧的部分）、`FigWin.OverlayHost.DevHost`；在 Mac 上与真实 inshellisense 互通（正常、慢定位、定位失败）；`src/overlay-host/README.md` |
