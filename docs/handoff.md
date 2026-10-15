@@ -6,6 +6,8 @@
 
 路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。阶段 A 中只需要 Mac 就能做的部分已经完成，包括 T-049：常用补全不再依赖 Git Bash。现在**卡在 Windows 实测**：T-035、T-048。阶段 B 的协议（T-042）已经完成，GPT 接着做 T-043。
 
+后续工作的顺序、分工、每一步的验收方法，以及两端如何同步代码，见 **`docs/roadmap.md`**。
+
 ## 进度
 
 | 谁 | 已完成 | 进行中 / 下一步 |
