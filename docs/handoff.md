@@ -35,6 +35,8 @@
 
 ## 推送
 
+- 2026-10-15 起，对方仓库已授权，所有端都推送到对方仓库的 `develop`（D-008，`docs/roadmap.md` 第 2 节）。下面两条是此前的情况，保留作记录。
+
 - `origin/develop`（用户的 fork）可以推送，已是最新。
 - `upstream/develop`：Windows 端已把 Mac 的提交同步上去（35db2c0）。2026-10-15 用户说对方已经授权，但从 Mac 推送仍返回 403，可能是协作邀请还没有接受，或者本机保存的令牌没有这个仓库的权限。在此之前，两边通过 `origin/develop` 同步。
 - Windows 端合并 T-035 前要注意：`research/evidence.md` 中 E-005 前面多了一个空行，表格会断开。

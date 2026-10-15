@@ -84,14 +84,12 @@
 
 ## D-008 开发分支与推送
 
-- 状态：已采用（2026-10-14，用户要求在开发分支上工作）；推送目标有一项待确认，见下文
+- 状态：已采用（2026-10-14 用户要求在开发分支上工作；2026-10-15 对方仓库已授权，推送目标随之更新）
 - 决定：
   - 日常开发在 `develop` 分支上进行（用户所说的“dev 分支”，在对方仓库中的实际名字是 `develop`）。
   - 每个任务在 `ai/<工具>/<任务号>` 分支上完成，再合并回 `develop`。`main` 只用于里程碑。
-- 现状：
-  - 本地 remote `origin` 是用户的 fork，可以推送，已建立 `origin/develop`。
-  - `upstream`（`xingdouiii-maker/fig-windows-research`）的 `develop` 分支已经包含到 T-034 为止的提交，但当前账号推送时返回 403，没有写权限。
-- 待确认：由仓库所有者把当前账号加为协作者，直接推送到 `upstream/develop`；或者改为从 `origin/develop` 向 `upstream/develop` 提 Pull Request。
+  - **所有端都推送到对方的仓库**（`xingdouiii-maker/fig-windows-research`）。Mac 上它的远程名是 `upstream`，Windows 上是 `origin`。
+- 历史：2026-10-14 至 2026-10-15，Mac 端没有对方仓库的写权限，两端通过用户的 fork 中转（Mac 上的 `origin`，Windows 上的 `mac`）。那个 fork 现在只作备份，不再要求同步；新的工作不要只推送到 fork。
 
 ## D-009 T-042：建立 inshellisense 悬浮窗协议 v1
 
@@ -113,5 +111,6 @@
 - 决定：
   - 先提交 T-039 的两项修复，每项一个 PR：PowerShell 路径引号（F-029）、宽字符删除数（F-030）。这两项与平台无关，已有单元测试；中文删除已在 bash 和 zsh 上实测。
   - T-037（Windows 上直接执行 generator）等 T-048 在 Windows 上验证后，再决定是否提交。
-- 做法：从上游最新的 `main` 建分支（2026-10-14 时仍是 8dcc9ca，与本仓库固定的版本相同），提交时使用本仓库的 git 身份。PR 从用户 GitHub 账号下的 inshellisense fork 发出。微软要求贡献者签署 CLA，需要用户本人在 PR 中按机器人的提示签署，AI 不代签。
+  - 2026-10-15 用户同意追加第三个 PR：T-051（custom generator 的默认目录和输出清理，F-032）。
+- 做法：从上游最新的 `main` 建分支（2026-10-15 时仍是 8dcc9ca，与本仓库固定的版本相同），提交时使用本仓库的 git 身份。PR 从用户 GitHub 账号下的 inshellisense fork 发出；分支由 AI 推送，PR 由用户在预填好标题和说明的页面上确认创建。微软要求贡献者签署 CLA，需要用户本人在 PR 中按机器人的提示签署，AI 不代签。
 - 合并后：在 `src/inshellisense/CHANGES.md` 的对应行注明上游 PR 编号；以后同步上游时，这几处改动可以直接用上游版本。

@@ -218,3 +218,13 @@
 - 修复 11 个 Windows 测试环境假设失败，不改 runtime、不安装软件、不改系统或启动配置。
 - 观察：全量 L1 265 通过、10 跳过、0 失败；93 快照通过；构建和修改文件 ESLint 通过，见 E-009。
 - T-052 完成，T-035/T-048 人工验收保持未完成；下一步由用户在 WT 按清单测试。handoff 保留整合者版本。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· 整合、T-050、T-012 准备、认领 T-043
+
+- 对方仓库授权后，Mac 端已经可以推送。合并 Windows 端的 T-035 进展和 T-052，并在 Mac 上复验：共 276 个，265 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；lint 通过。
+- 整理 evidence 表中 E-008、E-009 错位的列；更新 D-008：所有端都推送到对方仓库，roadmap 的同步说明随之改写。
+- T-050：用户已 Fork 上游，并同意追加 T-051 作为第三个 PR（D-011）。
+  - 在上游 main（8dcc9ca）上建了分支 `fix/custom-generator-cwd`，在上游的 `generator.test.ts` 中新增 3 个测试。去掉修复后，其中 2 个失败；lint 通过。
+  - 三个分支已推送到用户的 fork。预填好标题和说明的 PR 链接保存在 Mac 的 `local/upstream-pr/links.txt`，由用户确认创建并签署 CLA。
+- T-012：在 `specs/completion.md` 第 8 节新增给用户的 13 项人工清单，“Kiro 观察”一栏改为注明版本；在 Mac 的 `local/t012/` 中准备了 `My Docs`、`a&b` 两个文件夹和一个 git 仓库。
+- 按用户要求，T-043 由 GPT 改派给 Claude，已认领。

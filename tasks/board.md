@@ -21,7 +21,7 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-042 | 编写悬浮窗协议 `docs/protocol.md`（inshellisense → 宿主） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-042`） | `docs/protocol.md` v1、D-009：双向 JSON 行、会话/序号、显示快照、定位/回退、debugState、P-01 至 P-12；JSON 示例与引用检查通过，T-043/T-044 尚待实现 |
-| T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | todo | any | T-042 | 预留：Codex/GPT（Mac） | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-043 | 在 inshellisense 中抽象渲染器，新增悬浮窗渲染器和回退逻辑 | doing | any | T-042 | Claude Code/Opus 5.5 2026-10-15（Mac，分支 `ai/claude/T-043`；用户改派，原预留给 Codex/GPT） | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-029 | 自动测试工具 `tools/wt-driver` | todo | windows | — | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-019 | 光标定位（`ICaretLocator`：UIA 优先，单元格换算作为后备） | todo | windows, human | T-029 | | 见 `docs/mvp-plan.md` 中该任务所在的行；并达到 `docs/overlay-design.md` 中的通过标准 |
 | T-021 | 原生悬浮列表窗口：置顶、不激活、跟随 WT | todo | windows, human | — | | 同上 |
@@ -34,8 +34,8 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
-| T-050 | 向 microsoft/inshellisense 提交 T-039 的两项修复（D-011） | blocked | human | — | Claude Code/Opus 5.5 2026-10-14 准备分支；用户 Fork、发 PR、签 CLA | 两个 PR 已创建；合并后在 `src/inshellisense/CHANGES.md` 中注明 PR 编号。阻塞：用户 GitHub 账号下还没有 inshellisense 的 fork，本机也没有 `gh` |
-| T-012 | 在 Kiro 2.30.0 上执行规格用例 C-001 至 C-013 | todo | mac-kiro, human | — | | 每条用例的“Kiro 2.30.0 观察”一栏都有结果和证据编号 |
+| T-050 | 向 microsoft/inshellisense 提交修复（D-011）：PowerShell 引号、宽字符删除数、custom generator 的目录和输出 | doing | human | — | Claude Code/Opus 5.5 2026-10-15 准备并推送分支；用户创建 PR、签 CLA | 三个分支已推送到用户的 inshellisense fork（`fix/pwsh-path-quoting`、`fix/wide-char-backspace`、`fix/custom-generator-cwd`）；PR 说明和预填链接在 Mac 的 `local/upstream-pr/`。完成标准：三个 PR 已创建；合并后在 `src/inshellisense/CHANGES.md` 中注明 PR 编号 |
+| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013（本机已自动更新到 2.31.0） | todo | mac-kiro, human | — | 用户在 Mac 上操作，AI 记录 | 按 `specs/completion.md` 第 8 节的“T-012 人工清单”逐项回答；每条用例的“Kiro 观察”一栏都有结果、版本和证据编号 |
 
 ## 已完成
 
