@@ -1,6 +1,6 @@
 # Windows 端当前工作指令
 
-更新：2026-10-15（关卡一 T-035 通过之后）。读者：Windows 端的 AI。
+更新：2026-10-15 第 2 版（D-013 授权；T-048 要确认运行的是修改版）。读者：Windows 端的 AI。
 
 用户只需要对你说：“同步 develop，读 `docs/windows-next.md`，按顺序做。”本页写明了接下来要做的每一步：什么时候需要先问用户，结果记在哪里，怎样才算完成。背景和验收标准的出处，见文中给出的链接。
 
@@ -22,7 +22,7 @@
    - 一个任务一个分支，命名为 `ai/codex/<任务号>`。
    - 合并回 develop 前先同步。
    - 不要重写 `docs/handoff.md`。
-   - 安装软件、修改用户配置之前，先问用户并得到同意。
+   - 安装软件、修改用户配置之前，先问用户并得到同意。例外：D-013 已授权的事项（安装 PowerShell 7、设为 WT 默认、安装 .NET 10 SDK）不必再问。
    - 截图和原始日志存到 `local/evidence/`，在 `research/evidence.md` 中登记。
    - 公开的报告中不写用户名、本机路径和个人数据。
 4. 和用户一起测试时，每次只说一项操作，等用户回答“是”或“否”再继续。需要看日志的，你自己去读，不要让用户读。
@@ -31,14 +31,14 @@
 
 为什么要做：T-035 时用户的 Windows Terminal 中找不到 `pwsh.exe`，测试用的是你自带的 PowerShell。目标 shell 是 PowerShell 7（D-002），后面的测试和日常使用都需要它装在系统里。
 
-1. 问用户：“是否同意安装 PowerShell 7，并在 Windows Terminal 中把它设为默认？”
-2. **用户同意时**：
-   1. 运行 `winget install --id Microsoft.PowerShell --source winget`。
-   2. 指导用户在 Windows Terminal 中设置默认配置文件：设置 → 启动 → 默认配置文件，选择 PowerShell（不是 Windows PowerShell）→ 保存。不要直接改 `settings.json`。
-   3. 请用户关闭并重新打开 Windows Terminal，在新标签中运行 `$PSVersionTable.PSVersion`，应显示 7.x。
-   4. 在用户的这个标签中运行 `pwsh -NoProfile -File scripts/windows/check-env.ps1`，把结果写入 `research/spike-inshellisense.md` 的新一节“T-057”。
-   5. 在任务板中把 T-057 改为 `done`。
-3. **用户不同意时**：在 `docs/decisions.md` 中记一条“待决定”，写明原因和影响：不能进入 T-040，也不能日常使用。T-048 仍可用临时 PATH 的方式进行，但要在报告中注明。
+**已经授权，不必再问用户**（D-013：用户外出前授权整合者按推荐方案处理，推荐方案就是安装）。
+
+1. 运行 `winget install --id Microsoft.PowerShell --source winget`。
+2. 把 PowerShell 7 设为 Windows Terminal 的默认配置文件：
+   - 用户在场时，请用户操作：设置 → 启动 → 默认配置文件，选择 PowerShell（不是 Windows PowerShell）→ 保存。
+   - 用户不在时，可以直接修改 `settings.json`：先备份到 `local/evidence/T-057-wt-settings-backup.json`，再把 `defaultProfile` 改成 PowerShell 7 配置文件的 GUID。WT 会自动重新加载。
+3. 验证：新开一个 WT 标签，运行 `$PSVersionTable.PSVersion`，应显示 7.x；在这个标签中运行 `pwsh -NoProfile -File scripts/windows/check-env.ps1`。用户在场时请用户自己开标签，确认 WT 的默认配置真的生效了。
+4. 把结果写入 `research/spike-inshellisense.md` 的新一节“T-057”，在任务板中把 T-057 改为 `done`，并在 log 中写明“按 D-013 执行”。
 
 ## 2. T-048：关卡二，测试我们的修改版（需要用户在场，约 30 分钟）
 
@@ -58,7 +58,11 @@
    - 一个 git 仓库：有一个已提交后又修改的文件，和一个新建并暂存的文件；
    - 一个 npm 项目：有 `scripts`、`workspaces` 和一个子文件夹；
    - 至少一个全局安装的 npm 包（清单第 4 项会用到，npm 本身即可）。
-3. 请用户在**自己的 PowerShell 7 标签**中进入仓库的 `src/inshellisense/`，运行 `node build/index.js -s pwsh -V`，然后 `cd` 到测试材料目录。注意第 8 项要求先 `cd` 进项目，而不是在项目中启动。
+3. 请用户在**自己的 PowerShell 7 标签**中进入仓库的 `src/inshellisense/`，然后：
+   1. **先确认运行的是修改版**：运行 `node build/index.js --version`，应该显示 `__VERSION__`。从源码构建的版本才显示这个占位符；原版显示 `0.0.4`。上一次 T-048 实际运行的是原版，结果已经作废。
+   2. 不要用 `spikes/T-035-baseline/` 的启动器，也不要用全局安装的 `is`，它们都是原版。
+   3. 运行 `node build/index.js -s pwsh -V`，然后 `cd` 到测试材料目录。第 8 项要求先 `cd` 进项目，而不是在项目中启动。
+   4. 确认 `%USERPROFILE%\.inshellisense\log\inshellisense.log` 的修改时间是刚才。原版启动器把用户目录改到了 `local/tools/` 下，日志不在这里。
 4. 按清单逐项进行。第 1、4、5、6 项要检查日志：你自己读取 `%USERPROFILE%\.inshellisense\log\inshellisense.log`，确认其中的 `ran natively`、`emulated in node`，以及有没有 `git bash`。
 5. 把结果写入 `research/spike-fork-windows.md`：
    - 开头是环境表，用 check-env 的输出；
@@ -93,7 +97,7 @@ T-035 第 10 项发现的问题：拖动窗口大小后，候选和输入位置�
 
 ## 5. 用户不在时：阶段 B 的准备
 
-1. 问用户是否同意安装 .NET 10 SDK（D-012）：`winget install Microsoft.DotNet.SDK.10`。
+1. 安装 .NET 10 SDK（D-012；已按 D-013 授权，不必再问）：`winget install Microsoft.DotNet.SDK.10`。
 2. 装好后，在 `src/overlay-host/` 下运行 `dotnet test OverlayHost.slnx`。Mac 上的结果是 70 个全部通过；把 Windows 上的结果记入 log，失败时新建任务。
 3. 按顺序做：
    - T-029 自动测试工具（`tools/wt-driver`，验收见 roadmap B2）；

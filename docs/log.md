@@ -378,3 +378,10 @@
 ## 2026-10-15 · Codex/GPT-6（Windows）· 同步 Claude 工作流
 - 同步双方 develop 0374081，保留两端日志和 T-056 分工，并保留版本归属更正。
 - 已读 windows-next.md：从 T-057 开始。确认 winget 可用，常规 PowerShell 7 安装路径仍不存在；安装与 WT 默认设置待用户明确同意，未执行安装或修改配置。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· D-013、指令文件第 2 版
+
+- 用户外出，授权需要确认的事项按整合者的推荐方案处理，记为 D-013。范围是：在 Windows 上安装 PowerShell 7 并设为 WT 默认；安装 .NET 10 SDK；在 Mac 上把 PowerShell 安装到用户目录，用于测试安装脚本。修改 `$PROFILE`、删除数据、对外提交、改变路线都不在授权范围内。
+- 合并 Windows 端的 T-048 提交：上次实际运行的是原版，修改版的结果已作废。`docs/windows-next.md` 更新为第 2 版：
+  - T-057 不必再问用户；
+  - T-048 开始前先用 `--version` 确认是修改版（应显示 `__VERSION__`），并检查日志位置。

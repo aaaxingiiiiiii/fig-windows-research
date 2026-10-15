@@ -128,3 +128,17 @@
   - Mac：用微软官方的 `dotnet-install.sh` 安装到用户目录（`~/.dotnet`），不修改系统目录。
   - 安装前都要先征得用户同意。
 
+## D-013 用户外出期间的授权：需要确认的事项采用整合者的推荐方案
+
+- 状态：已采用（2026-10-15）。用户外出前对整合者说：“如果要我确认的，就直接使用你的推荐方案。”
+- 据此确定的事项：
+  1. **T-057**：在用户的 Windows 上用 `winget install --id Microsoft.PowerShell --source winget` 安装 PowerShell 7，并设为 Windows Terminal 的默认配置文件。修改 WT 的 `settings.json` 之前先备份；把 `defaultProfile` 改成 PowerShell 7 配置文件的 GUID。
+  2. **D-012**：在 Windows 上用 `winget install Microsoft.DotNet.SDK.10` 安装 .NET 10 SDK。
+  3. 在 Mac 上把 PowerShell 安装到用户目录（`~/.powershell`），只用于测试 T-058 的安装脚本，不修改系统目录。
+- 不在授权范围内（仍须等用户本人决定）：
+  - 修改用户的 `$PROFILE`（T-040 的实际安装）；
+  - 删除用户数据；
+  - 任何对外发布或提交（例如向上游提交 PR，见 D-011）；
+  - 改变路线的决定。
+- 用户回来后，由整合者汇总按本条执行了哪些事项。
+
