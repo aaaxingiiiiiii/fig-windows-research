@@ -212,3 +212,9 @@
 - 按 roadmap 安装锁定项目依赖并构建成功；Windows L1：253 通过、10 跳过、11 失败，93 快照通过；新增 T-051 的 4 项通过。
 - 产出：E-008、research/spike-inshellisense.md 预检结果、T-052（跨平台测试环境假设）。原始日志仅在 local/evidence；未修改 vendor 实现、系统设置或 PowerShell 启动配置。
 - T-035 保持 doing，真实 Windows Terminal 的人工清单待用户操作；T-048 尚未通过，不进入 T-040。docs/handoff.md 保留 Mac 整合者版本。
+
+## 2026-10-15 · Codex/GPT-6（Windows）· T-052
+- 已 fetch origin 与 mac 的全部分支；两端 develop 没有新的实现提交。将此前 Windows 报告同步到 develop 后认领 T-052。
+- 修复 11 个 Windows 测试环境假设失败，不改 runtime、不安装软件、不改系统或启动配置。
+- 观察：全量 L1 265 通过、10 跳过、0 失败；93 快照通过；构建和修改文件 ESLint 通过，见 E-009。
+- T-052 完成，T-035/T-048 人工验收保持未完成；下一步由用户在 WT 按清单测试。handoff 保留整合者版本。

@@ -63,7 +63,8 @@ describe("ls", () => {
     writeFile("", "ls-a", "b.txt");
     writeFile("", "ls-a", ".env");
     makeDir("ls-a", "src");
-    fs.symlinkSync(path.join(dir, "src"), path.join(dir, "link"));
+    // Windows 使用无需管理员权限的目录 junction，仍验证链接跟随行为。
+    fs.symlinkSync(path.join(dir, "src"), path.join(dir, "link"), originalPlatform === "win32" ? "junction" : "dir");
     expect(await emulate("ls", ["-1ApL"], dir)).toEqual({ status: 0, stdout: ".env\nb.txt\nlink/\nsrc/\n", stderr: "" });
   });
 
@@ -202,7 +203,8 @@ describe("HOME", () => {
     expect(withPosixHome({ HOME: "/custom" }).HOME).toBe("/custom");
   });
 
-  test("其他平台不改", () => {
+  test.each(["darwin", "linux"] as const)("%s 平台不改", (platform) => {
+    setPlatform(platform);
     expect(withPosixHome({ PATH: "x" })).toEqual({ PATH: "x" });
   });
 });

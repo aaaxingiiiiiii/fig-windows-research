@@ -150,23 +150,23 @@ describe("C-xxx：与 Fig 开源基线对照（bash）", () => {
 
 describe("W-xxx：PowerShell 规则", () => {
   test("W-001 带空格的文件夹用单引号包裹", async () => {
-    expect(await accept("cd M", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: "'My Docs/'" });
+    expect(await accept("cd M", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: `'My Docs${path.sep}'` });
   });
 
   test("W-002 名称中的单引号写成两个单引号，并整体加引号（T-039 修复）", async () => {
-    expect((await accept("cd it", Shell.Pwsh, workDir, "it's")).insert).toBe("'it''s/'");
+    expect((await accept("cd it", Shell.Pwsh, workDir, "it's")).insert).toBe(`'it''s${path.sep}'`);
   });
 
   test("W-003 含 `$` 的名称加单引号，避免被当作变量展开（T-039 修复）", async () => {
-    expect((await accept("cd a", Shell.Pwsh, workDir, "a$b")).insert).toBe("'a$b/'");
+    expect((await accept("cd a", Shell.Pwsh, workDir, "a$b")).insert).toBe(`'a$b${path.sep}'`);
   });
 
   test("W-004 含 `&` 的名称加单引号（T-039 修复）", async () => {
-    expect((await accept("cd a", Shell.Pwsh, workDir, "a&b")).insert).toBe("'a&b/'");
+    expect((await accept("cd a", Shell.Pwsh, workDir, "a&b")).insert).toBe(`'a&b${path.sep}'`);
   });
 
   test("W-005 中文名称按字符数删除（T-039 修复；PowerShell 中的效果待 T-035 第 15 项验证）", async () => {
-    expect(await accept("cd 中", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: "中文目录/" });
+    expect(await accept("cd 中", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: `中文目录${path.sep}` });
   });
 
   test("W-006 `;` 之后只解析最后一条命令", async () => {
@@ -174,14 +174,14 @@ describe("W-xxx：PowerShell 规则", () => {
   });
 
   test("W-007 用户已输入开头的单引号时，替换整个带引号的词", async () => {
-    expect(await accept("cd 'My", Shell.Pwsh, workDir)).toEqual({ deleteCount: 3, insert: "'My Docs/'" });
+    expect(await accept("cd 'My", Shell.Pwsh, workDir)).toEqual({ deleteCount: 3, insert: `'My Docs${path.sep}'` });
   });
 
   test("W-008 含反引号的名称加单引号（T-039 修复）", async () => {
-    expect((await accept("cd a", Shell.Pwsh, workDir, "a`b")).insert).toBe("'a`b/'");
+    expect((await accept("cd a", Shell.Pwsh, workDir, "a`b")).insert).toBe(`'a\`b${path.sep}'`);
   });
 
   test("W-009 同时含空格和单引号时，单引号写成两个单引号（T-039 修复）", async () => {
-    expect((await accept("cd it", Shell.Pwsh, workDir, "it's dir")).insert).toBe("'it''s dir/'");
+    expect((await accept("cd it", Shell.Pwsh, workDir, "it's dir")).insert).toBe(`'it''s dir${path.sep}'`);
   });
 });

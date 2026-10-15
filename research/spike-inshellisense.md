@@ -67,3 +67,11 @@
 复现（在 `src/inshellisense/`）：`npm ci --no-audit --no-fund`、`npm run build`、`npm test -- --ci --runInBand --json --outputFile=../../local/evidence/T-035-source-tests.json`。测试会调用 unpackResources，在运行用户的 `.inshellisense/` 中准备 spec 缓存；未改 PowerShell 启动配置。原始日志含本机路径，仅留在 local/evidence。
 
 T-035 的 16 项 Windows Terminal 人工清单仍待完成；T-048 仅完成上述预检，不视为认领或通过。继续使用 `spikes/T-035-baseline/README.md` 的原版启动入口。
+
+## 2026-10-15：T-052 修复后复验
+
+观察（E-009）：Windows 全量 L1 为 **265 通过、10 原有跳过、0 失败（275 项）**，93 个快照通过。构建与三个修改测试文件的 ESLint 通过。比 E-008 多一项，是把 HOME 的非 Windows 用例分别覆盖 darwin 和 linux。
+
+本轮只改测试：PowerShell 期望使用本机目录分隔符，完整保留引号、特殊字符和删除数断言；Windows 的目录链接夹具使用不需要管理员权限的 junction，继续验证跟随链接；HOME 明确模拟非 Windows 平台；Git Bash 探测用 mock 隔离本机安装，并验证原生命令不触发回退、bash 在回退不可用时返回 127。没有跳过新失败，也没有修改运行时实现。Mac 本机尚未复验。
+
+T-052 已完成。T-035/T-048 的 Windows Terminal 人工验收仍未完成，不能用本次 L1 成功代替。
