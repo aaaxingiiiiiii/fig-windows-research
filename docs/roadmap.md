@@ -209,10 +209,17 @@ Windows 验收发现问题
 
 ## 7. 接下来按顺序做
 
-1. **用户 + Windows 端的 AI**：在 Windows Terminal 中完成 T-035 的 16 项和 T-048 的 8 项，一次大约 1–2 小时。这是目前唯一的瓶颈。
-2. **Mac · Claude**：T-043 已完成。
-3. **Mac · Claude**：之后处理 T-035、T-048 中发现的缺陷。
-6. T-035、T-048 通过后，**Windows 端**开始 T-040；同时开始 T-029、T-021，为阶段 B 做准备。
+更新：2026-10-15，T-035 通过之后。
+
+1. **用户决定**：T-057，在 Windows 上正式安装 PowerShell 7，并把它设为 Windows Terminal 的默认配置文件。
+   - T-035 时发现，用户的 WT 中找不到 `pwsh.exe`。测试用的是 Windows 端 AI 工具自带的 PowerShell，靠临时修改 PATH 才启动起来。
+   - 目标 shell 是 PowerShell 7（D-002）。T-048 和之后的日常使用、打包都需要它装在系统里。
+   - 安装：`winget install Microsoft.PowerShell`。
+2. **用户 + Windows 端的 AI**：T-048，在**最新的 develop** 上测试修改版的 8 项（第 4 节 A2）。Windows 端的具体步骤见 `docs/windows-next.md`。最好在第 1 步装好的 PowerShell 7 中进行。最新的 develop 已经包含 T-054、T-055 对悬浮窗代码和补全的修改，不要用 T-035 时的 8fb0570。
+3. **Windows 端的 AI**：T-056，在修改版上复现“拖动窗口大小后候选错位”。用 `-V` 记录日志，写下复现步骤和恢复方法，交给 Mac 端分析；修复后再到 Windows 上复验。
+4. T-048 通过后，**Windows 端**开始 T-040（打包和安装，A3），然后由用户试用 T-041（A4）。
+5. **用户不在时，Windows 端**做阶段 B 的准备：先安装 .NET 10 SDK（需要用户同意），再做 T-029 和 T-021，接着做 T-019，最后做 T-044（只需实现 `IOverlayPresenter`）。
+6. **Mac · Claude**：分析和修复 T-056 以及 T-048 中发现的缺陷；继续整合各端的提交。
 
 ## 8. 交给各端 AI 的工作包
 
@@ -220,46 +227,18 @@ Windows 验收发现问题
 
 ### 8.1 Windows 端的 GPT
 
-**前提**：
+Windows 端当前要做的事，按顺序写在 **`docs/windows-next.md`** 中，包括：
 
-- Windows 上还没有安装 .NET SDK（E-005）。T-029、T-021、T-019、T-044 都需要 .NET 10 SDK，安装前先征得用户同意。
-- Node 22 和 Git 已经具备。
+- 什么时候先问用户；
+- 结果记在哪里；
+- 怎样才算完成；
+- 怎样交回 Mac 端。
 
-**第 1 步：和用户一起完成两个关卡（需要用户在场，大约 1–2 小时，优先做）**
+用户只需要对它说：
 
-1. 同步 develop，运行 L1：在 `src/inshellisense/` 下执行 `npm ci`、`npm run build`、`npm test -- --ci`，与上一次在 Windows 上的结果（E-009）对比。
-2. 在用户开始之前准备好测试材料，不要让用户自己建：
-   - 一个测试文件夹，里面有这些子文件夹：`My Docs`、`a&b`、`a$b`、`it's`、`it's dir`、`` a`b ``、`中文目录`；
-   - 一个 git 仓库：有一个已提交后又修改过的文件，和一个新建并 `git add` 的文件；
-   - 一个 npm 项目：`package.json` 中带 `scripts` 和 `workspaces`，并有一个子文件夹。
-3. 请用户打开一个新的 Windows Terminal 标签页。按第 4 节 A1，用原版启动器（`spikes/T-035-baseline/README.md`）做 T-035 的 16 项：
-   - 每次只告诉用户一项操作，等用户回答“是”或“否”；
-   - 回答“否”时请用户截图，截图存到 `local/evidence/`。
-4. 换成我们的版本（`node build/index.js -s pwsh -V`），按第 4 节 A2 做 T-048 的 8 项。日志在 `%USERPROFILE%\.inshellisense\log\inshellisense.log`。
-5. 把结果写入 `research/spike-inshellisense.md` 和 `research/spike-fork-windows.md`，按第 3 节登记证据，按 A1、A2 判定两个关卡是否通过：
-   - 代码缺陷：按第 6 节新建任务，env 填 `any`，交给 Mac 端修复；
-   - 关卡不通过：写入 `docs/decisions.md`，交给用户决定。
-6. 提交并推送到 develop。
+> 同步 develop，读 docs/windows-next.md，按顺序做。
 
-**第 2 步：不需要用户在场的准备工作（用户没空时先做）**
-
-1. T-029 自动测试工具 `tools/wt-driver`：启动 WT 和 pwsh、发送按键、截图、用 UIA 读取终端控件的边界。验收见第 5 节 B2。
-2. T-021 原生悬浮窗演示：只显示固定的候选列表，不接补全。先做出来，下次用户在场时按 B3 的 7 项验收。
-3. T-019 光标定位（依赖 T-029）：按 `docs/windows-setup.md` 的测量方法做。需要改缩放、接第二块显示器的组合，等用户在场时再测。
-
-**第 3 步：两个关卡都通过后**
-
-- T-040 打包、安装、卸载，按 A3 验收。最好在 Windows Sandbox 中进行。
-- 交给用户试用（T-041，按 A4 记录）。
-
-**第 4 步：T-044 宿主集成（T-019、T-021 完成后）**
-
-- 协议核心已由 T-053 完成（`src/overlay-host/`）。T-044 只需实现 `IOverlayPresenter`，即窗格绑定、UIA 定位和原生窗口，见 `src/overlay-host/README.md`。
-- 先用 `spikes/T-043-fake-host/` 对照 inshellisense 发出的消息，再接入真正的窗口。按 B5 验收。
-
-**交给它的话：**
-
-> 同步 develop（`git fetch --all`，然后合并对方仓库的 develop），阅读 AGENTS.md、docs/handoff.md，以及 docs/roadmap.md 的第 3 至 6 节和第 8.1 节，按第 8.1 节的顺序工作：用户在场时先做第 1 步，和用户一起完成 T-035、T-048 的人工清单；用户不在时做第 2 步，即 T-029、T-021。安装 .NET 10 SDK 等软件前先征得用户同意。每个任务在 ai/codex/<任务号> 分支上完成，合并前先同步 develop，结束时更新 board 和 log，不要重写 handoff.md。
+`docs/windows-next.md` 由整合者维护。阶段变化时，由整合者重写；其他 AI 只在任务板和 log 中记录进度。
 
 ### 8.2 Mac 端的 GPT
 

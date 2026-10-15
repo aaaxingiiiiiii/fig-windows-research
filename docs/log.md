@@ -357,3 +357,24 @@
 - T-048 用户反馈：1 分支候选出现（原生命令日志待核实）、2 中文目录通过、3 五种特殊字符目录通过；T-056 在修改版仍复现。
 
 - T-048 版本核实更正：当前实际运行官方 baseline 进程，未发现修改版 build/index.js。撤回此前人工 1–3 项与错位的修改版归属，待明确启动后重测；截图已保存。第 8 项还缺末尾空格，第 6 项 npm run 为执行输出，不算候选证据。
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· 整合 T-035 结果
+
+- 合并 Windows 端的 T-035：按 A1 判定关卡通过；第 10 项拖动窗口后候选错位，清屏可以恢复，登记为 T-056；T-048 已认领，尚无结果。
+- 发现：用户自己的 WT 中找不到 `pwsh.exe`，T-035 用的是 Windows 端 AI 工具自带的 PowerShell 7.6.5（临时修改 PATH）。之前环境检查中的“PowerShell 7.6.5”也来自 AI 工具自带的版本。新增 T-057（安装 PowerShell 7 并设为 WT 默认，需要用户决定），T-040 改为依赖它；windows-setup.md 注明环境检查必须在用户自己的终端中运行。
+- 更新 roadmap 第 7 节：T-057 → T-048（在最新 develop 上，含 T-054、T-055）→ 复现 T-056 → T-040；阶段 B 的准备照常。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· Windows 端工作指令
+
+- 应用户要求，把交给 Windows 端 AI 的话写成文件 `docs/windows-next.md`，使用户只需说“同步 develop，读 docs/windows-next.md，按顺序做”。内容按顺序包括：
+  - T-057：先问用户是否安装 PowerShell 7；
+  - T-048：在最新 develop 上做 8 项，日志由 AI 自己读；
+  - T-056：复现 5 种窗口变化，记录恢复方法和日志；
+  - T-040；
+  - 用户不在时做阶段 B 的准备；
+  - 结束时的流程，以及遇到问题时的处理。
+- AGENTS.md、handoff、roadmap 第 8.1 节和 README 都指向这个文件；该文件由整合者维护，其他 AI 不修改。
+
+
+## 2026-10-15 · Codex/GPT-6（Windows）· 同步 Claude 工作流
+- 同步双方 develop 0374081，保留两端日志和 T-056 分工，并保留版本归属更正。
+- 已读 windows-next.md：从 T-057 开始。确认 winget 可用，常规 PowerShell 7 安装路径仍不存在；安装与 WT 默认设置待用户明确同意，未执行安装或修改配置。
