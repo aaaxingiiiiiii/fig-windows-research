@@ -426,3 +426,8 @@
 - T-057：依用户明确授权及新版 windows-next，备份 WT 设置并将 defaultProfile 指向已有 PowerShell 7 动态配置，读取验证一致；未改启动脚本。实际新默认标签待用户回来确认。
 
 - T-048 无人值守：新增可复现引擎检查，13 项通过，正式 pwsh 执行中文/特殊路径验证成功；npm 全局包以实际列表核对，清单假定 npm 包存在与本机不符。人工关卡仍待确认。
+
+
+## 2026-10-15 · Codex/GPT-6（Windows）· T-056
+- 正式 pwsh 7.6.7 + Windows ConPTY 运行 Claude 的 resize-sim：普通组通过，wrap 连续两次失败，均在尺寸恢复后再输入 e 时 aligned=false，光标行混入 line4。
+- E-012 和 research/spike-fork-windows.md 有完整尺寸/光标表与复现命令；原始日志保留 local/evidence。T-056 已复现，待 Mac Claude 分析，未擅自改动运行时或判定修复。

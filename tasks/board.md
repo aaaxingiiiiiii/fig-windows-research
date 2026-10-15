@@ -17,7 +17,7 @@
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-052 | 修复 Windows 本机 L1 测试的平台与环境假设 | done | any | — | Codex/GPT-6（Windows）2026-10-15；265 通过、10 跳过、0 失败，见 E-009 | 复现 `research/spike-inshellisense.md` E-008 的 11 个失败；路径断言同时验证分隔符和 PowerShell 引号，隔离 HOME/Git Bash 条件，明确非管理员符号链接夹具策略；保留行为覆盖，Windows 复验并记录结果 |
 
-| T-056 | 调查并修复 Windows 调整窗口后候选与输入位置错位 | todo | any | — | 复现：Windows 端；分析和修复：Mac 端（Claude）。2026-10-15 Mac 上模拟无法复现（F-034），下一步在 Windows 上运行 `spikes/T-056-resize-sim/` | 原版 T-035 第 10 项截图与复现见 research/spike-inshellisense.md；确认缩放/分屏触发方式及恢复性，修改版复现需核实运行版本后重测，再补回归测试并修复，Windows 复验；未确认前不归因于具体模块 |
+| T-056 | 调查并修复 Windows 调整窗口后候选与输入位置错位 | doing | any | — | Codex/GPT-6（Windows）2026-10-15 已自动复现：pwsh --wrap 连续两次在输入 e 后错位（E-012）；等待 Mac 端 Claude 分析和修复 | 原版 T-035 第 10 项截图与复现见 research/spike-inshellisense.md；确认缩放/分屏触发方式及恢复性，修改版复现需核实运行版本后重测，再补回归测试并修复，Windows 复验；未确认前不归因于具体模块 |
 
 ### 阶段 B：悬浮窗（复用阶段 A）
 

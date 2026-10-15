@@ -31,3 +31,30 @@
 这些是引擎与原生命令集成证据，不代表 WT 人工 1–8 项已通过。无人值守期间保留人工关卡待确认。
 
 日志核对：git 原生执行 8 次、npm 原生执行 2 次；Node 模拟 bash 4 次、cat 1 次、ls 2 次；未出现 Git Bash 回退日志。最新全量 L1 376 通过、10 跳过、0 失败，93 快照通过，构建成功。
+
+
+## T-056 Windows 自动复现（E-012）
+
+环境：Windows 11 build 26200，Node 22.23.2，正式 Microsoft.PowerShell 应用包 7.6.7；修改版源码构建包含 T-054/T-055。外层 xterm-headless，内层 node-pty/ConPTY；并未自动控制 Windows Terminal GUI。
+
+在仓库根目录把正式 PowerShell 应用包目录放到当前测试进程 PATH 首位，然后执行：
+
+```powershell
+node spikes/T-056-resize-sim/resize-sim.cjs pwsh
+node spikes/T-056-resize-sim/resize-sim.cjs pwsh --wrap
+```
+
+观察：普通组退出码 0，6 个检查均 visible=true、aligned=true。wrap 组连续两次退出码 1，结果一致：
+
+| 步骤 | 尺寸 | 光标 x,y | 位置 | 对齐 |
+| --- | --- | --- | --- | --- |
+| before | 100×30 | 39,29 | above | true |
+| resize | 80×30 | 39,29 | above | true |
+| resize | 120×30 | 39,29 | above | true |
+| resize | 90×24 | 39,23 | above | true |
+| resize | 100×30 | 39,29 | above | true |
+| 再输入 e | 100×30 | 40,22 | below | **false** |
+
+最后光标行变为 `line4                            git che`，提示符不在该行；两次均非程序提前退出。日志为 local/evidence/T-056-windows-normal.txt、T-056-windows-wrap.txt、T-056-windows-wrap-repeat.txt，含本机路径，不公开。
+
+推断：失败可以在 Windows 的 ConPTY + headless 外层组合中触发，不能把原因只归为 WT GUI；具体是内层重绘、光标追踪或模拟器对重绘的处理，仍需 Mac 端分析。自动复现和原版人工截图是否同一根因未知。修复尚未进行，恢复方法仅有原版人工清屏结果，修改版需后续复验。
