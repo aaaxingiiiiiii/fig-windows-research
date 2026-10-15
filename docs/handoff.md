@@ -8,7 +8,10 @@
 
 路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。
 
-- 阶段 A 的代码已经完成，在 Windows 上构建成功，L1 测试全部通过（T-052）。现在等待用户在 Windows Terminal 中完成人工清单：T-035（16 项）和 T-048（8 项）。
+- 阶段 A：**关卡一 T-035 已通过**（原版 inshellisense 在 Windows Terminal 中没有阻断问题）。发现两件事：
+  - T-056：拖动窗口大小后候选错位，清屏可以恢复；
+  - T-057：用户的 Windows 上没有安装 PowerShell 7，测试靠 AI 工具自带的 pwsh。
+  下一步是 T-057（用户决定），然后在最新的 develop 上做关卡二 T-048。顺序见 `docs/roadmap.md` 第 7 节。
 - 阶段 B：协议（T-042）、inshellisense 一侧的悬浮窗渲染器（T-043）和宿主的协议核心（T-053，C#/.NET 10）已完成，并且在 Mac 上验证过两端可以互通。下一步是 Windows 上的 T-029、T-021、T-019，然后是 T-044：只需实现 `IOverlayPresenter`。
 
 ## 进度
@@ -16,9 +19,9 @@
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
 | Claude Code（Mac，整合者） | T-036 至 T-039、T-049、T-051、T-013、T-043、T-053；记录 T-012；`docs/usage.md`、`docs/roadmap.md` | 等待 Windows 验收结果并修复其中的缺陷 |
-| Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | 按 `docs/roadmap.md` 第 8.1 节：和用户一起完成 T-035、T-048 的人工清单；用户不在时做 T-029、T-021 |
+| Codex/GPT-6（Windows） | T-035 的环境检查、冒烟测试和 L1 预检；T-052（Windows 上的测试平台假设） | T-035 已通过；下一步：T-057（等用户同意）→ T-048（最新 develop）→ 复现 T-056；用户不在时做 T-029、T-021 |
 | GPT/Codex（Mac） | T-015、T-042 | T-054（审查 T-043）→ T-055；T-053 需要先安装 .NET 8 SDK（见 `docs/roadmap.md` 第 8.2 节） |
-| 用户 | 对方仓库授权；inshellisense fork | T-035 和 T-048 的人工清单（Windows） |
+| 用户 | 对方仓库授权；inshellisense fork | 决定是否在 Windows 上安装 PowerShell 7（T-057）；T-048 的人工清单 |
 
 ## 关键结论（本轮新增）
 

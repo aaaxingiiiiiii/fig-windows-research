@@ -348,3 +348,9 @@
   - 正常情况：宿主收到候选和选中项，终端里不画候选框，Tab 正常插入；
   - 定位延迟 300 ms 和定位失败：客户端都回到终端内绘制，插入正常。
 - 登记了测试用 NuGet 包的许可证（`research/sources.md`）。T-044 改为依赖 T-053，只需在 Windows 上实现 `IOverlayPresenter`。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· 整合 T-035 结果
+
+- 合并 Windows 端的 T-035：按 A1 判定关卡通过；第 10 项拖动窗口后候选错位，清屏可以恢复，登记为 T-056；T-048 已认领，尚无结果。
+- 发现：用户自己的 WT 中找不到 `pwsh.exe`，T-035 用的是 Windows 端 AI 工具自带的 PowerShell 7.6.5（临时修改 PATH）。之前环境检查中的“PowerShell 7.6.5”也来自 AI 工具自带的版本。新增 T-057（安装 PowerShell 7 并设为 WT 默认，需要用户决定），T-040 改为依赖它；windows-setup.md 注明环境检查必须在用户自己的终端中运行。
+- 更新 roadmap 第 7 节：T-057 → T-048（在最新 develop 上，含 T-054、T-055）→ 复现 T-056 → T-040；阶段 B 的准备照常。

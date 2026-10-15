@@ -27,7 +27,9 @@ git switch develop
 sh scripts/fetch-sources.sh      # 需要 Git Bash；也可以按脚本内容手动执行 git 命令
 ```
 
-运行 `pwsh -NoProfile -File scripts/windows/check-env.ps1`，把输出的表格粘贴到验证报告的开头。这个脚本只读取版本信息，不安装任何东西；它还没有在 Windows 上运行过，出错时请修正后提交。
+运行 `pwsh -NoProfile -File scripts/windows/check-env.ps1`，把输出的表格粘贴到验证报告的开头。这个脚本只读取版本信息，不安装任何东西。
+
+**必须在用户自己打开的 Windows Terminal 标签页中运行**，不要用 AI 工具自带的 PowerShell。T-035 时，AI 工具自带的 PowerShell 7.6.5 被当成了本机环境；用户自己的 WT 中其实找不到 `pwsh.exe`，也就是没有安装 PowerShell 7（T-057）。
 
 ## 3. 验证程序的存放与报告
 

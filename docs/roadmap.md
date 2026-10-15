@@ -209,10 +209,17 @@ Windows 验收发现问题
 
 ## 7. 接下来按顺序做
 
-1. **用户 + Windows 端的 AI**：在 Windows Terminal 中完成 T-035 的 16 项和 T-048 的 8 项，一次大约 1–2 小时。这是目前唯一的瓶颈。
-2. **Mac · Claude**：T-043 已完成。
-3. **Mac · Claude**：之后处理 T-035、T-048 中发现的缺陷。
-6. T-035、T-048 通过后，**Windows 端**开始 T-040；同时开始 T-029、T-021，为阶段 B 做准备。
+更新：2026-10-15，T-035 通过之后。
+
+1. **用户决定**：T-057，在 Windows 上正式安装 PowerShell 7，并把它设为 Windows Terminal 的默认配置文件。
+   - T-035 时发现，用户的 WT 中找不到 `pwsh.exe`。测试用的是 Windows 端 AI 工具自带的 PowerShell，靠临时修改 PATH 才启动起来。
+   - 目标 shell 是 PowerShell 7（D-002）。T-048 和之后的日常使用、打包都需要它装在系统里。
+   - 安装：`winget install Microsoft.PowerShell`。
+2. **用户 + Windows 端的 AI**：T-048，在**最新的 develop** 上测试修改版的 8 项（第 4 节 A2）。最好在第 1 步装好的 PowerShell 7 中进行。最新的 develop 已经包含 T-054、T-055 对悬浮窗代码和补全的修改，不要用 T-035 时的 8fb0570。
+3. **Windows 端的 AI**：T-056，在修改版上复现“拖动窗口大小后候选错位”。用 `-V` 记录日志，写下复现步骤和恢复方法，交给 Mac 端分析；修复后再到 Windows 上复验。
+4. T-048 通过后，**Windows 端**开始 T-040（打包和安装，A3），然后由用户试用 T-041（A4）。
+5. **用户不在时，Windows 端**做阶段 B 的准备：先安装 .NET 10 SDK（需要用户同意），再做 T-029 和 T-021，接着做 T-019，最后做 T-044（只需实现 `IOverlayPresenter`）。
+6. **Mac · Claude**：分析和修复 T-056 以及 T-048 中发现的缺陷；继续整合各端的提交。
 
 ## 8. 交给各端 AI 的工作包
 
