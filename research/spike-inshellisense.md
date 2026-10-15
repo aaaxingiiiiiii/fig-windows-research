@@ -50,3 +50,20 @@
 在 Windows Terminal 使用 `spikes/T-035-baseline/README.md` 的启动命令，按 16 项清单逐项记录是/否和现象。完整验收前保持 T-035 为 doing。此后按交接安排执行 T-048 验证修改版；本轮未开始 T-048。
 
 本次使用隔离的运行时用户目录；未开启开机/终端自动启动。将来验证真实用户 `$PROFILE` 时另行按授权范围备份并执行。
+
+## 2026-10-15：同步 Mac 与 Windows 本机 L1 预检
+
+观察（E-008）：合入 mac/develop 的 bd5a6ec 后，按 roadmap 执行锁定依赖安装、TypeScript 构建和 Jest。安装与构建退出码为 0；测试退出码为 1：274 项中 253 通过、10 跳过、11 失败；93 个快照全部通过。新增 customGenerator 的 4 项测试全部通过。此数量是 Windows 实测，不沿用 Mac 报告中的 275 项。
+
+| 失败组 | 数量 | 观察及后续 |
+| --- | --- | --- |
+| figspec W-001/002/003/004/005/007/008/009 | 8 | 断言期待目录结尾 `/`，Windows 实际返回反斜杠；引号及删除数没有显示差异。需要核对跨平台语义，不应直接删除断言。 |
+| posixEmulation 的 ls 链接 | 1 | 测试夹具创建符号链接时报 EPERM；没有修改系统开发者模式或提权安装。 |
+| posixEmulation 的 HOME「其他平台不改」 | 1 | Windows 实际补入 HOME，与断言冲突；需隔离测试的平台前提。 |
+| executeCommand 的「没有 Git Bash」 | 1 | 本机装有 Git Bash，实际执行并返回 native；测试未隔离 Git Bash 存在条件。 |
+
+推断：这些失败主要反映测试的跨平台环境假设；尚不能据此证明交互功能正确或错误。登记 T-052 供后续修复并在 Windows 复验，本轮不修改 vendor 源码或放宽验收条件。
+
+复现（在 `src/inshellisense/`）：`npm ci --no-audit --no-fund`、`npm run build`、`npm test -- --ci --runInBand --json --outputFile=../../local/evidence/T-035-source-tests.json`。测试会调用 unpackResources，在运行用户的 `.inshellisense/` 中准备 spec 缓存；未改 PowerShell 启动配置。原始日志含本机路径，仅留在 local/evidence。
+
+T-035 的 16 项 Windows Terminal 人工清单仍待完成；T-048 仅完成上述预检，不视为认领或通过。继续使用 `spikes/T-035-baseline/README.md` 的原版启动入口。

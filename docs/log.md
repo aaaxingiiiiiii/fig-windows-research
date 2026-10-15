@@ -206,3 +206,9 @@
 - 再做黑盒对照（E-007）：Kiro 的 `init <shell> post` 只有在 `Q_TERM` 已设置时才输出完整的集成脚本，否则只设置 PATH。是否有 TTY、是否设置了 `QTERM_SESSION_ID`，都不影响输出；pre 不受影响。完整脚本与开源版只有三处小差异，其中一处是别名改为经标准输入传递。F-006 由“未知”改为“观察”。
 - 发现本机的 Kiro 已自动更新为 2.31.0。已在 target.md 中注明：E-001 的哈希只对应 2.30.0，之后的观察要写明实际版本。
 - 没有反编译，也没有读取二进制文件的内容，只运行了命令并比较输出。
+
+## 2026-10-15 · Codex/GPT-6（Windows）· T-035
+- 同步 mac/develop bd5a6ec，保留两端追加记录，修复 evidence 表格空行。
+- 按 roadmap 安装锁定项目依赖并构建成功；Windows L1：253 通过、10 跳过、11 失败，93 快照通过；新增 T-051 的 4 项通过。
+- 产出：E-008、research/spike-inshellisense.md 预检结果、T-052（跨平台测试环境假设）。原始日志仅在 local/evidence；未修改 vendor 实现、系统设置或 PowerShell 启动配置。
+- T-035 保持 doing，真实 Windows Terminal 的人工清单待用户操作；T-048 尚未通过，不进入 T-040。docs/handoff.md 保留 Mac 整合者版本。
