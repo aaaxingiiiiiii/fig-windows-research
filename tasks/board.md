@@ -37,12 +37,12 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
 | T-055 | 补齐 `research/spec-compat.md` 中“仍未处理的项”：gh 的 GraphQL 参数引号、scp 的 `host:path` 与盘符、dotnet 的 `launchSettings.json` 相对路径 | todo | any | — | 预留：Codex/GPT（Mac） | 模拟 win32 的测试通过；改动记入 `CHANGES.md` |
-| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | doing | mac-kiro, human | — | 用户 2026-10-15 完成 13 项（Kiro 2.31.1），Claude 记录 | 已记录 10 项（E-010、F-033）。**剩下 3 项需要用户重测**：C-008（先 `cd` 进 `local/t012`）、C-003（末尾有没有空格）、C-012（空命令行按 Enter 是否出现新的提示符） |
 
 ## 已完成
 
 | 编号 | 任务 | 负责人 | 产出 |
 | --- | --- | --- | --- |
+| T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | 用户（Mac，Kiro 2.31.1）2026-10-15；Claude 记录 | 12 条一致，C-006 不一致（F-033，E-010）；`specs/completion.md` 第 8 节；C-002 源码预期勘误 |
 | T-013 | 弄清 F-006：`init zsh post` 为什么只输出 4 行 | Claude Code/Opus 5.5 2026-10-15 | 由 `Q_TERM`（figterm 设置）决定是否输出完整集成脚本；F-006 改为观察；E-007；target.md 注明 Kiro 已自动更新为 2.31.0 |
 | T-051 | custom generator 默认在 generator 的目录中执行命令，输出按 Fig 的规则清理（F-032） | Claude Code/Opus 5.5 2026-10-15 | `src/inshellisense/src/runtime/generator.ts`；`customGenerator.test.ts`（4 个）；T-048 清单第 8 项 |
 | T-049 | Windows 上用 Node 模拟 spec 中常用的 POSIX 命令（`ls -1ApL`、`cat`、`grep` 和 9 条 `bash -c` 脚本），generator 上下文补上 HOME | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/runtime/posixEmulation.ts`、`utils.ts`、`generator.ts`；`posixEmulation.test.ts`（31 个）；T-048 清单第 4 至 6 项；F-032、T-051 |
