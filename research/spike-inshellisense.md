@@ -148,3 +148,8 @@ T-052 已完成。T-035/T-048 的 Windows Terminal 人工验收仍未完成，�
 ## T-057：正式安装 PowerShell 7
 
 用户明确同意安装并设为默认。2026-10-15 通过 winget 官方源安装 Microsoft.PowerShell，安装包版本 7.6.7.0，哈希校验通过，安装退出码 0；Get-AppxPackage 确认为 Microsoft.PowerShell 应用包，应用包内 pwsh 执行 PSVersionTable 实测 7.6.7（常规 Program Files/PowerShell/7 路径不适用于本次安装）。安装后用该二进制执行环境脚本，日志在 local/evidence/T-057-installed-env.txt；此为 Agent 发起的验证，尚不能代替用户 WT 新标签验证。按 windows-next 第 1 节，默认配置通过 WT 设置界面由用户选择，不直接编辑 settings.json；未修改用户 PowerShell 启动脚本。T-057 保持 doing，待设置和新标签验证。
+
+
+### T-057 默认配置已设置
+
+用户在本对话明确授权安装并设为默认，随后授权离开期间继续自动执行。按新版 windows-next，在 local/evidence/T-057-wt-settings-backup.json 保存原配置，选取现有 Windows.Terminal.PowershellCore 的 PowerShell 配置 GUID，仅修改 defaultProfile，重新解析验证一致。没有修改其他配置或启动脚本。PowerShell 7.6.7 已直接运行验证；新 WT 默认标签视觉验收仍待用户回来，T-057 保持 doing。
