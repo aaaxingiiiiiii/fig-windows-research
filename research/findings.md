@@ -11,7 +11,7 @@
 | F-003 | Kiro 2.30.0 的 `init zsh pre` 与开源 `pre.sh` 只在二进制名占位符上不同 | 观察 | E-003；`aq:crates/fig_integrations/src/shell/scripts/pre.sh` | 只比较了 zsh pre |
 | F-004 | Kiro 2.30.0 前端使用与开源前端相同的设置键和 spec CDN | 观察 | E-002；`aq:packages/autocomplete-parser/src/loadHelpers.ts#L33` | 只做了字符串统计，没有比较逻辑 |
 | F-005 | Kiro 2.30.0 的补全链路沿用开源代码，开源代码可作为行为基线 | 推断 | F-003、F-004 | 用 T-012 的运行时用例验证 |
-| F-006 | `kiro-cli init zsh post` 在非交互环境中只输出 4 行，而开源 `post.zsh` 有 193 行并输出 OSC 697。原因未知 | 未知 | E-003 | T-013 |
+| F-006 | Kiro 的 `init <shell> post` 只有在环境变量 `Q_TERM` 已设置时，才输出完整的集成脚本（含 OSC 697 钩子）；否则只输出设置 PATH 的几行。`Q_TERM` 由 PTY 包装程序（figterm，即 `kiro-cli-term`）设置。因此只有被 figterm 包装的 shell 才会安装提示符钩子。开源 1.19.7 没有这个判断（`aq:crates/q_cli/src/cli/init.rs#L121-L295`），总是输出完整脚本。有 `Q_TERM` 时，zsh 脚本与开源 `post.zsh` 只有三处不同：开头增加 `Q_SHELL` 赋值；`get-shell` 的错误输出被丢弃；别名改为经标准输入传给 `pre-cmd --alias-stdin`，不再放进命令行参数 | 观察（Kiro 2.31.0） | E-003、E-007 | T-013 已完成。原先“非交互环境”的推测不成立：在伪终端中运行同样只有 4 行；只设置 `QTERM_SESSION_ID` 也不改变输出 |
 | F-007 | Kiro 2.30.0 的 `init` 只接受 bash、zsh、fish、nu，不支持 PowerShell 和 cmd | 观察 | E-003 | 只检查了命令行参数 |
 | F-008 | 补全链路为：figterm 用 PTY 包装 shell → shell 输出 OSC 697 标记 → figterm 在影子终端中取出缓冲区 → 通过 protobuf 和 Unix socket 发给桌面端 → 推送给 webview 前端 | 观察 | `architecture.md` | 来自开源基线 |
 | F-009 | 插入的方式是向 PTY 写入“光标移动 + 退格 × N + 文本 + 可选的回车”；前端用 `ESC[D` 实现 `{cursor}` 占位 | 观察 | `aq:crates/fig_proto/src/figterm.rs#L4-L30`、`aq:packages/autocomplete-app/src/state/insertion.ts#L25-L90` | 退格字节在 Windows 各 shell 上的效果未测 |
@@ -37,7 +37,7 @@
 | F-029 | inshellisense 0.0.4 只在名称含空格时才给路径加引号（`needsQuoted` 只检查空格）；PowerShell 下的单引号转义写成 `\'`，而 PowerShell 的正确写法是 `''`。因此 pwsh 下 `it's`、`a$b`、`a&b`、`` a`b `` 的插入结果都不正确 | 观察 | `src/inshellisense/src/runtime/utils.ts` 第 45–88 行；`figspec.test.ts` 中的 W-002 至 W-004、W-008、W-009 | T-039 已修复（`src/inshellisense/CHANGES.md`）；在 Windows 终端中的实际效果待 T-035 第 16 项确认 |
 | F-030 | inshellisense 按显示宽度（`wcswidth`）计算要删除的字符数，而 bash 和 zsh 按字符删除。所以补全中文名称时会多删字符：输入 `echo X中`，接受补全“中文目录”后，结果是 `中文目录`，前面的 X 也被删掉了 | 观察（bash、zsh 实测；PowerShell 为推断） | `src/inshellisense/src/runtime/parser.ts` 第 90–117 行、`replacement.ts`；用 node-pty 驱动 macOS 自带的 bash 和 zsh 实测 | T-039 已改为按字符删除；PSReadLine 也按字符删除这一点仍是推断，待 T-035 第 15 项验证 |
 | F-031 | inshellisense 与 Fig 有 7 处做法不同：Tab 行为、Enter 行为、Esc 后的显示、光标在行中时是否显示、路径的引号风格、`--opt=` 的插入、↑ 在第一项时的行为，以及是否补全命令名 | 观察 | `specs/completion.md` 第 9 节 | 是否改成 Fig 风格由用户决定 |
-| F-032 | custom generator 执行命令时，inshellisense 与 Fig 有两处不同：① 没有给出 cwd 时，Fig 使用终端的当前目录，inshellisense 使用自身进程的目录；② Fig 会清理输出（CRLF 换成 LF，去掉首尾的空行），inshellisense 只对 script generator 的输出做 `trim()`，custom generator 拿到的是原始输出。因此 npm 的 workspaces 候选把 `npm prefix` 的输出（带换行）直接拼进路径，读取失败 | 观察（源码） | Fig：`aq:crates/figterm/src/message.rs#L61-L93`、`aq:crates/figterm/src/message.rs#L459-L464`、`aq:packages/api-bindings-wrappers/src/executeCommand.ts#L11-L17`；inshellisense：`is:src/runtime/generator.ts#L33`、`is:src/runtime/generator.ts#L42` | 登记为 T-051；Windows 上与 Mac 上都受影响 |
+| F-032 | custom generator 执行命令时，inshellisense 与 Fig 有两处不同：① 没有给出 cwd 时，Fig 使用终端的当前目录，inshellisense 使用自身进程的目录；② Fig 会清理输出（CRLF 换成 LF，去掉首尾的空行），inshellisense 只对 script generator 的输出做 `trim()`，custom generator 拿到的是原始输出。因此 npm 的 workspaces 候选把 `npm prefix` 的输出（带换行）直接拼进路径，读取失败 | 观察（源码） | Fig：`aq:crates/figterm/src/message.rs#L61-L93`、`aq:crates/figterm/src/message.rs#L459-L464`、`aq:packages/api-bindings-wrappers/src/executeCommand.ts#L11-L17`；inshellisense：`is:src/runtime/generator.ts#L33`、`is:src/runtime/generator.ts#L42` | T-051 已修复：没有给出目录时使用 generator 的目录（与 script generator 相同，输入路径时是解析后的目录），输出按 Fig 的规则清理 |
 
 ## 注意
 

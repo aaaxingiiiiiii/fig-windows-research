@@ -31,6 +31,7 @@
 | `docs/usage.md` | **使用说明**：启动、按键、与 Fig 的不同之处、已知限制 |
 | `docs/dev.md` | 开发指南：构建、测试、运行 |
 | `docs/mvp-plan.md` | **实现主计划**：阶段 A（终端内）和阶段 B（悬浮窗）的步骤与测试 |
+| `docs/roadmap.md` | **后续工作与验收流程**：剩余任务的顺序和分工、各阶段的验收步骤、两端同步代码的方法 |
 | `docs/protocol.md` | 悬浮窗协议 v1（inshellisense 与宿主之间） |
 | `docs/overlay-design.md` | 悬浮窗的技术评估（光标定位等结论仍然适用） |
 | `docs/archive/` | 已存档的 PSReadLine 路线计划与协议 |

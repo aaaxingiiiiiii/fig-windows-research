@@ -19,3 +19,5 @@
 | 2026-10-14 | T-049 | `src/runtime/utils.ts` | `buildExecuteShellCommand`：Windows 上先尝试模拟，能模拟时不再启动进程；`-V` 日志记录 `generator command emulated in node`。函数改为先定义 `execute` 再返回，以便模拟层递归执行管道中的原生命令 | 同上 | 否 |
 | 2026-10-14 | T-049 | `src/runtime/generator.ts` | generator 上下文的环境变量经 `withPosixHome` 处理：Windows 上没有 HOME 时补上用户目录（只影响 spec 读取的上下文，不影响子进程） | ssh、scp 用 `${HOME}/.ssh/known_hosts` 和 `~/.ssh/config` 列出主机 | 是（与 Windows 有关的小改动） |
 | 2026-10-14 | T-049 | `src/tests/figspec/posixEmulation.test.ts` | 新增 31 个测试，包括 9 条脚本在 spec 包中的出处检查，以及模拟 win32 时经真实 spec（node、git diff、npm run）得到候选 | 防止 spec 包升级后模拟悄悄失效 | 否 |
+| 2026-10-15 | T-051 | `src/runtime/generator.ts` | 传给 custom generator 的 executeShellCommand 经 `buildCustomExecuteCommand` 包装：没有给出 cwd 时使用 generator 的目录；stdout、stderr 按 Fig 的 cleanOutput 清理（CRLF 换成 LF，去掉 `ESC[?25h` 和首尾的空行） | 原来在 inshellisense 进程的目录中执行，并把带换行的原始输出交给 spec，例如 npm 的 workspaces 候选会读错 package.json（F-032） | 是（与平台无关） |
+| 2026-10-15 | T-051 | `src/tests/figspec/customGenerator.test.ts` | 新增 4 个测试：默认目录、显式目录、输出清理、npm workspaces 候选 | 防止回归 | 否 |

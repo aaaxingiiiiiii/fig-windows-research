@@ -8,6 +8,6 @@
 | E-002 | 前端打包文件的字符串统计 | 用 `grep -o -F` 统计 `insertValue`、`insertCommonPrefix`、`specs.q.us-east-1` 等字符串，并提取 `https://` 链接 | `index-Ct4Ru0Ux.js`（哈希见 target.md） | 2026-10-14 | 否 |
 | E-003 | Shell 集成脚本输出 | `kiro-cli init {zsh,bash,fish} {pre,post}`，在非交互的工具 shell 中运行；另试 `init pwsh pre` 和 `init powershell pre`，均报错 | Kiro CLI 2.30.0 | 2026-10-14 | 输出含 `$HOME` 展开后的路径 |
 | E-004 | Bundle 元数据与签名 | 读取 `Info.plist`、`Resources/manifest.json`；运行 `codesign -dv --verbose=2`；运行 `file` 查看架构 | Kiro CLI 2.30.0 | 2026-10-14 | 否 |
-
 | E-005 | Windows 环境检查 | pwsh -NoProfile -File scripts/windows/check-env.ps1；dotnet --list-sdks 确认无 SDK | Windows 11 / T-035 | 2026-10-14 | 公开报告仅含版本；完整输出保留 local/ |
 | E-006 | 官方原版命令与受控 PTY 冒烟检查 | 按 spikes/T-035-baseline/README.md 初始化、doctor、complete；交互输入 git ch、下方向键、Tab，Ctrl+C 取消后 exit | inshellisense 0.0.4 / pwsh 7.6.5 | 2026-10-14 | 终端记录含本机路径，不公开原始记录；不等同 WT 人工验收 |
+| E-007 | `init <shell> post` 在不同环境下的输出（T-013） | 在仓库根目录分别运行：① `kiro-cli init zsh post [--rcfile zshrc]`；② `script -q /dev/null sh -c 'kiro-cli init zsh post --rcfile zshrc \| wc -l'`；③ 加上 `Q_TERM=1`；④ 只加 `QTERM_SESSION_ID=<任意 UUID>`；⑤ bash、fish 的 post 各运行一次，比较有无 `Q_TERM=1` 的区别；⑥ 用 diff 对比 ③ 的输出与开源 `post.zsh`（把 `{{CLI_BINARY_NAME}}` 换成 `kiro-cli`）。行数：zsh 4/197，bash 4/573，fish 3/115；② 为 4；④ 为 4；pre 不受影响（80） | Kiro CLI 2.31.0 | 2026-10-15 | 输出含 `$HOME` 展开后的路径，原始文件在 `local/evidence/T-013/` |

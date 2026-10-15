@@ -33,15 +33,15 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-015 | 评估 `wf` spec 在 Windows 上的可用性（对 T-037 有参考价值） | done | any | — | Codex/GPT-6 2026-10-14（Mac，分支 `ai/codex/T-015`） | `research/spec-compat.md`：30 项源码评估（11 可直接使用、17 需改写、2 不适用），外部命令/共享 helper 清单、T-037 改写建议和 Windows 验证清单；非使用率排名，尚无 Windows 实测 |
-| T-051 | custom generator 执行命令时默认使用终端的当前目录，并像 Fig 一样清理输出（F-032） | todo | any | — | | 在 `src/runtime/generator.ts` 中给传入 custom 的 executeShellCommand 加上默认 cwd 和输出清理；补充测试（例如 npm workspaces 候选）；改动记入 `CHANGES.md` |
 | T-050 | 向 microsoft/inshellisense 提交 T-039 的两项修复（D-011） | blocked | human | — | Claude Code/Opus 5.5 2026-10-14 准备分支；用户 Fork、发 PR、签 CLA | 两个 PR 已创建；合并后在 `src/inshellisense/CHANGES.md` 中注明 PR 编号。阻塞：用户 GitHub 账号下还没有 inshellisense 的 fork，本机也没有 `gh` |
 | T-012 | 在 Kiro 2.30.0 上执行规格用例 C-001 至 C-013 | todo | mac-kiro, human | — | | 每条用例的“Kiro 2.30.0 观察”一栏都有结果和证据编号 |
-| T-013 | 弄清 F-006：在 figterm 包装的交互式 zsh 中，`init zsh post` 输出什么 | todo | mac-kiro | — | | 用黑盒方式取得证据，不反编译 |
 
 ## 已完成
 
 | 编号 | 任务 | 负责人 | 产出 |
 | --- | --- | --- | --- |
+| T-013 | 弄清 F-006：`init zsh post` 为什么只输出 4 行 | Claude Code/Opus 5.5 2026-10-15 | 由 `Q_TERM`（figterm 设置）决定是否输出完整集成脚本；F-006 改为观察；E-007；target.md 注明 Kiro 已自动更新为 2.31.0 |
+| T-051 | custom generator 默认在 generator 的目录中执行命令，输出按 Fig 的规则清理（F-032） | Claude Code/Opus 5.5 2026-10-15 | `src/inshellisense/src/runtime/generator.ts`；`customGenerator.test.ts`（4 个）；T-048 清单第 8 项 |
 | T-049 | Windows 上用 Node 模拟 spec 中常用的 POSIX 命令（`ls -1ApL`、`cat`、`grep` 和 9 条 `bash -c` 脚本），generator 上下文补上 HOME | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/runtime/posixEmulation.ts`、`utils.ts`、`generator.ts`；`posixEmulation.test.ts`（31 个）；T-048 清单第 4 至 6 项；F-032、T-051 |
 | T-037 | Windows 上的 generator 改为直接执行（cross-spawn），找不到命令时才退回 Git Bash | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/runtime/utils.ts`、`package.json`；`executeCommand.test.ts`；Windows 验证见 T-048 |
 | T-039 | 修复 pwsh 路径引号（W-002 至 W-004、W-008、W-009）和中文删除数（W-005） | Claude Code/Opus 5.5 2026-10-14 | `src/inshellisense/src/runtime/replacement.ts`、`utils.ts`；对应用例转为回归测试；`CHANGES.md` 中标注可提交上游 |

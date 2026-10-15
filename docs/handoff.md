@@ -1,18 +1,20 @@
 # 当前交接状态
 
-更新：2026-10-14 · Claude Code/Opus 5.5（本轮整合者）。每次会话结束时重写本页，保持一屏可读。多个 AI 同时工作时，由整合者统一更新本页（`docs/workflow.md`“多个 AI 同时工作”）。
+更新：2026-10-15 · Claude Code/Opus 5.5（本轮整合者）。每次会话结束时重写本页，保持一屏可读。多个 AI 同时工作时，由整合者统一更新本页（`docs/workflow.md`“多个 AI 同时工作”）。
 
 ## 一句话
 
 路线（D-007）：在 PowerShell 7 + Windows Terminal 上，先基于 inshellisense 做终端内补全（阶段 A），再加 Fig 式悬浮窗（阶段 B）。阶段 A 中只需要 Mac 就能做的部分已经完成，包括 T-049：常用补全不再依赖 Git Bash。现在**卡在 Windows 实测**：T-035、T-048。阶段 B 的协议（T-042）已经完成，GPT 接着做 T-043。
 
+后续工作的顺序、分工、每一步的验收方法，以及两端如何同步代码，见 **`docs/roadmap.md`**。
+
 ## 进度
 
 | 谁 | 已完成 | 进行中 / 下一步 |
 | --- | --- | --- |
-| Claude Code（Mac） | T-036、T-037、T-038、T-039、T-049（POSIX 命令模拟）；使用说明 `docs/usage.md` | T-050 等用户 Fork；之后可以做 T-051 |
-| GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015、T-042（`docs/protocol.md` v1） | **T-043**（渲染器抽象和悬浮窗渲染器），已预留 |
-| Windows 上的 AI 和用户 | — | **T-035**（实测原版）→ **T-048**（实测我们的修改，清单已更新为 7 项）→ T-040（打包） |
+| Claude Code（Mac） | T-036、T-037、T-038、T-039、T-049（POSIX 命令模拟）、T-051（custom generator 的目录和输出）；`docs/usage.md`、`docs/roadmap.md` | T-013 已完成（F-006 查明）；等待 Windows 验收结果，修复其中发现的缺陷；T-050 等用户 Fork |
+| GPT/Codex（Mac，worktree `../fig-windows-research-codex`） | T-015、T-042（`docs/protocol.md` v1） | **T-043**（渲染器抽象和悬浮窗渲染器），已预留，2026-10-15 时还没有开始 |
+| Codex/GPT-6（Windows）和用户 | T-035 的环境检查和受控终端冒烟测试（分支 `upstream/ai/codex/T-035`，`research/spike-inshellisense.md`） | **T-035 的 16 项 WT 人工清单，需要用户在 Windows Terminal 中逐项操作** → **T-048**（8 项）→ T-040（打包） |
 | 用户 | D-010、D-011 已决定 | T-050：在 GitHub 上 Fork microsoft/inshellisense，并在 PR 中签署 CLA |
 
 ### 交给 Windows 上那个 AI 的话
@@ -28,13 +30,14 @@
 
 - T-049：Windows 上，文件补全以及 git、npm/yarn/pnpm/npx、cargo、make 的常用动态候选由 Node 模拟 POSIX 命令（`src/runtime/posixEmulation.ts`），不需要 Git Bash。Mac 上模拟 win32 的测试通过，还没有在 Windows 上运行过。
 - T-048 清单已修正：原来的第 4、5 项选错了命令（`npm run`、`git restore` 实际走的路径与清单描述不符），现在第 4 项是 `npm uninstall -g `，第 5 项是 `git diff `，另外新增了第 6 项。
-- F-032：custom generator 的默认目录和输出清理与 Fig 不同，登记为 T-051。
-- Mac 上的测试（`npm test -- --ci`）：共 271 个，260 个通过，10 个跳过，1 个失败（Homebrew 环境问题）。
+- F-032：custom generator 的默认目录和输出清理与 Fig 不同，已由 T-051 修复，T-048 清单新增第 8 项用于验证。这项修复与平台无关，也可以提交上游（是否加入 T-050，由用户决定）。
+- Mac 上的测试（`npm test -- --ci`）：共 275 个，264 个通过，10 个跳过，1 个失败（Homebrew 环境问题）。
 
 ## 推送
 
 - `origin/develop`（用户的 fork）可以推送，已是最新。
-- `upstream/develop` 仍然返回 403。获得授权之前，可以从 fork 提 Pull Request（D-008）。
+- `upstream/develop`：Windows 端已把 Mac 的提交同步上去（35db2c0）。2026-10-15 用户说对方已经授权，但从 Mac 推送仍返回 403，可能是协作邀请还没有接受，或者本机保存的令牌没有这个仓库的权限。在此之前，两边通过 `origin/develop` 同步。
+- Windows 端合并 T-035 前要注意：`research/evidence.md` 中 E-005 前面多了一个空行，表格会断开。
 
 ## 注意
 

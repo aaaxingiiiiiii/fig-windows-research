@@ -184,3 +184,25 @@
 - 经用户同意在项目 local/ 安装官方原版 0.0.4，使用项目内隔离缓存；未修改 PowerShell 启动配置。
 - doctor、git ch CLI 补全及受控 PTY 的启动/输入/候选/Tab 插入/退出通过。记录 E-005、E-006；不将这些结果冒充 Windows Terminal 人工验收。
 - T-035 保持 doing，等待用户完成 16 项 WT 清单；T-048 未开始。按并行协作规则未重写 docs/handoff.md。
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· 后续工作与验收流程
+
+- 同步对方仓库的 develop（Windows 端认领 T-035 的提交 35db2c0），查看 Windows 端分支 `ai/codex/T-035` 的进展：环境检查和受控终端冒烟测试已完成，16 项人工清单等待用户。
+- 应用户要求新增 `docs/roadmap.md`，内容包括：剩余工作的路线图、各端分工、仓库权限解决前两端同步代码的方法、验收通用规则和报告文件、阶段 A 与阶段 B 每一步的验收步骤（T-040、T-041、T-021、T-044 的清单为新写）、发现问题时的流转，以及接下来的顺序。AGENTS.md、README、mvp-plan、handoff 中加入指向它的说明。
+- 从 Mac 推送对方仓库仍然返回 403，用户稍后处理。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-051
+
+- 传给 custom generator 的 executeShellCommand 加了一层包装：
+  - 没有给出 cwd 时，使用 generator 的目录。这与 script generator 相同；输入的是路径时，用解析后的目录。
+  - 输出按 Fig 的 cleanOutput 清理。依据见 F-032：Fig 的 figterm 和 executeCommand。
+- 新增 4 个测试。去掉修复后，其中 3 个失败；另一个检查显式给出的目录不会被覆盖，修复前后都通过。其中 npm workspaces 候选的测试走真实的 spec 和真实的 npm。
+- T-048 清单新增第 8 项（`npm run -w `，要在 cd 之后的目录中测试）；roadmap、handoff、usage、spec-compat、dev.md 同步更新。
+- 测试：`npm test -- --ci` 共 275 个，264 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；lint 通过。
+- 这项修复与平台无关，CHANGES.md 中标注为“可提交上游”。是否作为第三个 PR 加入 T-050，由用户决定。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-013
+
+- 先读开源代码：1.19.7 的 `shell_init` 在 post 阶段不判断是否运行在 figterm 中，总是输出完整的 `post.zsh`。
+- 再做黑盒对照（E-007）：Kiro 的 `init <shell> post` 只有在 `Q_TERM` 已设置时才输出完整的集成脚本，否则只设置 PATH。是否有 TTY、是否设置了 `QTERM_SESSION_ID`，都不影响输出；pre 不受影响。完整脚本与开源版只有三处小差异，其中一处是别名改为经标准输入传递。F-006 由“未知”改为“观察”。
+- 发现本机的 Kiro 已自动更新为 2.31.0。已在 target.md 中注明：E-001 的哈希只对应 2.30.0，之后的观察要写明实际版本。
+- 没有反编译，也没有读取二进制文件的内容，只运行了命令并比较输出。
