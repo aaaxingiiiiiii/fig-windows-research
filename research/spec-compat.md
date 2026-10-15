@@ -88,7 +88,7 @@
 - gh 的 GraphQL 参数引号。
 - rustup 的 find/sed。
 - npm 的网络搜索（curl.exe 可以直接执行，需要实测）。
-- dotnet 的 `cat` 使用的相对路径，以及 custom generator 的默认目录和输出换行（F-032，T-051）。
+- dotnet 的 `cat` 使用的相对路径。custom generator 的默认目录和输出换行已由 T-051 修复（F-032），但 dotnet 的路径还没有在 Windows 上验证。
 - scp 中 `host:path` 与盘符冒号的区分。
 - python 和 node 的 `generateSpec` 探测：当前引擎不调用 `generateSpec`，所以没有模拟。
 

@@ -52,7 +52,6 @@ node build/index.js -s pwsh
 ## 5. 已知限制
 
 - 补全规则来自 Fig 的 spec 库，其中一部分动态候选要执行 Linux 风格的命令行工具（`ls`、`cat`、`grep`、`sed` 等）。最常见的用法已经改由 Node 模拟，不需要 Git for Windows，包括文件补全，git、npm、yarn、pnpm、npx、cargo、make 的动态候选（T-049）。其余用法在没有安装 Git for Windows 时没有动态候选，但不会报错，静态的子命令和选项照常显示。
-- 少数 spec 中的命令执行时使用的是启动补全时的目录，不是终端的当前目录（T-051 待修复）。
 - 只支持 Windows Terminal 中的 PowerShell 7；Windows PowerShell 5.1、cmd 和其他终端没有测试。
 - 全屏程序（vim、less 等）运行期间不显示候选。
 

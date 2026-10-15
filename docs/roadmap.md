@@ -1,6 +1,6 @@
 # 后续工作与验收流程
 
-更新：2026-10-15。读者：接手的 AI（Mac、Windows 各端）和负责人工验收的用户。
+更新：2026-10-15（T-051 之后）。读者：接手的 AI（Mac、Windows 各端）和负责人工验收的用户。
 
 本页说明三件事：剩下的工作按什么顺序做、由哪一端做；每一步做完后如何验收；验收不通过时如何处理。其他内容见：
 
@@ -19,7 +19,6 @@
 阶段 A：终端内版本
   ┌ [Windows + 用户] T-035 实测原版 inshellisense ── 关卡 ①（进行中）
   ├ [Windows + 用户] T-048 实测我们的修改 ──────── 关卡 ②（可与 T-035 同一次完成）
-  ├ [Mac，任意端]    T-051 custom generator 的目录和输出（不阻塞）
   └ [用户]           T-050 向上游提交 PR（Fork、签署 CLA；不阻塞）
         ↓ T-035、T-048 通过
   [Windows]        T-040 打包、安装、卸载
@@ -44,7 +43,7 @@
 | 端 | 当前 / 下一个任务 | 之后 | 说明 |
 | --- | --- | --- | --- |
 | Windows：AI 和用户 | T-035（自动检查已完成，等待用户完成 16 项人工清单）→ T-048 | T-040 → T-029 → T-021 → T-019 → T-044 → T-045 → T-046 | 凡是要看画面、用输入法、调缩放的步骤，都需要用户坐在 Windows Terminal 前操作 |
-| Mac：Claude（整合者） | T-051 | 修复 Windows 验收中发现的缺陷（代码类任务的 env 为 any）；合并各端分支；重写 `docs/handoff.md` | 不能运行 Windows 程序；修复后由 Windows 端复验 |
+| Mac：Claude（整合者） | T-051 已完成；等待 Windows 验收结果 | 修复 Windows 验收中发现的缺陷（代码类任务的 env 为 any）；合并各端分支；重写 `docs/handoff.md` | 不能运行 Windows 程序；修复后由 Windows 端复验 |
 | Mac：GPT | T-043 | 协助 T-044 的协议联调（假服务端、消息检查） | 在独立的 worktree 中工作 |
 | 用户 | T-035、T-048 的人工清单 | T-050、T-041、T-045 的 L3 清单、T-046；处理仓库权限 | 每项只需回答“是”或“否”，回答“否”时附截图 |
 
@@ -122,10 +121,9 @@ git push <可以推送的远程> develop
   node build/index.js -s pwsh -V
   ```
 
-- 清单：`docs/mvp-plan.md` 中的“T-048 人工清单”，共 7 项。日志在 `%USERPROFILE%\.inshellisense\log\inshellisense.log`。
-- 判定：7 项全部为“是”。
+- 清单：`docs/mvp-plan.md` 中的“T-048 人工清单”，共 8 项。日志在 `%USERPROFILE%\.inshellisense\log\inshellisense.log`。
+- 判定：8 项全部为“是”。
 - 不通过时：每个失败项新建一个任务（env 填 `any`），写明复现步骤和日志中的相关行（删去个人信息）。Mac 端修复并补上 L1 测试，之后 Windows 端只需复验失败的项。
-- 如果 T-051 在 T-048 之前合并：把它的验证（npm workspaces 候选）作为第 8 项加入清单。
 
 ### A3. T-040：打包与安装
 
@@ -216,8 +214,8 @@ Windows 验收发现问题
 
 ## 7. 接下来按顺序做
 
-1. **用户 + Windows 端的 AI**：在 Windows Terminal 中完成 T-035 的 16 项和 T-048 的 7 项，一次大约 1–2 小时。这是目前唯一的瓶颈。
+1. **用户 + Windows 端的 AI**：在 Windows Terminal 中完成 T-035 的 16 项和 T-048 的 8 项，一次大约 1–2 小时。这是目前唯一的瓶颈。
 2. **Mac · GPT**：T-043。
-3. **Mac · Claude**：T-051；之后处理 T-035、T-048 中发现的缺陷。
+3. **Mac · Claude**：处理 T-035、T-048 中发现的缺陷（T-051 已完成）。
 4. **用户**：解决仓库权限；为 T-050 Fork 上游仓库并签署 CLA。
 5. T-035、T-048 通过后，**Windows 端**开始 T-040；同时开始 T-029、T-021，为阶段 B 做准备。

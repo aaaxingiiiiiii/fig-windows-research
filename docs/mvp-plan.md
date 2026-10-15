@@ -111,6 +111,7 @@ docs/dev.md            构建、测试、安装命令（由 T-036 编写）
 5. 在 git 仓库中修改一个已提交的文件，再新建一个文件并 `git add`，然后输入 `git diff `：候选应包含这两个文件；输入 `git diff --staged `：只包含新加的文件。日志中应看到 `generator command emulated in node`，**不应**出现 `using git bash`。如果这台电脑装了 WSL，任务管理器中不应出现 WSL 进程。
 6. 在含有 `package.json` 的项目的子目录中输入 `npm run `，能列出脚本名；在有 `.js` 文件的目录中输入 `node `，能列出这些文件。日志中这两项都应是 `emulated in node`。
 7. 在 `src/inshellisense/` 下运行 `npm test -- --ci`，记录结果，与 `docs/dev.md` 中 Mac 上的结果对比。
+8. 新建一个项目文件夹，其中 `package.json` 的内容为 `{"name":"demo","private":true,"workspaces":["packages/a","packages/b"]}`。先用 `cd` 进入该文件夹（不要在这个文件夹中启动 inshellisense），再输入 `npm run -w `，候选中应有 `packages/a` 和 `packages/b`（T-051）。
 
 ## 7. 阶段 B：悬浮窗
 

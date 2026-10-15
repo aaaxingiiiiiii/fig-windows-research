@@ -73,7 +73,7 @@ npm test -- --ci                                                                
 - 已知缺陷用 `test.failing` 写出正确的期望，修复后改为 `test`。不要为了让测试通过而改动期望。
 - 新增用例时，同步更新 `specs/completion.md` 的第 9 节或第 10 节。
 
-2026-10-14 在 Mac 上的结果（T-049 之后，`npm test -- --ci`）：全部测试 271 个，260 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 58 个（规格用例 22 个、执行方式 5 个、POSIX 模拟 31 个），全部按预期执行；只剩 2 个 `test.failing`。
+2026-10-15 在 Mac 上的结果（T-051 之后，`npm test -- --ci`）：全部测试 275 个，264 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 62 个（规格用例 22 个、执行方式 5 个、POSIX 模拟 31 个、custom generator 4 个），全部按预期执行；只剩 2 个 `test.failing`。
 
 建议加上 `--ci`。不加时，jest 会为失败的 `brewInstallMullvad` 新写一个快照，把 `__snapshots__/runtime.test.ts.snap` 改掉；出现这种改动时，用 `git checkout` 还原，不要提交。
 

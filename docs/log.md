@@ -182,3 +182,13 @@
 - 同步对方仓库的 develop（Windows 端认领 T-035 的提交 35db2c0），查看 Windows 端分支 `ai/codex/T-035` 的进展：环境检查和受控终端冒烟测试已完成，16 项人工清单等待用户。
 - 应用户要求新增 `docs/roadmap.md`，内容包括：剩余工作的路线图、各端分工、仓库权限解决前两端同步代码的方法、验收通用规则和报告文件、阶段 A 与阶段 B 每一步的验收步骤（T-040、T-041、T-021、T-044 的清单为新写）、发现问题时的流转，以及接下来的顺序。AGENTS.md、README、mvp-plan、handoff 中加入指向它的说明。
 - 从 Mac 推送对方仓库仍然返回 403，用户稍后处理。
+
+## 2026-10-15 · Claude Code/Opus 5.5（Mac）· T-051
+
+- 传给 custom generator 的 executeShellCommand 加了一层包装：
+  - 没有给出 cwd 时，使用 generator 的目录。这与 script generator 相同；输入的是路径时，用解析后的目录。
+  - 输出按 Fig 的 cleanOutput 清理。依据见 F-032：Fig 的 figterm 和 executeCommand。
+- 新增 4 个测试。去掉修复后，其中 3 个失败；另一个检查显式给出的目录不会被覆盖，修复前后都通过。其中 npm workspaces 候选的测试走真实的 spec 和真实的 npm。
+- T-048 清单新增第 8 项（`npm run -w `，要在 cd 之后的目录中测试）；roadmap、handoff、usage、spec-compat、dev.md 同步更新。
+- 测试：`npm test -- --ci` 共 275 个，264 个通过，10 个跳过，1 个失败（Homebrew 环境问题）；lint 通过。
+- 这项修复与平台无关，CHANGES.md 中标注为“可提交上游”。是否作为第三个 PR 加入 T-050，由用户决定。
