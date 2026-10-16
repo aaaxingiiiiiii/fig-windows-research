@@ -8,6 +8,7 @@
 ; 安装只影响当前用户，不需要管理员权限。修改 PowerShell 配置文件（$PROFILE）、PATH 和补全配置的步骤
 ; 由 scripts/windows/install.ps1 完成，卸载时由 uninstall.ps1 撤销（自测见 scripts/windows/test-install.ps1）。
 ; 升级和卸载前，如果有终端正在运行 is.exe，会请用户先关闭：运行中的 is.exe 会占用它解包的原生模块，资源无法更新或删除。
+; 配置失败时安装程序以退出码 9 结束，再运行一次会继续完成；卸载脚本失败时，恢复所需的文件保存到 %LOCALAPPDATA%\figwin-recovery。
 ;
 ; 测试用的命令行参数（scripts/windows/test-installer.ps1 使用）：
 ;   /PROFILEPATH=<路径>  把初始化语句写到这个文件，而不是真实的 $PROFILE
@@ -78,8 +79,9 @@ chs.RunningPrepare=有终端正在使用补全（is.exe 正在运行），程序
 chs.RunningUninstall=有终端正在使用补全（is.exe 正在运行），无法卸载。%n%n请关闭所有 PowerShell 标签和窗口，然后点击“确定”重试；点击“取消”退出卸载。
 chs.Configuring=正在配置 PowerShell……
 chs.ScriptFailed=配置 PowerShell 时出错（退出码 %1）。程序文件已经安装，但补全不会自动启用。%n%n详细信息见：%2%n%n可以在“设置 → 应用”中卸载后重新安装。
-chs.UninstallScriptFailed=恢复 PowerShell 配置时出错（退出码 %1）。详细信息见：%2
-chs.UninstallNoPwsh=没有找到 PowerShell 7，无法自动恢复 PowerShell 的配置文件。%n%n配置文件中会留下两行（以“# fig-windows-research: inshellisense”开头的一行和它的下一行），不会造成问题，可以手动删除。
+chs.UninstallScriptFailed=恢复 PowerShell 配置时出错（退出码 %1），配置文件和 PATH 可能还没有恢复。详细信息见：%2%n%n恢复所需的文件已保存在：%3%n关闭所有 PowerShell 标签后，在 PowerShell 7 中运行下面的命令完成恢复：%n%n    pwsh -NoProfile -File "%3\scripts\uninstall.ps1" -InstallDir "%3"
+chs.UninstallNoPwsh=没有找到 PowerShell 7，无法自动恢复 PowerShell 的配置文件和 PATH。%n%n恢复所需的文件已保存在：%1%n重新安装 PowerShell 7 后，运行下面的命令完成恢复：%n%n    pwsh -NoProfile -File "%1\scripts\uninstall.ps1" -InstallDir "%1"
+chs.RunningUnknown=无法确认是否有终端正在使用补全。%n%n请关闭所有 PowerShell 标签和窗口，然后点击“确定”继续；点击“取消”退出。
 chs.Upgrade=已经安装过：这次只更新程序和资源，原来的选项保持不变。要改变选项，请先卸载再安装。
 chs.EditConfig=编辑补全配置
 chs.Readme=使用说明
@@ -110,6 +112,7 @@ Type: dirifempty; Name: "{app}"
 [Code]
 var
   PwshPath: String;
+  InstallScriptFailed: Boolean;
 
 { 查找 PowerShell 7：MSI 安装登记的 App Paths、默认安装目录、winget / 应用商店（MSIX）的应用执行别名、PATH }
 function FindPwsh(): String;
@@ -156,20 +159,34 @@ begin
   StringChangeEx(Result, '''', '\''', True);
 end;
 
-{ 是否有进程正在运行这个程序（WMI 查询；查询失败时当作没有运行，只记日志） }
-function IsRunning(const ExePath: String): Boolean;
+// 是否有进程正在运行这个程序：0 没有，1 有，2 无法确认。先用 WMI 查询；查询失败时改用 PowerShell 检查
+function RunningState(const ExePath, Pwsh: String): Integer;
 var
   Locator, Services, Processes: Variant;
+  PsPath: String;
+  Code: Integer;
 begin
-  Result := False;
+  Result := 2;
   try
     Locator := CreateOleObject('WbemScripting.SWbemLocator');
     Services := Locator.ConnectServer('.', 'root\CIMV2');
     Processes := Services.ExecQuery('SELECT ProcessId FROM Win32_Process WHERE ExecutablePath = ''' + WqlString(ExePath) + '''');
-    Result := Processes.Count > 0;
+    if Processes.Count > 0 then
+      Result := 1
+    else
+      Result := 0;
+    exit;
   except
-    Log('无法检查 is.exe 是否正在运行：' + GetExceptionMessage);
+    Log('WMI 查询失败：' + GetExceptionMessage);
   end;
+  if Pwsh = '' then
+    exit;
+  PsPath := ExePath;
+  StringChangeEx(PsPath, '''', '''''', True);
+  if Exec(Pwsh, '-NoLogo -NoProfile -NonInteractive -Command "if (Get-Process -Name is -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ''' + PsPath + ''' }) { exit 1 } else { exit 0 }"', '', SW_HIDE, ewWaitUntilTerminated, Code) and ((Code = 0) or (Code = 1)) then
+    Result := Code
+  else
+    Log('用 PowerShell 检查进程也失败了');
 end;
 
 function Quote(const S: String): String;
@@ -221,10 +238,21 @@ begin
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  State: Integer;
 begin
   Result := '';
-  if IsRunning(ExpandConstant('{app}\is.exe')) then
-    Result := CustomMessage('RunningPrepare');
+  State := RunningState(ExpandConstant('{app}\is.exe'), PwshPath);
+  // 无法确认时不放行：静默安装直接停止；有界面时请用户确认已经关闭终端
+  if State = 1 then
+    Result := CustomMessage('RunningPrepare')
+  else if State = 2 then
+  begin
+    if WizardSilent() then
+      Result := CustomMessage('RunningPrepare')
+    else if SuppressibleMsgBox(CustomMessage('RunningUnknown'), mbConfirmation, MB_OKCANCEL, IDCANCEL) <> IDOK then
+      Result := CustomMessage('RunningPrepare');
+  end;
 end;
 
 procedure RunInstallScript();
@@ -248,6 +276,7 @@ begin
   if not Exec(PwshPath, Params, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
   begin
     Log('install.ps1 失败，退出码 ' + IntToStr(Code));
+    InstallScriptFailed := True;
     SuppressibleMsgBox(FmtMessage(CustomMessage('ScriptFailed'), [IntToStr(Code), LogFile]), mbError, MB_OK, IDOK);
   end;
 end;
@@ -258,17 +287,56 @@ begin
     RunInstallScript();
 end;
 
+// 文件已经装好但配置失败时，以退出码 9 结束（静默安装时调用方据此知道失败）。再运行一次安装程序会继续完成剩下的步骤
+function GetCustomSetupExitCode(): Integer;
+begin
+  Result := 0;
+  if InstallScriptFailed then
+    Result := 9;
+end;
+
 function InitializeUninstall(): Boolean;
+var
+  State: Integer;
 begin
   Result := True;
-  while IsRunning(ExpandConstant('{app}\is.exe')) do
-  begin
+  PwshPath := FindPwsh();
+  repeat
+    State := RunningState(ExpandConstant('{app}\is.exe'), PwshPath);
+    // 没有 PowerShell 7 时 is.exe 无法运行补全会话，无法确认也可以继续
+    if (State = 0) or ((State = 2) and (PwshPath = '')) then
+      exit;
     if SuppressibleMsgBox(CustomMessage('RunningUninstall'), mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then
     begin
       Result := False;
       exit;
     end;
-  end;
+  until False;
+end;
+
+// 卸载脚本没能完成时，在删除程序文件之前，把恢复所需的文件复制到单独的文件夹，返回它的路径
+function SaveRecoveryFiles(): String;
+var
+  Names: TArrayOfString;
+  I: Integer;
+begin
+  Result := ExpandConstant('{localappdata}\figwin-recovery\') + GetDateTimeString('yyyymmdd-hhnnss', #0, #0);
+  ForceDirectories(Result + '\scripts');
+  SetArrayLength(Names, 3);
+  Names[0] := 'install-state.json';
+  Names[1] := 'profile-backup.bin';
+  Names[2] := 'install.log';
+  for I := 0 to GetArrayLength(Names) - 1 do
+    if FileExists(ExpandConstant('{app}\') + Names[I]) then
+      FileCopy(ExpandConstant('{app}\') + Names[I], Result + '\' + Names[I], False);
+  SetArrayLength(Names, 4);
+  Names[0] := 'install.ps1';
+  Names[1] := 'uninstall.ps1';
+  Names[2] := 'profile-file.ps1';
+  Names[3] := 'user-path.ps1';
+  for I := 0 to GetArrayLength(Names) - 1 do
+    FileCopy(ExpandConstant('{app}\scripts\') + Names[I], Result + '\scripts\' + Names[I], False);
+  Log('恢复所需的文件已保存到 ' + Result);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -278,11 +346,11 @@ var
 begin
   if (CurUninstallStep <> usUninstall) or not FileExists(ExpandConstant('{app}\install-state.json')) then
     exit;
-  Pwsh := FindPwsh();
+  Pwsh := PwshPath;
   if Pwsh = '' then
   begin
     Log('没有找到 PowerShell 7，跳过 uninstall.ps1');
-    SuppressibleMsgBox(CustomMessage('UninstallNoPwsh'), mbInformation, MB_OK, IDOK);
+    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallNoPwsh'), [SaveRecoveryFiles()]), mbInformation, MB_OK, IDOK);
     exit;
   end;
   LogFile := ExpandConstant('{%TEMP}\figwin-uninstall.log');
@@ -291,6 +359,6 @@ begin
   if not Exec(Pwsh, Params, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
   begin
     Log('uninstall.ps1 失败，退出码 ' + IntToStr(Code));
-    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallScriptFailed'), [IntToStr(Code), LogFile]), mbError, MB_OK, IDOK);
+    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallScriptFailed'), [IntToStr(Code), LogFile, SaveRecoveryFiles()]), mbError, MB_OK, IDOK);
   end;
 end;

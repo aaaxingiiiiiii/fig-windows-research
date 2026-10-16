@@ -25,12 +25,12 @@ if ($IsWindows) {
     $fakeName = 'is.cmd'
     $fake = Join-Path $root 'fake-is.cmd'
     Set-Content -LiteralPath $fake -Encoding utf8 -Value @(
-        '@echo off', 'chcp 65001 >nul', 'if "%1"=="--version" (echo 0.0.4-figwin.test& exit /b 0)', 'echo %*>>"%FIGWIN_TEST_CALLS%"', 'mkdir "%FIGWIN_TEST_DATA%" 2>nul', 'echo.', "echo $($sourceLine.Replace('%', '%%'))")
+        '@echo off', 'chcp 65001 >nul', 'if "%1"=="--version" (echo 0.0.4-figwin.test& exit /b 0)', 'echo %*>>"%FIGWIN_TEST_CALLS%"', 'if defined FIGWIN_TEST_FAIL_INIT if "%1"=="init" exit /b 3', 'mkdir "%FIGWIN_TEST_DATA%" 2>nul', 'echo.', "echo $($sourceLine.Replace('%', '%%'))")
 }
 else {
     $fakeName = 'is'
     $fake = Join-Path $root 'fake-is.sh'
-    Set-Content -LiteralPath $fake -Encoding utf8 -Value @('#!/bin/sh', 'if [ "$1" = "--version" ]; then echo 0.0.4-figwin.test; exit 0; fi', 'echo "$*" >> "$FIGWIN_TEST_CALLS"', 'mkdir -p "$FIGWIN_TEST_DATA"', 'echo', "printf '%s\n' `"$($sourceLine.Replace('"', '\"'))`"")
+    Set-Content -LiteralPath $fake -Encoding utf8 -Value @('#!/bin/sh', 'if [ "$1" = "--version" ]; then echo 0.0.4-figwin.test; exit 0; fi', 'echo "$*" >> "$FIGWIN_TEST_CALLS"', 'if [ -n "$FIGWIN_TEST_FAIL_INIT" ] && [ "$1" = init ]; then exit 3; fi', 'mkdir -p "$FIGWIN_TEST_DATA"', 'echo', "printf '%s\n' `"$($sourceLine.Replace('"', '\"'))`"")
     chmod +x $fake
 }
 
@@ -167,6 +167,59 @@ Invoke-Case '原地安装（安装包已把程序放进安装目录）' {
     Assert-True (-not (Test-Path -LiteralPath $ctx.Profile)) '原地安装后也能完整卸载'
 }
 
+Invoke-Case '安装后改过的配置文件混用 LF 和 CRLF：卸载只删两行，其他字节原样保留' {
+    param($ctx)
+    [IO.File]::WriteAllBytes($ctx.Profile, [Text.Encoding]::UTF8.GetBytes("A`nB`r`n"))
+} {
+    param($ctx)
+    $bytes = [IO.File]::ReadAllBytes($ctx.Profile)
+    [IO.File]::WriteAllBytes($ctx.Profile, [byte[]]($bytes + [Text.Encoding]::UTF8.GetBytes("C`nD")))
+    $ctx.BeforeUninstall = [IO.File]::ReadAllBytes($ctx.Profile)
+} {
+    param($ctx)
+    $expected = [Text.Encoding]::UTF8.GetBytes("A`nB`r`nC`nD")
+    Assert-True ([Convert]::ToHexString([IO.File]::ReadAllBytes($ctx.Profile)) -eq [Convert]::ToHexString($expected)) '只删除了安装时加入的两行，混用的换行符原样保留'
+    $backup = "$($ctx.Profile).figwin-uninstall-backup"
+    Assert-True ((Test-Path -LiteralPath $backup) -and [Convert]::ToHexString([IO.File]::ReadAllBytes($backup)) -eq [Convert]::ToHexString($ctx.BeforeUninstall)) '卸载前的内容另存了一份'
+}
+
+# 第一次安装在 init 时失败：安装记录标明没有完成；再运行一次时补完剩下的步骤，而不是当作升级跳过
+Write-Host '用例：第一次安装中途失败，再运行时补完'
+$case = Join-Path $root 'resume'
+$resumeProfile = Join-Path $case 'profile' 'Microsoft.PowerShell_profile.ps1'
+$resumeInstall = Join-Path $case 'install'
+$env:FIGWIN_TEST_DATA = Join-Path $case 'data'
+$env:FIGWIN_TEST_CALLS = Join-Path $case 'calls.txt'
+New-Item -ItemType Directory -Path (Split-Path -Parent $resumeProfile) -Force | Out-Null
+Set-Content -LiteralPath $resumeProfile -Encoding utf8NoBOM -Value 'Write-Host mine'
+$resumeBefore = (Get-FileHash -LiteralPath $resumeProfile).Hash
+$resumeArgs = @{ Source = $fake; InstallDir = $resumeInstall; ProfilePath = $resumeProfile; DataDir = $env:FIGWIN_TEST_DATA; ExecutableName = $fakeName; NoPathUpdate = $true; ConfigPath = (Join-Path $case '.inshellisenserc') }
+$env:FIGWIN_TEST_FAIL_INIT = '1'
+$failed = $false
+try { & (Join-Path $PSScriptRoot 'install.ps1') @resumeArgs 6>$null | Out-Null } catch { $failed = $true }
+Remove-Item Env:FIGWIN_TEST_FAIL_INIT
+$resumeState = Get-Content -LiteralPath (Join-Path $resumeInstall 'install-state.json') -Raw | ConvertFrom-Json -AsHashtable
+Assert-True ($failed -and $resumeState['completed'] -eq $false) 'init 失败时安装报错，记录标明没有完成'
+Assert-True ((Get-FileHash -LiteralPath $resumeProfile).Hash -eq $resumeBefore) '失败时配置文件还没有被修改'
+& (Join-Path $PSScriptRoot 'install.ps1') @resumeArgs 6>$null | Out-Null
+$resumeState = Get-Content -LiteralPath (Join-Path $resumeInstall 'install-state.json') -Raw | ConvertFrom-Json -AsHashtable
+$resumeLines = @((Read-ProfileFile -Path $resumeProfile).Text -split "`r?`n" | Where-Object { $_ })
+Assert-True ($resumeState['completed'] -eq $true -and $resumeLines[-2] -eq $ProfileMarker -and $resumeLines[-1] -eq $sourceLine) '再运行一次补完了配置文件的修改'
+& (Join-Path $PSScriptRoot 'uninstall.ps1') -InstallDir $resumeInstall 6>$null | Out-Null
+Assert-True ((Get-FileHash -LiteralPath $resumeProfile).Hash -eq $resumeBefore) '补完后卸载，配置文件逐字节恢复'
+
+# 旧版本（第 1 版）的安装记录缺少后来新增的键：卸载不能在严格模式下出错
+Write-Host '用例：第 1 版的安装记录'
+$case = Join-Path $root 'v1'
+New-Item -ItemType Directory -Path $case | Out-Null
+$v1Profile = Join-Path $root 'v1-profile.ps1'  # 放在安装目录之外：卸载会删除整个安装目录
+Set-Content -LiteralPath $v1Profile -Encoding utf8NoBOM -Value "Write-Host old`n$ProfileMarker`n$sourceLine"
+@{ version = 1; profilePath = $v1Profile; profileExisted = $true; installedHash = 'not-the-current-hash'; sourceLine = $sourceLine; pathAdded = $false; dataDir = (Join-Path $case 'data'); dataDirExisted = $true } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $case 'install-state.json')
+$v1Failed = $false
+try { & (Join-Path $PSScriptRoot 'uninstall.ps1') -InstallDir $case -WarningAction SilentlyContinue 6>$null | Out-Null } catch { $v1Failed = $true; Write-Host "  $_" }
+Assert-True (-not $v1Failed -and -not (Get-Content -LiteralPath $v1Profile -Raw).Contains($ProfileMarker)) '用第 1 版的记录也能卸载，删除了安装时加入的两行'
+
 # ---- 用户 PATH（只在 Windows 上）：用 HKCU 下的临时子键代替 HKCU\Environment，不碰真实的 PATH ----
 if ($IsWindows) {
     $testKeyRoot = "Software\figwin-install-test-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
@@ -209,6 +262,15 @@ if ($IsWindows) {
         param($ctx)
         $value = Get-UserPathValue $ctx.Extra.PathKey
         Assert-True ($value.Value -eq 'C:\Tools;D:\Later' -and $value.Kind -eq 'String') '只删除了安装目录，保留了用户新加的项和原来的类型'
+    }
+    Invoke-Case '安装后只改了 PATH 的值类型（REG_EXPAND_SZ → REG_SZ）' { New-TestPathKey 'C:\Tools' } {
+        param($ctx)
+        $value = Get-UserPathValue $ctx.Extra.PathKey
+        Set-UserPathValue ([ordered]@{ Value = $value.Value; Kind = 'String' }) $ctx.Extra.PathKey
+    } {
+        param($ctx)
+        $value = Get-UserPathValue $ctx.Extra.PathKey
+        Assert-True ($value.Value -eq 'C:\Tools' -and $value.Kind -eq 'String') '只删除了安装目录，保留了用户改过的类型'
     }
     [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($testKeyRoot, $false)
 }

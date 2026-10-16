@@ -6,7 +6,7 @@
 // 每组都带 --wrap --per-step（最后一组除外），依次是：
 //   direct-*：不经过 inshellisense，直接运行 pwsh。也错位，说明问题不在 inshellisense
 //   is-off-*：现在的 inshellisense（E-012 的条件）
-//   is-conpty-* / is-legacy-* / is-noscroll-*：inshellisense 内部的 xterm 改用 ConPTY 的窗口变化规则（候选修复，见 src/isterm/pty.ts）
+//   is-conpty-* / is-noscroll-*：inshellisense 内部的 xterm 改用 ConPTY 的窗口变化规则；is-sys*：改用系统自带的 ConPTY（候选修复，见 src/isterm/pty.ts）
 //   *-plain / *-conpty：外层 xterm 用默认规则 / 用 ConPTY 的规则
 // 完整输出（含提示符，可能有本机路径）写到 --out 目录；屏幕上和 summary.md 中只有坐标和是否对齐，可以公开。
 
@@ -26,12 +26,12 @@ const groups = [
   { name: "direct-conpty", flags: ["--direct", "--outer-conpty"] },
   { name: "is-off-plain", flags: [], variant: "off" },
   { name: "is-off-conpty", flags: ["--outer-conpty"], variant: "off" },
-  { name: "is-conpty-plain", flags: [], variant: "conpty" },
   { name: "is-conpty-conpty", flags: ["--outer-conpty"], variant: "conpty" },
-  { name: "is-legacy-conpty", flags: ["--outer-conpty"], variant: "legacy" },
-  { name: "is-noscroll-plain", flags: [], variant: "noscroll" },
   { name: "is-noscroll-conpty", flags: ["--outer-conpty"], variant: "noscroll" },
-  { name: "is-noscroll-conpty-nowrap", flags: ["--outer-conpty"], variant: "noscroll", nowrap: true },
+  { name: "is-sysconpty-plain", flags: [], variant: "sysconpty" },
+  { name: "is-sysconpty-conpty", flags: ["--outer-conpty"], variant: "sysconpty" },
+  { name: "is-syswpty-conpty", flags: ["--outer-conpty"], variant: "syswpty" },
+  { name: "is-sysconpty-conpty-nowrap", flags: ["--outer-conpty"], variant: "sysconpty", nowrap: true },
 ];
 
 const cell = (result) => {

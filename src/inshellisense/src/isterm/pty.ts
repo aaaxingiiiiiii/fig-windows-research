@@ -48,11 +48,18 @@ type ISTermOptions = {
 // 变宽时合并折行，光标随之上移。xterm 默认在这两种情况下都从回滚区拉回旧行，内部模型和 ConPTY 的行号从此错开。
 // FIGWIN_T056_VARIANT 只用于 Windows 上的对照试验（spikes/T-056-resize-sim/matrix.cjs），有结论后删除：
 //   off（默认，与上游相同）、conpty（windowsPty：变高时不拉回旧行）、legacy（再加上不重新折行）、
-//   noscroll（windowsPty，并且内部 xterm 不保留回滚区，变宽时也和 ConPTY 一样让光标上移）
-export const t056TerminalOptions = (platform: NodeJS.Platform, release: string, variant: string | undefined): { windowsPty?: IWindowsPty; scrollback?: number } => {
+//   noscroll（windowsPty，并且内部 xterm 不保留回滚区，变宽时也和 ConPTY 一样让光标上移）、
+//   sysconpty（改用系统自带的 ConPTY，不用 node-pty 附带的 conpty.dll：对照组中系统 ConPTY 在窗口变化后会重画整个屏幕）、
+//   syswpty（系统 ConPTY，再加上 windowsPty）
+export const t056UseConptyDll = (variant: string | undefined): boolean => variant !== "sysconpty" && variant !== "syswpty";
+export const t056TerminalOptions = (
+  platform: NodeJS.Platform,
+  release: string,
+  variant: string | undefined,
+): { windowsPty?: IWindowsPty; scrollback?: number } => {
   if (platform !== "win32") return {};
   const build = Number(release.split(".")[2]) || 0;
-  if (variant === "conpty") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) } };
+  if (variant === "conpty" || variant === "syswpty") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) } };
   if (variant === "legacy") return { windowsPty: { backend: "conpty", buildNumber: 21375 } };
   if (variant === "noscroll") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) }, scrollback: 0 };
   return {};
@@ -94,7 +101,7 @@ export class ISTerm implements IPty {
       cwd: process.cwd(),
       env: { ...convertToPtyEnv(shell, underTest, login), ...env },
       useConpty: true,
-      useConptyDll: true,
+      useConptyDll: t056UseConptyDll(process.env.FIGWIN_T056_VARIANT),
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;

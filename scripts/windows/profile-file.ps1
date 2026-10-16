@@ -37,8 +37,9 @@ function Read-ProfileFile {
     }
 }
 
-function Write-ProfileFile {
-    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][AllowEmptyString()][string]$Text, [Parameter(Mandatory)][string]$Encoding)
+# 按配置文件原来的编码把文本转成字节（包括 BOM）
+function ConvertTo-ProfileBytes {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Text, [Parameter(Mandatory)][string]$Encoding)
     [byte[]]$preamble = @()
     if ($Encoding -eq 'utf8BOM') {
         $encoder = [Text.UTF8Encoding]::new($false)
@@ -58,30 +59,49 @@ function Write-ProfileFile {
     else {
         $encoder = [Text.UTF8Encoding]::new($false)
     }
-    [byte[]]$body = $encoder.GetBytes($Text)
-    $stream = [IO.File]::Create($Path)
+    return [byte[]]($preamble + $encoder.GetBytes($Text))
+}
+
+function Get-BytesHash([byte[]]$Bytes) {
+    return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Bytes))
+}
+
+# 原子地写入文件：先写到同一目录下的临时文件，再替换原文件。写到一半中断时，原文件保持不变
+function Write-FileAtomic {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][AllowEmptyCollection()][byte[]]$Bytes)
+    $temp = "$Path.figwin-tmp-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
     try {
-        $stream.Write($preamble, 0, $preamble.Length)
-        $stream.Write($body, 0, $body.Length)
+        $stream = [IO.File]::Create($temp)
+        try {
+            $stream.Write($Bytes, 0, $Bytes.Length)
+            $stream.Flush($true)
+        }
+        finally {
+            $stream.Dispose()
+        }
+        if (Test-Path -LiteralPath $Path -PathType Leaf) { [IO.File]::Replace($temp, $Path, [NullString]::Value) }
+        else { [IO.File]::Move($temp, $Path) }
     }
     finally {
-        $stream.Dispose()
+        if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue }
     }
 }
 
-# 删除安装时加入的两行：标记注释，以及紧跟其后的初始化语句。返回删除后的文本和是否找到。
+function Write-ProfileFile {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][AllowEmptyString()][string]$Text, [Parameter(Mandatory)][string]$Encoding)
+    Write-FileAtomic -Path $Path -Bytes (ConvertTo-ProfileBytes -Text $Text -Encoding $Encoding)
+}
+
+# 删除安装时加入的两行：标记注释，以及紧跟其后的初始化语句。只删这两行和它们的换行符，其他内容（包括混用的 LF 和 CRLF）原样保留。
+# 返回删除后的文本和是否找到。
 function Remove-ProfileBlock {
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Text, [Parameter(Mandatory)][string]$SourceLine)
-    $newline = if ($Text.Contains("`r`n")) { "`r`n" } else { "`n" }
-    $lines = [Collections.Generic.List[string]]::new([string[]][regex]::Split($Text, '\r?\n'))
-    $found = $false
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -eq $ProfileMarker) {
-            $count = if ($i + 1 -lt $lines.Count -and $lines[$i + 1].Trim() -eq $SourceLine) { 2 } else { 1 }
-            $lines.RemoveRange($i, $count)
-            $found = $true
-            $i--
-        }
-    }
-    return [pscustomobject]@{ Text = ($lines -join $newline); Found = $found }
+    $pattern = '(?m)^[ \t]*' + [regex]::Escape($ProfileMarker) + '[ \t]*(?:\r?\n|\z)(?:[ \t]*' + [regex]::Escape($SourceLine) + '[ \t]*(?:\r?\n|\z))?'
+    $result = [regex]::Replace($Text, $pattern, '')
+    return [pscustomobject]@{ Text = $result; Found = ($result -ne $Text) }
+}
+
+# 安装记录：原子写入；读取时用索引访问（$state['键']），旧版本的记录缺少某些键时得到 $null，不会在严格模式下出错
+function Save-InstallState([System.Collections.IDictionary]$State, [string]$Path) {
+    Write-FileAtomic -Path $Path -Bytes ([Text.UTF8Encoding]::new($false).GetBytes(($State | ConvertTo-Json)))
 }

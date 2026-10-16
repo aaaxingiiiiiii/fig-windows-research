@@ -458,3 +458,19 @@
 - T-059：Inno Setup 7.1 安装脚本、构建脚本（Mac 上验证了准备文件的步骤，第三方声明 47 个包）、安装包验收脚本 `test-installer.ps1` 和 `check-installed.cjs`（Mac 上验证了 3 种检查方式）。D-015 记录技术选择。
 - T-061：`.github/workflows/windows.yml`。
 - L1：Mac 上 396 个测试，385 个通过，10 个跳过，1 个失败（Homebrew）；lint 通过；check-refs 通过。
+
+## 2026-10-16 · Claude Code/Opus 5.5（Mac，整合者）· CI 第一、二次结果，GPT 审查安装包
+
+- 第一次 CI：安装包构建因读错 ISCC 的版本字段而失败；Windows 上 configTemplate 测试因 CRLF 失败。都已修复。
+- 第二次 CI（E-018）：Windows 上的测试全部通过；安装包编译成功，虚拟机中安装、新开 PowerShell 7 自动出现补全（PATH 中没有 Node）都通过。
+- 第一次按“统筹 GPT”的方式，用本机 Codex（`codex exec`，只读）独立审查安装包，发现 9 个问题。整合者逐条核实，全部成立，其中两条在本机复现（严格模式下哈希表缺键、空结果取 `.Count` 都会报错）。修复：
+  - 写文件改为原子替换；先记录、再修改；
+  - 安装记录增加 completed：第一次安装中途失败时，再运行一次会补完，不再当作升级跳过；配置失败时安装程序的退出码是 9；
+  - 卸载脚本失败或没有 PowerShell 7 时，把恢复所需的文件保存到 `%LOCALAPPDATA%\figwin-recovery\`，并提示怎样完成恢复；
+  - 进程检查：WMI 失败时改用 PowerShell 检查，两种都失败时不放行；
+  - 卸载时只删除那两行，其余字节原样保留；用户改过的配置文件先另存一份；
+  - PATH 的“没有改过”判断区分大小写和值类型；记录一律用索引访问，兼容第 1 版的记录；
+  - 验收脚本：修复 `.Count` 缺陷；升级检查先故意把资源弄旧；增加故障注入（配置失败 → 退出码 9 → 补完 → 卸载恢复）。
+  - 安装脚本自测：82 项通过，另有 4 个只在 Windows 上运行的 PATH 用例；两处变异检查有效。
+- T-056：`noscroll` 无效。新增变体 `sysconpty`、`syswpty`（改用系统 ConPTY），等第三次 CI。
+

@@ -7,7 +7,7 @@
 // wrapped lines are joined, the cursor moves up. In both cases the default xterm pulls lines back from its scrollback.
 
 import xterm from "@xterm/headless";
-import { t056TerminalOptions } from "../../isterm/pty.js";
+import { t056TerminalOptions, t056UseConptyDll } from "../../isterm/pty.js";
 
 const write = (term: xterm.Terminal, data: string) => new Promise<void>((resolve) => term.write(data, resolve));
 const options = (variant?: string) => t056TerminalOptions("win32", "10.0.26200", variant);
@@ -45,6 +45,13 @@ test("t056TerminalOptions only applies on win32 and defaults to upstream behavio
   expect(t056TerminalOptions("win32", "10.0.19045", "conpty")).toEqual({ windowsPty: { backend: "conpty", buildNumber: 21376 } });
   expect(options("legacy")).toEqual({ windowsPty: { backend: "conpty", buildNumber: 21375 } });
   expect(options("noscroll")).toEqual({ windowsPty: { backend: "conpty", buildNumber: 26200 }, scrollback: 0 });
+  expect(options("sysconpty")).toEqual({});
+  expect(options("syswpty")).toEqual({ windowsPty: { backend: "conpty", buildNumber: 26200 } });
+});
+
+test("only the sys* variants switch from the bundled conpty.dll to the system ConPTY", () => {
+  expect([undefined, "off", "conpty", "legacy", "noscroll"].map(t056UseConptyDll)).toEqual([true, true, true, true, true]);
+  expect(["sysconpty", "syswpty"].map(t056UseConptyDll)).toEqual([false, false]);
 });
 
 test("growing the terminal pulls lines from scrollback by default", async () => {

@@ -123,8 +123,8 @@ else {
 # ---- 3. 有终端在使用补全时，阻止升级和卸载 ----
 $env:FIGWIN_CHILD_PATH = Get-ChildPath
 $hold = Start-Process -FilePath $node -ArgumentList "`"$checker`"", "`"$installedExe`"", 'hold', '60', '--', '-s', 'pwsh' -PassThru -WindowStyle Hidden
-for ($waited = 0; $waited -lt 60 -and (Get-IsProcesses).Count -eq 0; $waited++) { Start-Sleep -Seconds 1 }
-if ((Get-IsProcesses).Count -gt 0) {
+for ($waited = 0; $waited -lt 60 -and @(Get-IsProcesses).Count -eq 0; $waited++) { Start-Sleep -Seconds 1 }
+if (@(Get-IsProcesses).Count -gt 0) {
     $code = Invoke-Setup 'upgrade-while-running'
     Check '有终端在运行 is.exe 时，安装程序不升级（退出码不为 0）' ($code -ne 0) "退出码 $code"
     Check '……PowerShell 配置文件没有被改动' ((Get-Hash $profilePath) -eq $profileInstalled)
@@ -139,10 +139,14 @@ Get-IsProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
 # ---- 4. 再运行一次安装程序（升级，A3 第 5 项） ----
+# 先把资源弄“旧”：改掉版本号，放一个旧版本才有的文件。升级必须重新生成资源，才能通过下面的检查
+Set-Content -LiteralPath $versionFile -Value '0.0.0-stale' -NoNewline
+$staleSpec = Join-Path $dataDir 'spec' 'figwin-stale-test.js'
+Set-Content -LiteralPath $staleSpec -Value '// stale'
 $code = Invoke-Setup 'upgrade'
 Check '再次运行安装程序正常结束（退出码 0）' ($code -eq 0) "退出码 $code"
 Check '再次安装没有重复添加初始化语句（配置文件不变）' ((Get-Hash $profilePath) -eq $profileInstalled)
-Check '再次安装后资源仍与程序同一版本' ((Test-Path -LiteralPath $versionFile) -and (Get-Content -LiteralPath $versionFile -Raw).Trim() -eq $version)
+Check '再次安装重新生成了资源（版本号恢复，旧文件被删除）' ((Test-Path -LiteralPath $versionFile) -and (Get-Content -LiteralPath $versionFile -Raw).Trim() -eq $version -and -not (Test-Path -LiteralPath $staleSpec))
 
 # ---- 5. 补全配置写错时，PowerShell 仍然可用（T-062） ----
 if ($interactive -and (Test-Path -LiteralPath $configPath)) {
@@ -168,6 +172,28 @@ $samePath = if ($null -eq $pathBefore) { $null -eq $pathAfter } else { $pathAfte
 Check '用户 PATH 恢复原样（值和类型都相同）' $samePath
 if (-not $configExisted) { Check '没有改过的默认补全配置已删除' (-not (Test-Path -LiteralPath $configPath)) }
 if (-not $dataExisted) { Check '安装时新建的数据目录已删除' (-not (Test-Path -LiteralPath $dataDir)) }
+
+# ---- 7. 配置失败时：退出码 9；排除故障后再运行会补完；之后能干净卸载 ----
+# 用 /PROFILEPATH 把配置文件指向一个已经存在的目录，写入必然失败；这一部分不碰真实的 $PROFILE
+$obstacle = Join-Path $LogDir 'profile-is-a-directory'
+New-Item -ItemType Directory -Force -Path $obstacle | Out-Null
+$pathBeforeFailure = Get-UserPathValue
+$code = Invoke-Setup 'fail-profile' @('/TASKS=profile', "/PROFILEPATH=`"$obstacle`"")
+Check '配置失败时，安装程序以退出码 9 结束' ($code -eq 9) "退出码 $code"
+$statePath = Join-Path $installDir 'install-state.json'
+$failedState = if (Test-Path -LiteralPath $statePath) { Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -AsHashtable } else { $null }
+Check '……安装记录标明“没有完成”' ($failedState -and $failedState['completed'] -eq $false)
+Remove-Item -LiteralPath $obstacle -Recurse -Force
+$code = Invoke-Setup 'resume' @('/TASKS=profile', "/PROFILEPATH=`"$obstacle`"")
+Check '排除故障后再运行安装程序，补完剩下的步骤（退出码 0）' ($code -eq 0) "退出码 $code"
+$resumedLines = @(if (Test-Path -LiteralPath $obstacle -PathType Leaf) { (Read-ProfileFile -Path $obstacle).Text -split "`r?`n" | Where-Object { $_ } })
+Check '……配置文件中加上了初始化语句' ($resumedLines.Count -ge 2 -and $resumedLines[-2] -eq $ProfileMarker)
+$removed = Invoke-Uninstall 'after-resume' 120
+for ($waited = 0; $waited -lt 30 -and (Test-Path -LiteralPath $installDir); $waited++) { Start-Sleep -Seconds 1 }
+Check '……卸载后安装目录和卸载信息都已删除' ($removed -and -not (Test-Path -LiteralPath $installDir))
+Check '……卸载后配置文件被删除（安装前不存在）' (-not (Test-Path -LiteralPath $obstacle))
+$pathAfterFailure = Get-UserPathValue
+Check '……卸载后用户 PATH 恢复原样' ((($null -eq $pathBeforeFailure) -and ($null -eq $pathAfterFailure)) -or ($pathBeforeFailure -and $pathAfterFailure -and $pathAfterFailure.Value -ceq $pathBeforeFailure.Value -and $pathAfterFailure.Kind -eq $pathBeforeFailure.Kind))
 
 # ---- 汇总 ----
 $failed = @($results | Where-Object Status -eq '失败')

@@ -8,7 +8,7 @@
 # 做的事（只撤销安装记录中做过的步骤）：
 #   1. 恢复 $PROFILE：
 #      - 安装后没有再改过：逐字节恢复安装前的内容；安装前没有这个文件时删除它；
-#      - 安装后又被改过：只删除安装时加入的两行，保留其他修改，并提示。
+#      - 安装后又被改过：先把当前内容另存为 <配置文件>.figwin-uninstall-backup，再只删除安装时加入的两行，其他内容逐字节保留，并提示。
 #   2. 删除安装时创建的默认补全配置（~/.inshellisenserc）；用户改过的保留。
 #   3. 用户 PATH：安装后没有再改过时，恢复为安装前的值；改过时只删除安装目录这一项（只在安装时加过的情况下）。
 #   4. 删除安装时新建的 inshellisense 数据目录（安装前就存在的不删；-KeepData 时都不删）。
@@ -45,20 +45,23 @@ try {
     $statePath = Join-Path $InstallDir 'install-state.json'
     if (-not (Test-Path -LiteralPath $statePath)) { throw "没有找到安装记录：$statePath。可能没有安装，或已经卸载。" }
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -AsHashtable
+    # 一律用索引访问（$state['键']）：旧版本的记录缺少某些键时得到 $null，严格模式下不会出错
     # 第 1 版的安装记录没有 profileUpdated，有初始化语句就说明改过配置文件
-    $profileUpdated = if ($state.ContainsKey('profileUpdated')) { $state.profileUpdated } else { [bool]$state.sourceLine }
+    $profileUpdated = if ($state.ContainsKey('profileUpdated')) { [bool]$state['profileUpdated'] } else { [bool]$state['sourceLine'] }
+    # PATH 中要删除的是安装时的目录。恢复时可能从另一个目录（卸载失败时保存的恢复文件夹）运行本脚本
+    $recordedDir = if ($state['installDir']) { $state['installDir'] } elseif ($state['executable']) { Split-Path -Parent $state['executable'] } else { $InstallDir }
 
     # ---- 1. PowerShell 配置文件 ----
-    $profilePath = $state.profilePath
+    $profilePath = $state['profilePath']
     if (-not $profileUpdated) {
         Write-Host 'PowerShell 配置文件：安装时没有修改，跳过'
     }
     elseif ($PSCmdlet.ShouldProcess($profilePath, '恢复配置文件')) {
         $exists = Test-Path -LiteralPath $profilePath -PathType Leaf
         $currentHash = if ($exists) { (Get-FileHash -LiteralPath $profilePath -Algorithm SHA256).Hash } else { $null }
-        if ($exists -and $currentHash -eq $state.installedHash) {
-            if ($state.profileExisted) {
-                Copy-Item -LiteralPath (Join-Path $InstallDir 'profile-backup.bin') -Destination $profilePath -Force
+        if ($exists -and $currentHash -eq $state['installedHash']) {
+            if ($state['profileExisted']) {
+                Write-FileAtomic -Path $profilePath -Bytes ([IO.File]::ReadAllBytes((Join-Path $InstallDir 'profile-backup.bin')))
                 Write-Host "PowerShell 配置文件：已恢复为安装前的内容（$profilePath）"
             }
             else {
@@ -68,10 +71,14 @@ try {
         }
         elseif ($exists) {
             $file = Read-ProfileFile -Path $profilePath
-            $result = Remove-ProfileBlock -Text $file.Text -SourceLine $state.sourceLine
+            $result = Remove-ProfileBlock -Text $file.Text -SourceLine $state['sourceLine']
             if ($result.Found) {
+                # 用户在安装后改过这个文件：先把现在的内容另存一份，再只删除安装时加入的两行
+                $backup = "$profilePath.figwin-uninstall-backup"
+                if (Test-Path -LiteralPath $backup) { $backup = "$backup-$(Get-Date -Format yyyyMMddHHmmss)" }
+                Copy-Item -LiteralPath $profilePath -Destination $backup
                 Write-ProfileFile -Path $profilePath -Text $result.Text -Encoding $file.Encoding
-                Write-Warning "配置文件在安装后被修改过：只删除了安装时加入的两行，其他内容保持不变（$profilePath）"
+                Write-Warning "配置文件在安装后被修改过：只删除了安装时加入的两行，其他内容保持不变（$profilePath）。卸载前的内容另存在 $backup"
             }
             else {
                 Write-Warning "配置文件中没有找到安装时加入的内容，未修改（$profilePath）"
@@ -83,39 +90,47 @@ try {
     }
 
     # ---- 2. 补全配置 ----
-    if ($state.configCreated -and (Test-Path -LiteralPath $state.configPath)) {
-        if ((Get-FileHash -LiteralPath $state.configPath -Algorithm SHA256).Hash -ne $state.configHash) {
-            Write-Host "补全配置：安装后改过，保留（$($state.configPath)）"
+    $configPath = $state['configPath']
+    if ($state['configCreated'] -and $configPath -and (Test-Path -LiteralPath $configPath)) {
+        if ((Get-FileHash -LiteralPath $configPath -Algorithm SHA256).Hash -ne $state['configHash']) {
+            Write-Host "补全配置：安装后改过，保留（$configPath）"
         }
-        elseif ($PSCmdlet.ShouldProcess($state.configPath, '删除安装时创建的默认补全配置')) {
-            Remove-Item -LiteralPath $state.configPath -Force
-            Write-Host "补全配置：安装时创建、没有改过，已删除（$($state.configPath)）"
+        elseif ($PSCmdlet.ShouldProcess($configPath, '删除安装时创建的默认补全配置')) {
+            Remove-Item -LiteralPath $configPath -Force
+            Write-Host "补全配置：安装时创建、没有改过，已删除（$configPath）"
         }
     }
 
     # ---- 3. PATH ----
-    if ($state.pathAdded -and $IsWindows -and $PSCmdlet.ShouldProcess('用户 PATH', "删除 $InstallDir")) {
-        $pathKey = if ($state.pathKey) { $state.pathKey } else { 'Environment' }
+    if ($state['pathAdded'] -and $IsWindows -and $PSCmdlet.ShouldProcess('用户 PATH', "删除 $recordedDir")) {
+        $pathKey = if ($state['pathKey']) { $state['pathKey'] } else { 'Environment' }
+        $afterKind = if ($state['pathAfterKind']) { $state['pathAfterKind'] } elseif ($state['pathBefore']) { $state['pathBefore']['Kind'] } else { 'ExpandString' }
         $current = Get-UserPathValue $pathKey
-        if ($current -and $state.pathAfter -and $current.Value -eq $state.pathAfter) {
-            Set-UserPathValue $state.pathBefore $pathKey
+        $entries = if ($current) { @(Split-PathEntries $current.Value) } else { @() }
+        $ours = @($entries | Where-Object { Test-PathEntry $_ $recordedDir })
+        if ($current -and $state['pathAfter'] -and $current.Value -ceq $state['pathAfter'] -and $current.Kind -eq $afterKind) {
+            # 安装后没有再改过：恢复为安装前的值（安装前没有这个值时删除它）
+            Set-UserPathValue $state['pathBefore'] $pathKey
             Write-Host 'PATH：已恢复为安装前的值'
         }
-        elseif ($current) {
-            $entries = @(Split-PathEntries $current.Value | Where-Object { -not (Test-PathEntry $_ $InstallDir) })
-            Set-UserPathValue ([ordered]@{ Value = $entries -join ';'; Kind = $current.Kind }) $pathKey
+        elseif ($ours.Count -gt 0) {
+            Set-UserPathValue ([ordered]@{ Value = @($entries | Where-Object { -not (Test-PathEntry $_ $recordedDir) }) -join ';'; Kind = $current.Kind }) $pathKey
             Write-Host 'PATH：安装后被修改过，只删除了安装目录这一项'
+        }
+        else {
+            Write-Host 'PATH：安装目录已经不在用户 PATH 中，未修改'
         }
     }
 
     # ---- 4. 数据目录 ----
-    if (-not $KeepData -and -not $state.dataDirExisted -and (Test-Path -LiteralPath $state.dataDir)) {
-        if ($PSCmdlet.ShouldProcess($state.dataDir, '删除安装时新建的数据目录')) {
-            Remove-DirectoryOrWarn $state.dataDir '数据目录'
+    $dataDir = $state['dataDir']
+    if ($dataDir -and -not $KeepData -and -not $state['dataDirExisted'] -and (Test-Path -LiteralPath $dataDir)) {
+        if ($PSCmdlet.ShouldProcess($dataDir, '删除安装时新建的数据目录')) {
+            Remove-DirectoryOrWarn $dataDir '数据目录'
         }
     }
-    elseif (Test-Path -LiteralPath $state.dataDir) {
-        Write-Host "数据目录：保留（$($state.dataDir)）"
+    elseif ($dataDir -and (Test-Path -LiteralPath $dataDir)) {
+        Write-Host "数据目录：保留（$dataDir）"
     }
 
     # ---- 5. 安装目录 ----
