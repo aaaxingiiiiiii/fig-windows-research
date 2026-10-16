@@ -86,7 +86,7 @@ node build/index.js -s pwsh
 - 补全规则来自 Fig 的 spec 库，其中一部分动态候选要执行 Linux 风格的命令行工具（`ls`、`cat`、`grep`、`sed` 等）。最常见的用法已经改由 Node 模拟，不需要 Git for Windows，包括文件补全，git、npm、yarn、pnpm、npx、cargo、make 的动态候选（T-049）。其余用法在没有安装 Git for Windows 时没有动态候选，但不会报错，静态的子命令和选项照常显示。
 - 只支持 Windows Terminal 中的 PowerShell 7；Windows PowerShell 5.1、cmd 和其他终端没有测试。
 - 全屏程序（vim、less 等）运行期间不显示候选。
-- 在 Windows 10 上，拖动窗口大小后候选和输入可能错开几行（T-056），运行 `Clear-Host` 可以恢复。Windows 11 上已经修复：改用系统自带的 ConPTY。需要手动切换时，在启动补全之前设置环境变量 `FIGWIN_CONPTY`，取值 `system` 或 `bundled`（node-pty 附带的版本）。
+- 拖动窗口大小（尤其是窗口变宽、或者屏幕上有折行的长内容时）后，候选和输入可能错开几行（T-056），运行 `Clear-Host` 可以恢复。原因已经查明，还没有修复。
 
 ## 6. 遇到问题时
 

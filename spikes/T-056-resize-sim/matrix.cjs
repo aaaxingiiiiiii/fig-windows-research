@@ -36,6 +36,7 @@ const groups = [
 const cell = (result) => {
   const where = result.cursor ? `${result.cursor[0]},${result.cursor[1]}` : "";
   if (result.label === "exited early") return "提前退出";
+  if (result.suggestionsShown === false) return "✗无候选";
   if (result.aligned === false) return `✗框 ${where}`;
   if (result.promptAligned === false) return `✗行 ${where}`;
   if (result.rowStable === false) return `✗跳 ${where}`;
@@ -72,7 +73,7 @@ const table = [
     return `| ${name} | ${exit} | ${labels.map((label) => (byLabel.has(label) ? cell(byLabel.get(label)) : extra ? cell(extra) : "")).join(" | ")} |`;
   }),
   "",
-  "✓ 对齐；✗框 候选框没有紧贴光标；✗行 输入的字符没有出现在提示符所在的行；✗跳 输入一个字符后光标跳到了别的行。坐标是外层终端的光标（列,行，从 0 开始）。",
+  "✓ 对齐；✗框 候选框没有紧贴光标；✗行 输入的字符没有出现在提示符所在的行；✗跳 输入一个字符后光标跳到了别的行；✗无候选 输入 git ch 后没有出现候选框（其余各列的“对齐”没有意义）。坐标是外层终端的光标（列,行，从 0 开始）。",
 ].join("\n");
 fs.writeFileSync(path.join(out, "summary.md"), table + "\n");
 console.log("\n" + table);

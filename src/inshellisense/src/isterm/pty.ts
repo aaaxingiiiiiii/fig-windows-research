@@ -43,18 +43,10 @@ type ISTermOptions = {
   login: boolean;
 };
 
-// fig-windows-research T-056: on Windows 11 use the system ConPTY instead of the conpty.dll bundled with node-pty.
-// The bundled one does not repaint the screen after a resize, while the internal xterm pulls lines back from its
-// scrollback when the window grows taller or wider. The two then disagree about rows, inshellisense repaints the screen
-// from the internal model, and the shell's later output lands on the wrong lines. The system ConPTY repaints after a
-// resize, so the internal model follows it (F-035, E-019, E-020). Older Windows 10 builds keep the bundled one.
-// FIGWIN_CONPTY=bundled|system overrides the choice for troubleshooting.
-export const useBundledConpty = (platform: NodeJS.Platform, release: string, override: string | undefined): boolean => {
-  if (platform !== "win32") return true;
-  if (override === "bundled") return true;
-  if (override === "system") return false;
-  return (Number(release.split(".")[2]) || 0) < 22000;
-};
+// fig-windows-research T-056: which ConPTY to use on Windows. The default stays the conpty.dll bundled with node-pty.
+// The system ConPTY repaints the screen after a resize (no row drift), but with it inshellisense never shows any
+// suggestions (E-021), so it is only available for experiments: FIGWIN_CONPTY=system (or bundled).
+export const useBundledConpty = (platform: NodeJS.Platform, override: string | undefined): boolean => platform !== "win32" || override !== "system";
 
 export type ISTermPatch = {
   startX: number;
@@ -92,7 +84,7 @@ export class ISTerm implements IPty {
       cwd: process.cwd(),
       env: { ...convertToPtyEnv(shell, underTest, login), ...env },
       useConpty: true,
-      useConptyDll: useBundledConpty(process.platform, os.release(), process.env.FIGWIN_CONPTY),
+      useConptyDll: useBundledConpty(process.platform, process.env.FIGWIN_CONPTY),
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;

@@ -308,8 +308,18 @@ var
   Dir: String;
 begin
   Result := '';
+  // 每次新建一个不存在的文件夹，不复用、也不会删除以前留下的恢复文件
+  if not ForceDirectories(ExpandConstant('{localappdata}\figwin-recovery')) then
+  begin
+    Log('无法创建恢复文件夹');
+    exit;
+  end;
   Dir := ExpandConstant('{localappdata}\figwin-recovery\') + GetDateTimeString('yyyymmdd-hhnnss', #0, #0);
-  if not ForceDirectories(Dir + '\scripts') then
+  I := 0;
+  while DirExists(Dir + '-' + IntToStr(I)) do
+    I := I + 1;
+  Dir := Dir + '-' + IntToStr(I);
+  if not CreateDir(Dir) or not CreateDir(Dir + '\scripts') then
   begin
     Log('无法创建 ' + Dir);
     exit;
@@ -351,7 +361,12 @@ begin
     State := RunningState(ExpandConstant('{app}\is.exe'), PwshPath);
     if State = 0 then
       break;
-    // 有终端在运行，或者无法确认：请用户关闭终端后重试；静默卸载时直接停止
+    // 有终端在运行，或者无法确认：请用户关闭终端后重试；静默卸载时直接停止，不弹出对话框
+    if UninstallSilent() then
+    begin
+      Log('有终端可能正在使用补全，静默卸载停止');
+      exit;
+    end;
     if State = 1 then
     begin
       if SuppressibleMsgBox(CustomMessage('RunningUninstall'), mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then

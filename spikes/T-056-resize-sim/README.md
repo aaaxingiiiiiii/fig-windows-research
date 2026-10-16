@@ -24,7 +24,7 @@ node spikes/T-056-resize-sim/resize-sim.cjs zsh           # Mac 上对照
 | `--outer-conpty` | 外层 xterm 按 ConPTY 的规则处理窗口变化（`windowsPty`，VS Code 的终端也这样设置） |
 | `--per-step` | 每次改变大小后都输入 `e`、检查、再删掉，用来定位是哪一步引起错位 |
 | `--steps=80x30,120x30` | 改变大小的顺序，默认 `80x30,120x30,90x24,100x30` |
-| 环境变量 `FIGWIN_CONPTY` | inshellisense 用哪个 ConPTY：`bundled`（node-pty 附带的 conpty.dll）或 `system`（系统自带）；不设置时 Windows 11 用 `system`，见 `src/inshellisense/src/isterm/pty.ts` 的 `useBundledConpty` |
+| 环境变量 `FIGWIN_CONPTY` | inshellisense 用哪个 ConPTY：`bundled`（node-pty 附带的 conpty.dll）或 `system`（系统自带）；不设置时用 `bundled`，见 `src/inshellisense/src/isterm/pty.ts` 的 `useBundledConpty` |
 
 pwsh 第一条命令是 `Set-PSReadLineOption -HistorySaveStyle SaveNothing`，测试的命令不会写进 PowerShell 的历史，只有这一行本身会被记录。
 
@@ -36,7 +36,7 @@ node spikes/T-056-resize-sim/matrix.cjs pwsh    # 约 6 分钟，结果在 local
 
 依次运行 8 组：直接运行 pwsh（外层两种规则）；inshellisense 分别用附带的 conpty.dll、系统 ConPTY、默认选择；系统 ConPTY 不折行的一组。表格中“✗跳”表示输入一个字符后光标跳到了别的行。屏幕上和 `summary.md` 中只有坐标和是否对齐，可以公开；完整输出含提示符（可能有本机路径），只留在 `local/`。GitHub Actions 的 `t056` 作业也运行它（T-061）。
 
-期望的结果（E-019、E-020）：`direct-*`、`is-system-*`、`is-default-*` 全部对齐；`is-bundled-*` 在变宽（120×30）后输入时错位。如果在某台 Windows 11 上 `is-system-*` 也错位，或者 `is-default-*` 和 `is-system-*` 不一致，把结果交给 Mac 端。
+2026-10-16 起，`before` 一步必须出现候选框，否则判为失败（表格中显示“✗无候选”）。在此之前，没有候选框时也判为对齐：E-019、E-020 中系统 ConPTY 的“全部对齐”就是这样误判的（E-021）。
 
 ## 结果
 
@@ -60,4 +60,6 @@ node spikes/T-056-resize-sim/matrix.cjs pwsh    # 约 6 分钟，结果在 local
 - 由此推断：变宽时还有第二个原因，是 xterm 从回滚区拉行。新增 `noscroll` 变体（内部 xterm 不保留回滚区），等下一次运行的结果。
 
 2026-10-16，GitHub Actions 的 Windows 虚拟机（第三次运行，E-020；用户的 Windows 11 26200 上结果一致，E-019）：改用系统 ConPTY 的 4 组（加不加 `windowsPty`、外层两种规则、不折行）**全部对齐**，坐标与直接运行 pwsh 完全一致；其余各组照旧错位。系统 ConPTY 在窗口变化后会重画整个屏幕，内部模型随之与 ConPTY 一致。据此把修复定为：Windows 11 上默认用系统 ConPTY（`useBundledConpty`），删除了试验用的 xterm 变体。
+
+**2026-10-16 更正（E-021）**：上一段的结论是错的。改用系统 ConPTY 后完全不出现候选，各组“对齐”只是因为没有候选框可比较。第四次 CI 的安装包验收发现了这一点：新开的 PowerShell 7 中输入 `git ch` 后没有候选。默认已改回附带的 conpty.dll，T-056 仍未修复。模拟器已修补：没有候选框时判为失败。
 

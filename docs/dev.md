@@ -81,7 +81,7 @@ npm test -- --ci                                                                
 - custom generator 4 个；
 - spec 兼容（T-055）16 个；
 - 悬浮窗 95 个（T-054 之后）；
-- ConPTY 的选择 4 个（`isterm/conpty.test.ts`，T-056）；
+- ConPTY 的选择 3 个（`isterm/conpty.test.ts`，T-056）；
 - PowerShell 初始化脚本 3 个（`figspec/shellInit.test.ts`，T-062；后两个要用真实的 pwsh，没有 pwsh 或不是交互式会话时跳过）；
 - 安装包的默认配置 3 个（`figspec/configTemplate.test.ts`，T-060）。
 

@@ -12,7 +12,7 @@
   - 不要再约用户做 T-048 的 8 项人工清单、T-056 的手动复现、T-057 的新标签确认；这些在第 4 节，等功能完成后一起做。
   - 不在用户的电脑上运行安装包，也不修改用户真实的 `$PROFILE` 和 PATH。
 - **安装包（T-059）已由 Mac 端写好**：`installer/figwin.iss`、`scripts/windows/build-installer.ps1`。构建和安装、升级、卸载的验收都在 GitHub Actions 的一次性 Windows 虚拟机中进行（T-061，`.github/workflows/windows.yml`），不需要在你这边安装 Inno Setup。
-- **T-056**：Mac 端根据你的复现和 GitHub Actions 中的对照试验找到了原因，并已修复（F-035）：Windows 11 上改用系统自带的 ConPTY。你在 E-019 中已经验证了系统 ConPTY；第 1 步只需确认修复后的默认选择（`is-default-*`）也对齐。
+- **T-056**：原因已经查明（F-035），还没有修复。E-019 中系统 ConPTY 的“全部对齐”是误判：那几组根本没有出现候选框（E-021），模拟器已修补。T-056 暂时不需要你再做什么。
 
 ## 0. 每次开工前
 
@@ -34,7 +34,7 @@
    - 截图和原始日志存到 `local/evidence/`，在 `research/evidence.md` 中登记。
    - 公开的报告中不写用户名、本机路径和个人数据。
 
-## 1. T-056 对照试验，以及新测试的复验（不需要用户，约 15 分钟）
+## 1. 新测试的复验（不需要用户，约 10 分钟）
 
 1. 在 `src/inshellisense/` 下构建最新的修改版，并重新解包资源（从源码运行时，资源的版本是 `__VERSION__`）：
 
@@ -45,17 +45,8 @@
    npm test -- --ci
    ```
 
-   `npm test` 中有 Mac 端新增的 10 个测试（`isterm/conpty`、`figspec/shellInit`、`figspec/configTemplate`）。其中 `shellInit` 会用真实的 pwsh 运行初始化脚本，需要正式安装的 PowerShell 7 在 PATH 中。把结果与上次（376 通过）对比，多出的失败先记录下来。
-2. 在仓库根目录运行对照试验（约 6 分钟，正式安装的 PowerShell 7 要在 PATH 的最前面，和 E-012 时一样）：
-
-   ```powershell
-   node spikes/T-056-resize-sim/matrix.cjs pwsh
-   ```
-
-   - 屏幕上最后打印的表格只有坐标和是否对齐，可以公开，原样写入 `research/spike-fork-windows.md` 的新一节“T-056 对照试验”。
-   - 完整输出在 `local/evidence/T-056-matrix/`，含提示符和本机路径，不公开，在 `research/evidence.md` 中登记。
-   - 期望的结果和怎样读表格，见 `spikes/T-056-resize-sim/README.md` 的“对照试验”一节：`is-system-*`、`is-default-*` 应该与 `direct-*` 一样全部对齐。你只需要记录结果，修改由 Mac 端完成。
-   - 在任务板 T-056 的负责人一栏注明“已在用户的 Windows 上复验”，并写明是否全部对齐。
+   `npm test` 中有 Mac 端新增的 9 个测试（`isterm/conpty`、`figspec/shellInit`、`figspec/configTemplate`）。其中 `shellInit` 会用真实的 pwsh 运行初始化脚本，需要正式安装的 PowerShell 7 在 PATH 中。把结果与上次（376 通过）对比，多出的失败先记录下来。
+2. T-056 的对照试验已经做过（E-019），这次不用再跑。
 3. 运行安装脚本的自测：`pwsh -NoProfile -File scripts/windows/test-install.ps1`。这次多了 3 个只在 Windows 上运行的用例，用于检查用户 PATH 的处理。它们只读写注册表中一个临时的子键（`HKCU\Software\figwin-install-test-*`，测试结束后删除），不碰真实的 PATH。全部通过时退出码为 0；把通过的项数记入 log。
 
 ## 2. 阶段 B：继续做功能（不需要用户）

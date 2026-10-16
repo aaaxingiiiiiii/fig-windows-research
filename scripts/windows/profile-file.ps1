@@ -74,28 +74,31 @@ function Write-FileAtomic {
     $suffix = [guid]::NewGuid().ToString('N').Substring(0, 8)
     $temp = "$Path.figwin-tmp-$suffix"
     $old = "$Path.figwin-old-$suffix"
-    $stream = [IO.File]::Create($temp)
+    $written = $false
     try {
-        $stream.Write($Bytes, 0, $Bytes.Length)
-        $stream.Flush($true)
-    }
-    finally {
-        $stream.Dispose()
-    }
-    try {
-        if (Test-Path -LiteralPath $Path -PathType Leaf) { [IO.File]::Replace($temp, $Path, $old, $true) }
-        else { [IO.File]::Move($temp, $Path) }
-    }
-    catch {
-        if (-not (Test-Path -LiteralPath $Path) -and (Test-Path -LiteralPath $old)) { [IO.File]::Move($old, $Path) }
-        throw
-    }
-    finally {
-        if (Test-Path -LiteralPath $Path -PathType Leaf) {
-            foreach ($leftover in $temp, $old) {
-                if (Test-Path -LiteralPath $leftover) { Remove-Item -LiteralPath $leftover -Force -ErrorAction SilentlyContinue }
-            }
+        $stream = [IO.File]::Create($temp)
+        try {
+            $stream.Write($Bytes, 0, $Bytes.Length)
+            $stream.Flush($true)
         }
+        finally {
+            $stream.Dispose()
+        }
+        $written = $true
+        try {
+            if (Test-Path -LiteralPath $Path -PathType Leaf) { [IO.File]::Replace($temp, $Path, $old, $true) }
+            else { [IO.File]::Move($temp, $Path) }
+        }
+        catch {
+            if (-not (Test-Path -LiteralPath $Path) -and (Test-Path -LiteralPath $old)) { [IO.File]::Move($old, $Path) }
+            throw
+        }
+    }
+    finally {
+        # 临时文件没写完（还没有动过原文件），或者原位置已经有文件时，才清理临时文件和备份
+        $targetPresent = Test-Path -LiteralPath $Path -PathType Leaf
+        if ((-not $written -or $targetPresent) -and (Test-Path -LiteralPath $temp)) { Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue }
+        if ($targetPresent -and (Test-Path -LiteralPath $old)) { Remove-Item -LiteralPath $old -Force -ErrorAction SilentlyContinue }
     }
 }
 

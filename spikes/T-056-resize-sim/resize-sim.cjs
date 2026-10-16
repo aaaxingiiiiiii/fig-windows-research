@@ -93,7 +93,7 @@ const inspect = (label, typed) => {
   };
 };
 
-const ok = (result) => result.aligned !== false && result.promptAligned !== false && result.rowStable !== false;
+const ok = (result) => result.aligned !== false && result.promptAligned !== false && result.rowStable !== false && result.suggestionsShown !== false;
 
 (async () => {
   const file = direct ? findOnPath(shell) : process.execPath;
@@ -140,7 +140,9 @@ const ok = (result) => result.aligned !== false && result.promptAligned !== fals
   const before = inspect("before");
   const at = before.cursorLine.lastIndexOf("git ch");
   promptPrefix = at > 0 ? before.cursorLine.slice(0, at) : undefined;
-  const results = [{ ...inspect("before", "git ch"), promptPrefixFound: promptPrefix != null }];
+  // 输入 git ch 后必须出现候选框；没有候选框时“对齐”没有意义（E-021：系统 ConPTY 下完全不出现候选）
+  const first = inspect("before", "git ch");
+  const results = [{ ...first, promptPrefixFound: promptPrefix != null, suggestionsShown: direct ? null : first.visible }];
 
   // 输入一个字符后，光标应留在原来的行（命令很短，不会折行）；跳到别的行说明内外行号不一致
   const typeAndInspect = async (label) => {
