@@ -32,6 +32,15 @@
 
 核心类库 `FigWin.OverlayHost.Core` 只依赖 .NET 10 自带的库。
 
+安装包（T-059）和 Windows 自动检查（T-061）在构建时使用下面的工具，不复制它们的源码（2026-10-16 核实）：
+
+| 工具 | 版本 | 许可证 | 用途 |
+| --- | --- | --- | --- |
+| Inno Setup | 7.1.0（[jrsoftware/issrc 的 Release](https://github.com/jrsoftware/issrc/releases/tag/is-7_1_0) 中的 `innosetup-7.1.0-x64.exe`，SHA256 `0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f`） | Inno Setup License（issrc 的 `license.txt`：允许任何用途，包括商业用途；再分发时保留版权声明） | 编译安装包；界面使用其中自带的官方简体中文翻译（2026-06-23 加入，7.x 起提供） |
+| GitHub Actions | `actions/checkout` v7.0.1、`actions/setup-node` v7.0.0、`actions/setup-dotnet` v6.0.0、`actions/upload-artifact` v7.0.2，都按 commit 固定 | MIT | `.github/workflows/windows.yml` |
+
+安装包中的 `is.exe` 打包了 Node.js 运行时和 inshellisense 的 npm 生产依赖（47 个，包括 `@withfig/autocomplete`）。构建脚本把它们的许可证文本收集到安装目录的 `licenses/` 中：Node.js 的 `LICENSE`、inshellisense 的 `LICENSE`、每个 npm 包自带的许可证（`THIRD-PARTY-NOTICES.txt`）。其中 4 个包没有附带许可证文件，只在 `package.json` 中声明了 MIT（或 MIT/CC0），声明文件中照实注明。
+
 ## 闭源对象
 
 | 对象 | 用途 | 限制 |

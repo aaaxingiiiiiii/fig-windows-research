@@ -1,10 +1,18 @@
 # Windows 端当前工作指令
 
-更新：2026-10-15 第 2 版（D-013 授权；T-048 要确认运行的是修改版）。读者：Windows 端的 AI。
+更新：2026-10-16 第 3 版（D-014：先把功能做完，需要用户在场的测试放到最后）。读者：Windows 端的 AI。
 
 用户只需要对你说：“同步 develop，读 `docs/windows-next.md`，按顺序做。”本页写明了接下来要做的每一步：什么时候需要先问用户，结果记在哪里，怎样才算完成。背景和验收标准的出处，见文中给出的链接。
 
 本页由 Mac 端的整合者维护。做完一步后，在任务板和 log 中记录即可，**不要修改本页**；本页过时时，由整合者重写。
+
+## 这一版改了什么
+
+- **D-014**：用户决定，需要用户在场的测试先放一边，先把功能做完。最终交付 Windows 安装包和配置。所以：
+  - 不要再约用户做 T-048 的 8 项人工清单、T-056 的手动复现、T-057 的新标签确认；这些在第 4 节，等功能完成后一起做。
+  - 不在用户的电脑上运行安装包，也不修改用户真实的 `$PROFILE` 和 PATH。
+- **安装包（T-059）已由 Mac 端写好**：`installer/figwin.iss`、`scripts/windows/build-installer.ps1`。构建和安装、升级、卸载的验收都在 GitHub Actions 的一次性 Windows 虚拟机中进行（T-061，`.github/workflows/windows.yml`），不需要在你这边安装 Inno Setup。
+- **T-056**：Mac 端分析了你的复现结果，推断了原因（F-035），并准备了候选修复和一键对照试验，见第 1 步。
 
 ## 0. 每次开工前
 
@@ -22,113 +30,68 @@
    - 一个任务一个分支，命名为 `ai/codex/<任务号>`。
    - 合并回 develop 前先同步。
    - 不要重写 `docs/handoff.md`。
-   - 安装软件、修改用户配置之前，先问用户并得到同意。例外：D-013 已授权的事项（安装 PowerShell 7、设为 WT 默认、安装 .NET 10 SDK）不必再问。
+   - 安装软件、修改用户配置之前，先问用户并得到同意。D-013 已授权的（PowerShell 7、WT 默认配置、.NET 10 SDK）都已经做完。
    - 截图和原始日志存到 `local/evidence/`，在 `research/evidence.md` 中登记。
    - 公开的报告中不写用户名、本机路径和个人数据。
-4. 和用户一起测试时，每次只说一项操作，等用户回答“是”或“否”再继续。需要看日志的，你自己去读，不要让用户读。
 
-## 1. T-057：正式安装 PowerShell 7（先问用户）
+## 1. T-056 对照试验，以及新测试的复验（不需要用户，约 15 分钟）
 
-为什么要做：T-035 时用户的 Windows Terminal 中找不到 `pwsh.exe`，测试用的是你自带的 PowerShell。目标 shell 是 PowerShell 7（D-002），后面的测试和日常使用都需要它装在系统里。
-
-**已经授权，不必再问用户**（D-013：用户外出前授权整合者按推荐方案处理，推荐方案就是安装）。
-
-1. 运行 `winget install --id Microsoft.PowerShell --source winget`。
-2. 把 PowerShell 7 设为 Windows Terminal 的默认配置文件：
-   - 用户在场时，请用户操作：设置 → 启动 → 默认配置文件，选择 PowerShell（不是 Windows PowerShell）→ 保存。
-   - 用户不在时，可以直接修改 `settings.json`：先备份到 `local/evidence/T-057-wt-settings-backup.json`，再把 `defaultProfile` 改成 PowerShell 7 配置文件的 GUID。WT 会自动重新加载。
-3. 验证：新开一个 WT 标签，运行 `$PSVersionTable.PSVersion`，应显示 7.x；在这个标签中运行 `pwsh -NoProfile -File scripts/windows/check-env.ps1`。用户在场时请用户自己开标签，确认 WT 的默认配置真的生效了。
-4. 把结果写入 `research/spike-inshellisense.md` 的新一节“T-057”，在任务板中把 T-057 改为 `done`，并在 log 中写明“按 D-013 执行”。
-
-## 2. T-048：关卡二，测试我们的修改版（需要用户在场，约 30 分钟）
-
-验收标准见 `docs/roadmap.md` 第 4 节 A2；8 项清单见 `docs/mvp-plan.md` 中的“T-048 人工清单”。
-
-1. **用最新的 develop**，其中包含 Mac 端 T-054、T-055 的修改，不要用 T-035 时的版本。在 `src/inshellisense/` 下执行：
+1. 在 `src/inshellisense/` 下构建最新的修改版，并重新解包资源（从源码运行时，资源的版本是 `__VERSION__`）：
 
    ```powershell
    npm ci
    npm run build
+   node build/index.js reinit
    npm test -- --ci
    ```
 
-   把测试结果与 E-011 对比，多出的失败先记录下来。
-2. 检查测试材料。可以沿用 T-035 准备的 `local/acceptance/` 目录，确认清单需要的都有：
-   - 7 个特殊名称的文件夹：`My Docs`、`a&b`、`a$b`、`it's`、`it's dir`、`` a`b ``、`中文目录`；
-   - 一个 git 仓库：有一个已提交后又修改的文件，和一个新建并暂存的文件；
-   - 一个 npm 项目：有 `scripts`、`workspaces` 和一个子文件夹；
-   - 至少一个全局安装的 npm 包（清单第 4 项会用到，npm 本身即可）。
-3. 请用户在**自己的 PowerShell 7 标签**中进入仓库的 `src/inshellisense/`，然后：
-   1. **先确认运行的是修改版**：运行 `node build/index.js --version`，应该显示 `__VERSION__`。从源码构建的版本才显示这个占位符；原版显示 `0.0.4`。上一次 T-048 实际运行的是原版，结果已经作废。
-   2. 不要用 `spikes/T-035-baseline/` 的启动器，也不要用全局安装的 `is`，它们都是原版。
-   3. 运行 `node build/index.js -s pwsh -V`，然后 `cd` 到测试材料目录。第 8 项要求先 `cd` 进项目，而不是在项目中启动。
-   4. 确认 `%USERPROFILE%\.inshellisense\log\inshellisense.log` 的修改时间是刚才。原版启动器把用户目录改到了 `local/tools/` 下，日志不在这里。
-4. 按清单逐项进行。第 1、4、5、6 项要检查日志：你自己读取 `%USERPROFILE%\.inshellisense\log\inshellisense.log`，确认其中的 `ran natively`、`emulated in node`，以及有没有 `git bash`。
-5. 把结果写入 `research/spike-fork-windows.md`：
-   - 开头是环境表，用 check-env 的输出；
-   - 然后每项一行：编号、是 / 否、现象、证据编号。
-6. 判定：
-   - 8 项全部为“是”：把 T-048 改为 `done`，告诉用户关卡二通过。
-   - 有“否”：每个失败项在任务板中新建一个任务，env 填 `any`，写明复现步骤和日志中的相关行（删去个人信息），推送后告诉用户“交给 Mac 端修复”。修复合并后，只复验失败的项。
+   `npm test` 中有 Mac 端新增的 9 个测试（`isterm/windowsPty`、`figspec/shellInit`、`figspec/configTemplate`）。其中 `shellInit` 会用真实的 pwsh 运行初始化脚本，需要正式安装的 PowerShell 7 在 PATH 中。把结果与上次（376 通过）对比，多出的失败先记录下来。
+2. 在仓库根目录运行对照试验（约 6 分钟，正式安装的 PowerShell 7 要在 PATH 的最前面，和 E-012 时一样）：
 
-## 3. T-056：复现“拖动窗口大小后候选错位”（需要用户在场，约 10 分钟，可接在 T-048 之后）
+   ```powershell
+   node spikes/T-056-resize-sim/matrix.cjs pwsh
+   ```
 
-T-035 第 10 项发现的问题：拖动窗口大小后，候选和输入位置错开，清屏可以恢复。这一步只负责复现和记录，分析和修复由 Mac 端完成。
+   - 屏幕上最后打印的表格只有坐标和是否对齐，可以公开，原样写入 `research/spike-fork-windows.md` 的新一节“T-056 对照试验”。
+   - 完整输出在 `local/evidence/T-056-matrix/`，含提示符和本机路径，不公开，在 `research/evidence.md` 中登记。
+   - 怎样读表格，见 `spikes/T-056-resize-sim/README.md` 的“对照试验”一节。你只需要记录结果，修改由 Mac 端完成。
+   - 在任务板 T-056 的负责人一栏注明“对照试验已完成，等待 Mac 端修复”。
+3. 运行安装脚本的自测：`pwsh -NoProfile -File scripts/windows/test-install.ps1`。这次多了 3 个只在 Windows 上运行的用例，用于检查用户 PATH 的处理。它们只读写注册表中一个临时的子键（`HKCU\Software\figwin-install-test-*`，测试结束后删除），不碰真实的 PATH。全部通过时退出码为 0；把通过的项数记入 log。
 
-**先做不需要用户的自动检查**（F-034：Mac 上无法复现，怀疑与 ConPTY 有关）。在最新 develop 构建好修改版之后，在仓库根目录运行：
+## 2. 阶段 B：继续做功能（不需要用户）
 
-```powershell
-node spikes/T-056-resize-sim/resize-sim.cjs pwsh
-node spikes/T-056-resize-sim/resize-sim.cjs pwsh --wrap
-```
+验收中需要用户在场的部分（B3 的 7 项、B4 的人工项），按 D-014 留到第 4 节。
 
-两条命令各运行 2 次，把完整输出存到 `local/evidence/T-056-sim-*.txt`，结论写入报告。脚本输出的含义：
+1. **T-021 原生悬浮窗演示**（进行中）：先把窗口做出来，并用 wt-driver 做能自动化的检查，例如置顶、不激活、跟随 WT 移动。完成标准中需要用户看画面的项目，在任务板中写明“待用户验收（D-014）”，然后继续下一步，不要停下来等。
+2. **T-019 光标定位**：依赖 T-029（已完成）。测量方法见 `docs/windows-setup.md`，通过标准见 `docs/overlay-design.md`。能用 wt-driver 和 UIA 自动测量的先测；需要用户配合的（输入法、缩放、多显示器）留到第 4 节。
+3. **T-044 宿主集成**：在 Windows 上实现 `IOverlayPresenter`，说明见 `src/overlay-host/README.md`。.NET SDK 用 `local/tools/dotnet` 中的那份（E-014）。
+4. 每完成一个任务，推送后 GitHub Actions 会自动在虚拟机中跑一遍测试（T-061）。
 
-- 有 `aligned: false`：内层 ConPTY 能复现，Mac 端可以照此修复。用户的手动复现可以从简。
-- 全部 `aligned: true`：问题在 Windows Terminal 一侧，按下面的步骤请用户手动复现。
+## 3. 安装包（T-059）：只看结果，不在本机安装
 
-用户在场时的手动复现：
+- 安装包由 GitHub Actions 构建。每次推送后，在仓库的 Actions 页面 → **Windows** → 对应的运行中，可以看到 `installer` 作业的验收摘要，并下载 `figwin-setup` 附件。
+- 如果 `installer` 或 `tests` 作业失败，而失败的原因在你这边能复现（例如 L1 测试在 Windows 上失败），就按第 6 节新建任务。不要为了让 CI 通过而修改测试的期望。
+- **不要在用户的电脑上运行安装包**。用户最后会自己运行它（第 4 节）。如果用户同意，也可以在 Windows Sandbox 中试装，那样不影响用户的环境：
+  - 开启 Windows Sandbox 是系统设置的修改，要先问用户；
+  - 在 Sandbox 中可以运行 `scripts/windows/test-installer.ps1 -Setup <安装包> -Disposable`。
 
-1. 用修改版（`node build/index.js -s pwsh -V`）。开始前记下窗口的行数和列数：`$Host.UI.RawUI.WindowSize`。
-2. 请用户依次尝试下面几种情况，每种都回答“错位”或“正常”，错位时截图：
-   1. 输入 `git ch`，候选出现后，拖动窗口右边缘把窗口变窄；
-   2. 同上，把窗口变宽；
-   3. 先不输入，拖动窗口大小，再输入 `git ch`；
-   4. 最大化窗口，再还原；
-   5. 用 Alt+Shift+加号分屏。
-3. 每种情况错位后，依次试：按 Esc；再输入一个字符；运行 `Clear-Host`。记录哪一步能恢复。
-4. 把每次拖动前后几秒的日志片段复制到 `local/evidence/T-056-*.log`。日志的时间戳可以帮助对齐；不公开原始日志。
-5. 把结果写入 `research/spike-fork-windows.md` 的“T-056 复现”一节，包括：WT 版本、拖动前后的窗口大小、触发错位的情况、恢复方法。在任务板中，T-056 的负责人一栏写上“已复现，等待 Mac 端分析”。
+## 4. 功能完成后，和用户一起做的验收（现在不做）
 
-## 4. T-040：打包和安装（T-048 通过、T-057 完成之后）
+等阶段 B 的功能完成、整合者更新本页之后，再请用户在场，按下面的顺序一次做完：
 
-安装和卸载脚本已由 Mac 端完成（T-058），T-040 只需要打包、在 Windows 上验证，并写使用说明：
+1. T-057：在用户自己的 WT 新标签中确认 PowerShell 7 是默认配置。
+2. 用户运行安装包，按 `docs/roadmap.md` 第 4 节 A3 的清单验收：安装、新开标签出现补全、再次安装、卸载后恢复原样。
+3. T-048 的 8 项人工清单（`docs/mvp-plan.md`）。
+4. T-056：如果到那时还有错位，再做手动复现。
+5. 阶段 B 的人工验收：B3、B4、B5。
 
-1. 打包：在 `src/inshellisense/` 下运行 `npm run package`，生成 `pkg/inshellisense-win32-x64.exe`。用 `<exe> --version` 确认能运行，并且显示 `0.0.4-figwin.1`；原版显示 `0.0.4`。2026-10-15 已在 Mac 上验证过打包流程（生成 macOS 版，约 125 MB，`init` 和 `complete` 正常）。
-2. 运行脚本的自测：`pwsh -NoProfile -File scripts/windows/test-install.ps1`。Mac 上的结果是 26 项全部通过。这个自测只用临时目录，不碰真实的配置文件和 PATH。
-3. 按 `docs/roadmap.md` 第 4 节 A3 的 7 项清单验证 `scripts/windows/install.ps1` 和 `uninstall.ps1`：
-   - **修改用户真实的 `$PROFILE` 和 PATH 不在 D-013 的授权范围内**，要先问用户；
-   - 最好在 Windows Sandbox 中验证，这样不会影响用户的环境；
-   - A3 第 4 项“没有 Node 也能用”，在 Sandbox 中最容易验证。
-4. 完成后更新 `docs/usage.md` 第 1 节：安装、卸载、升级的命令。然后告诉用户可以开始试用（T-041，记录方式见 A4）。
-
-## 5. 用户不在时：阶段 B 的准备
-
-1. 安装 .NET 10 SDK（D-012；已按 D-013 授权，不必再问）：`winget install Microsoft.DotNet.SDK.10`。
-2. 装好后，在 `src/overlay-host/` 下运行 `dotnet test OverlayHost.slnx`。Mac 上的结果是 70 个全部通过；把 Windows 上的结果记入 log，失败时新建任务。
-3. 按顺序做：
-   - T-029 自动测试工具（`tools/wt-driver`，验收见 roadmap B2）；
-   - T-021 悬浮窗演示：先做出来，等用户在场时按 B3 的 7 项验收；
-   - T-019 光标定位：依赖 T-029，测量方法见 `docs/windows-setup.md`。
-4. 以上完成后做 T-044：在 Windows 上实现 `IOverlayPresenter`，说明见 `src/overlay-host/README.md`。
-
-## 6. 每次结束时
+## 5. 每次结束时
 
 1. 在任务分支上提交 → 同步 develop → 合并 → 推送到 `origin`（对方仓库）的 develop 和任务分支。
 2. 更新 `tasks/board.md` 中自己的任务行，在 `docs/log.md` 末尾追加一条记录。
-3. 用一小段话告诉用户：做完了什么；下一步是本页的哪一步；有没有需要用户决定或在场的事。
+3. 用一小段话告诉用户：做完了什么；下一步是本页的哪一步；有没有需要用户决定的事。按 D-014，不要约用户做测试。
 
-## 7. 遇到问题时
+## 6. 遇到问题时
 
 | 情况 | 处理 |
 | --- | --- |

@@ -73,13 +73,17 @@ npm test -- --ci                                                                
 - 已知缺陷用 `test.failing` 写出正确的期望，修复后改为 `test`。不要为了让测试通过而改动期望。
 - 新增用例时，同步更新 `specs/completion.md` 的第 9 节或第 10 节。
 
-2026-10-15 在 Mac 上的结果（T-043 之后，`npm test -- --ci`）：全部测试 357 个，346 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。我们新增的测试有 144 个，全部按预期执行；只剩 2 个 `test.failing`：
+2026-10-16 在 Mac 上的结果（`npm test -- --ci`，pwsh 在 PATH 中）：全部测试 396 个，385 个通过，10 个跳过，1 个失败（`brewInstallMullvad`，见上文）。完整运行时偶尔还有 1 个规格用例因为负载超时，单独运行时通过。我们新增的测试：
 
 - 规格用例 22 个；
 - 执行方式 5 个（Windows 端的 T-052 又修改过）；
 - POSIX 模拟 32 个；
 - custom generator 4 个；
-- 悬浮窗 81 个。
+- spec 兼容（T-055）16 个；
+- 悬浮窗 95 个（T-054 之后）；
+- 内部终端的窗口变化规则 3 个（`isterm/windowsPty.test.ts`，T-056）；
+- PowerShell 初始化脚本 3 个（`figspec/shellInit.test.ts`，T-062；后两个要用真实的 pwsh，没有 pwsh 或不是交互式会话时跳过）；
+- 安装包的默认配置 3 个（`figspec/configTemplate.test.ts`，T-060）。
 
 建议加上 `--ci`。不加时，jest 会为失败的 `brewInstallMullvad` 新写一个快照，把 `__snapshots__/runtime.test.ts.snap` 改掉；出现这种改动时，用 `git checkout` 还原，不要提交。
 
@@ -161,5 +165,32 @@ dotnet test OverlayHost.slnx      # 2026-10-15 在 Mac 上：70 个全部通过
 | `scripts/check-public.sh` | 提交前检查本机路径、凭据、大文件，以及 `local/` 是否被跟踪 |
 | `scripts/check-refs.py` | 检查文档中的源码引用是否有效 |
 | `scripts/windows/check-env.ps1` | Windows 环境检查（只读） |
-| `scripts/windows/install.ps1`、`uninstall.ps1` | 安装和卸载终端内补全（T-058）：复制程序、加入用户 PATH、运行 `is init pwsh`、备份并修改 `$PROFILE`；卸载时把 `$PROFILE` 逐字节恢复。支持 `-WhatIf` |
-| `scripts/windows/test-install.ps1` | 安装脚本的自测：只用临时目录和一个假的 `is`，不碰真实环境。在 Mac 上可以用 `~/.powershell/pwsh` 运行 |
+| `scripts/windows/install.ps1`、`uninstall.ps1` | 安装和卸载终端内补全（T-058、T-059）：复制程序、加入用户 PATH、运行 `is reinit` 和 `is init pwsh`、备份并修改 `$PROFILE`、创建默认补全配置。卸载时把 `$PROFILE` 和 PATH 恢复原样。支持 `-WhatIf`。安装包也调用这两个脚本 |
+| `scripts/windows/profile-file.ps1`、`user-path.ps1` | 上面两个脚本共用：按原编码读写配置文件；直接读写注册表中的用户 PATH，保留 REG_EXPAND_SZ 和 `%变量%` |
+| `scripts/windows/test-install.ps1` | 安装脚本的自测：只用临时目录、临时注册表键和一个假的 `is`，不碰真实环境。在 Mac 上可以用 `~/.powershell/pwsh` 运行（PATH 的 3 个用例只在 Windows 上运行） |
+| `scripts/windows/build-installer.ps1` | 构建安装包，见第 7 节 |
+| `scripts/windows/test-installer.ps1`、`check-installed.cjs` | 安装包的自动验收：静默安装、新开终端检查补全、升级、卸载。会修改当前用户的环境，只能在一次性的环境中运行（必须加 `-Disposable`） |
+
+## 7. 安装包和 Windows 自动检查（T-059、T-061）
+
+安装包用 Inno Setup 7.1 编译（D-015），脚本是 `installer/figwin.iss`。安装时复制文件，然后调用 `install.ps1`；卸载时先调用 `uninstall.ps1`，再删除文件。
+
+构建（Windows，PowerShell 7，需要 Inno Setup 7.1 或更新版本）：
+
+```powershell
+pwsh -File scripts/windows/build-installer.ps1            # 打包 is.exe 并编译，结果在 dist/
+pwsh -File scripts/windows/build-installer.ps1 -SkipPackage -Iscc <ISCC.exe 的路径>
+```
+
+在 Mac 上可以加 `-SkipPackage -StageOnly`，只检查准备安装文件的步骤：许可证、第三方声明、脚本、默认配置。
+
+每次推送到 `develop` 或 `ai/**` 分支时（只改文档的除外），`.github/workflows/windows.yml` 在 GitHub 的 Windows 虚拟机中运行三个作业：
+
+| 作业 | 内容 | 附件 |
+| --- | --- | --- |
+| tests | inshellisense 的 L1 测试、宿主测试、`test-install.ps1` | — |
+| installer | 构建安装包，用 `test-installer.ps1 -Disposable` 实际安装、升级、卸载 | `figwin-setup`（安装包和 SHA256）、`installer-test-logs` |
+| t056 | T-056 对照试验（`spikes/T-056-resize-sim/matrix.cjs`） | `t056-matrix` |
+
+结果摘要在每次运行的 Summary 页面；失败项和 T-056 的结果另有 annotation。公开仓库的 annotation 不登录也可以通过 GitHub API 读取，Mac 端没有 `gh` 时可以这样查看结果。
+

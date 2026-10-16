@@ -444,3 +444,17 @@
 - 新增 tools/wt-driver：专用随机标题窗口、固定 echo hi、逐次检查前台与目标身份、UIA TextPattern 实际输出检查、终端边界与截图、仅关闭自己创建的窗口。
 - 初版 UIA 误选标题文本控件；改为在支持 TextPattern 的候选中找专用 prompt 后，连续三次通过，E-015；没有通过超时或忽略错误来凑通过。最终构建零警告/零错误。
 - T-029 达到当前 smoke 标准；宿主 debugState 接入留 T-044，真实补全/缩放/输入法验收不因此通过。
+
+## 2026-10-16 · Claude Code/Opus 5.5（Mac，整合者）· D-014、T-056 分析、T-059 至 T-062
+
+- 合并 Windows 端的 T-057、T-048（无人值守）、T-056 复现、T-058 复验、.NET 10、T-029、T-021 认领。
+- 用户决定 D-014：需要用户在场的测试先放一边，先把功能做完，最终交付 Windows 安装包和配置。重写 `docs/windows-next.md` 第 3 版。
+- T-056：根据 E-012 推断出原因（F-035）。在 `src/isterm/pty.ts` 中加了试验用的变体 `FIGWIN_T056_VARIANT`（默认与上游相同），机制测试 3 个。模拟器新增对照组、逐步检查、外层 ConPTY 规则，`matrix.cjs` 一次跑 8 组；Mac 上 8 组都对齐（E-016）。修复要等 Windows 上的结果。
+- 写安装包时发现并修复两个会让用户无法使用 PowerShell 的问题：
+  - F-037、T-062：`is` 启动失败时，初始化脚本照样关闭 PowerShell。
+  - F-036：升级后资源不会更新。安装脚本改为每次先 `reinit`。
+- T-058 的安装脚本扩展：原地安装；`-NoProfileUpdate`；默认配置；每完成一步就写一次安装记录；安装日志；PATH 改为直接读写注册表（保留 REG_EXPAND_SZ 和 `%变量%`，卸载时恢复原值）。自测在 Mac 上 69 项通过，另有 3 个只在 Windows 上运行的 PATH 用例；做了两次变异检查。
+- T-060：默认配置 `installer/inshellisenserc.toml`，有中文说明；测试 3 个，变异检查有效。为此给 `loadConfig` 加了可选参数。
+- T-059：Inno Setup 7.1 安装脚本、构建脚本（Mac 上验证了准备文件的步骤，第三方声明 47 个包）、安装包验收脚本 `test-installer.ps1` 和 `check-installed.cjs`（Mac 上验证了 3 种检查方式）。D-015 记录技术选择。
+- T-061：`.github/workflows/windows.yml`。
+- L1：Mac 上 396 个测试，385 个通过，10 个跳过，1 个失败（Homebrew）；lint 通过；check-refs 通过。

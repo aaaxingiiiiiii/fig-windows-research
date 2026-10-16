@@ -32,3 +32,9 @@
 | 2026-10-15 | T-055 | `src/runtime/windowsSpecCompat.ts`、`utils.ts`、`suggestion.ts` | Windows 原生 gh GraphQL 参数移除 query 值的外层 shell 单引号；scp 当前远端操作数跳过本地 generator，盘符/UNC/本地相对路径和后续操作数保持本地流程 | 直接 argv 不解析 shell 引号；不能把远端路径当成本地目录补全 | 否（先做 Windows 原生验收） |
 | 2026-10-15 | T-055 | `src/tests/figspec/windowsSpecCompat.test.ts` | 新增 16 个模拟 win32 测试，覆盖 gh 实际包 generator/参数边界、scp 分流及 dotnet 实际 spec 的相对 cwd、中文/空格、CRLF、缺文件；dotnet 由现有 T-049 实现满足，无需重复修改 | 补齐 T-015 报告的三项兼容性验证；外部进程和目录读取用测试桩隔离 | 否 |
 | 2026-10-15 | T-040 准备 | `package.json`、`package-lock.json` | 版本号由 `0.0.4` 改为 `0.0.4-figwin.1` | 打包后的程序和原版的 `--version` 原来完全相同，T-048 第一次就因此误用了原版。加上后缀后可以区分；从源码运行时仍显示 `__VERSION__` | 否 |
+| 2026-10-16 | T-056 | `src/isterm/pty.ts` | 新增 `t056WindowsPty()`：Windows 上按环境变量 `FIGWIN_T056_VARIANT`（`off` 默认、`conpty`、`legacy`）给内部的 xterm 设置 `windowsPty`；默认不设置，与上游相同。`-V` 日志记录所用的变体 | **试验中**：ConPTY 没有回滚区，窗口变高时在底部加空行，xterm 默认却从回滚区拉回旧行，内部模型的行号与 ConPTY 不一致，推断是 T-056 错位的原因。对照试验（`spikes/T-056-resize-sim/matrix.cjs`）有结论后，保留有效的做法，删除这个环境变量 | 先在 Windows 上验证 |
+| 2026-10-16 | T-056 | `src/tests/isterm/windowsPty.test.ts` | 新增 3 个测试：只在 win32 上生效；默认时窗口变高从回滚区拉回旧行；`conpty` 变体保持光标所在行 | 记录机制，防止回归 | 否 |
+| 2026-10-16 | T-062 | `src/utils/shell.ts` | PowerShell 的初始化脚本：`is -s pwsh` 之后改为 `if ($?) { Stop-Process -Id $pid }`，只在 inshellisense 正常结束时关闭外层 shell | 原来 `is` 不存在、配置文件写错、资源版本不符时（都以非 0 退出），也会关闭外层 shell，每个新开的 PowerShell 窗口都会立刻关掉，用户无法使用 PowerShell | 是 |
+| 2026-10-16 | T-062 | `src/tests/figspec/shellInit.test.ts` | 新增 3 个测试：生成的脚本内容；用真实的 pwsh 运行初始化脚本，假的 `is` 失败时 PowerShell 仍可使用、成功时外层被关闭（没有 pwsh 或不是交互式会话时跳过后两个） | 防止回归；变异检查有效 | 否 |
+| 2026-10-16 | T-060 | `src/utils/config.ts` | `loadConfig(program, paths?)`：新增可选参数 `paths`，默认仍是 `~/.inshellisenserc` 和 XDG 路径 | 测试需要加载指定的文件（安装包的默认配置）；jest 中改 `HOME` 影响不到 `os.homedir()` | 否 |
+| 2026-10-16 | T-060 | `src/tests/figspec/configTemplate.test.ts` | 新增 3 个测试：安装包的默认配置 `installer/inshellisenserc.toml` 原样加载不改变任何默认值；去掉注释后每项设置都合法，并且等于代码中的默认值 | 防止模板与代码不一致；变异检查有效 | 否 |

@@ -11,13 +11,16 @@
 | 编号 | 任务 | 状态 | env | 依赖 | 负责人 | 完成标准 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-035 | 实测原版 inshellisense（关卡） | done | windows, human | — | Codex/GPT-6（Windows）2026-10-14；环境/受控 PTY 检查通过；2026-10-15 同步 8fb0570，L1 346 通过、10 跳过、0 失败；材料已备齐，关卡通过；第 10 项拖动窗口后错位可清屏恢复，保留 T-056；15/16 用户确认可进入 | 见 `docs/mvp-plan.md` 中该任务所在的行；按“T-035 人工清单”执行 |
-| T-048 | 在 Windows 上验证我们的修改（T-037 直接执行命令，T-039 引号和中文删除，T-049 POSIX 命令模拟） | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15 | 见 `docs/mvp-plan.md` 中的“T-048 人工清单” |
+| T-048 | 在 Windows 上验证我们的修改（T-037 直接执行命令，T-039 引号和中文删除，T-049 POSIX 命令模拟） | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15；无人值守的引擎检查 13 项通过（`spikes/T-048-engine-check/`）；**8 项人工清单按 D-014 推迟到功能完成之后** | 见 `docs/mvp-plan.md` 中的“T-048 人工清单” |
 | T-057 | 在用户的 Windows 上正式安装 PowerShell 7（`winget install Microsoft.PowerShell`），并设为 Windows Terminal 的默认配置文件 | doing | windows, human | — | Codex/GPT-6（Windows）2026-10-15；用户已同意，PowerShell 7.6.7 安装成功；WT 默认设置已备份并完成，新标签验证待用户确认 | 在用户自己的 WT 新标签中运行 `$PSVersionTable` 显示 7.x；`scripts/windows/check-env.ps1` 在该标签中运行，结果写入 `research/spike-inshellisense.md` |
-| T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本（脚本由 T-058 提供） | todo | windows | T-035, T-048, T-057, T-058 | | 见 `docs/mvp-plan.md` 中该任务所在的行 |
+| T-040 | 打包 win-x64 单文件程序，编写安装和卸载脚本（脚本由 T-058 提供） | todo | windows | T-059 | 按 D-014 调整：打包和安装改由 T-059（安装包）完成，安装、升级、卸载的自动验收在 T-061 的虚拟机中进行；本任务只剩在用户电脑上按 A3 做最终验收，推迟到功能完成之后
 | T-041 | 用户试用终端内版本一到两天 | todo | human | T-040 | 用户 | 见 `docs/mvp-plan.md` 中该任务所在的行 |
 | T-052 | 修复 Windows 本机 L1 测试的平台与环境假设 | done | any | — | Codex/GPT-6（Windows）2026-10-15；265 通过、10 跳过、0 失败，见 E-009 | 复现 `research/spike-inshellisense.md` E-008 的 11 个失败；路径断言同时验证分隔符和 PowerShell 引号，隔离 HOME/Git Bash 条件，明确非管理员符号链接夹具策略；保留行为覆盖，Windows 复验并记录结果 |
-
-| T-056 | 调查并修复 Windows 调整窗口后候选与输入位置错位 | doing | any | — | Codex/GPT-6（Windows）2026-10-15 已自动复现：pwsh --wrap 连续两次在输入 e 后错位（E-012）；等待 Mac 端 Claude 分析和修复 | 原版 T-035 第 10 项截图与复现见 research/spike-inshellisense.md；确认缩放/分屏触发方式及恢复性，修改版复现需核实运行版本后重测，再补回归测试并修复，Windows 复验；未确认前不归因于具体模块 |
+| T-056 | 调查并修复 Windows 调整窗口后候选与输入位置错位 | doing | any | — | 复现：Codex/GPT-6（Windows）2026-10-15（E-012）；分析：Claude Code/Opus 5.5 2026-10-16，推断是内部 xterm 与 ConPTY 在窗口变高、变宽时的行号规则不同（见 `src/isterm/pty.ts` 的 `t056WindowsPty`）。候选修复和对照试验（`spikes/T-056-resize-sim/matrix.cjs`）已备好，等 Windows 或 T-061 的结果再决定 | 原版 T-035 第 10 项截图与复现见 research/spike-inshellisense.md；确认缩放/分屏触发方式及恢复性，修改版复现需核实运行版本后重测，再补回归测试并修复，Windows 复验；未确认前不归因于具体模块 |
+| T-059 | Windows 安装包：Inno Setup 7.1，按用户安装、不需要管理员权限；安装选项（自动启用补全、默认配置）；升级时重新解包资源；有终端在运行时阻止升级和卸载 | doing | any | T-058 | Claude Code/Opus 5.5 2026-10-16：`installer/figwin.iss`、`scripts/windows/build-installer.ps1`（Mac 上验证了准备文件的步骤）、`test-installer.ps1`、`check-installed.cjs`；编译和验收在 T-061 的虚拟机或 Windows 上进行 | 虚拟机中 `test-installer.ps1` 全部通过（A3 第 1–6 项的自动部分）；用户电脑上的最终验收按 D-014 推迟 |
+| T-060 | 默认配置文件：每项设置都有中文说明，安装时创建（已有时不覆盖），卸载时只删除没有改过的 | done | any | — | Claude Code/Opus 5.5 2026-10-16 | `installer/inshellisenserc.toml`；`configTemplate.test.ts`（3 个，变异检查有效）；`install.ps1 -ConfigTemplate`，自测覆盖 3 种情况 |
+| T-061 | GitHub Actions 的 Windows 自动检查：L1 测试、宿主测试、安装脚本自测；构建安装包并在虚拟机中安装、升级、卸载；T-056 对照试验 | doing | any | T-059 | Claude Code/Opus 5.5 2026-10-16：`.github/workflows/windows.yml`（D-015） | 推送后三个作业都运行；安装包和日志作为附件保留 |
+| T-062 | PowerShell 初始化脚本：`is` 启动失败时不关闭 PowerShell | done | any | — | Claude Code/Opus 5.5 2026-10-16 | `src/utils/shell.ts`；`shellInit.test.ts`（3 个，用真实的 pwsh，变异检查有效）；安装包验收中再检查一次“配置写错时 PowerShell 仍可用” |
 
 ### 阶段 B：悬浮窗（复用阶段 A）
 
@@ -45,7 +48,7 @@
 
 | 编号 | 任务 | 负责人 | 产出 |
 | --- | --- | --- | --- |
-| T-058 | 安装和卸载脚本中与平台无关的部分 | Claude Code/Opus 5.5 2026-10-15 | `scripts/windows/install.ps1`、`uninstall.ps1`、`profile-file.ps1`、`test-install.ps1`（26 项检查，在 Mac 的 PowerShell 7.6.7 上通过；变异检查有效）。本地代码页的配置文件和真实的 PATH 修改，需要在 Windows 上验证（T-040） |
+| T-058 | 安装和卸载脚本中与平台无关的部分 | Claude Code/Opus 5.5 2026-10-15 | `scripts/windows/install.ps1`、`uninstall.ps1`、`profile-file.ps1`、`test-install.ps1`（2026-10-16 随 T-059 扩展：每次安装都先 reinit、原地安装、默认配置、不改配置文件的选项、PATH 直接读写注册表并逐字节恢复；Mac 上 69 项通过，另有 3 个只在 Windows 上运行的 PATH 用例；变异检查有效）。本地代码页的配置文件和真实的 PATH 修改，需要在 Windows 上验证（T-040） |
 | T-012 | 在 Kiro 上执行规格用例 C-001 至 C-013 | 用户（Mac，Kiro 2.31.1）2026-10-15；Claude 记录 | 12 条一致，C-006 不一致（F-033，E-010）；`specs/completion.md` 第 8 节；C-002 源码预期勘误 |
 | T-013 | 弄清 F-006：`init zsh post` 为什么只输出 4 行 | Claude Code/Opus 5.5 2026-10-15 | 由 `Q_TERM`（figterm 设置）决定是否输出完整集成脚本；F-006 改为观察；E-007；target.md 注明 Kiro 已自动更新为 2.31.0 |
 | T-051 | custom generator 默认在 generator 的目录中执行命令，输出按 Fig 的规则清理（F-032） | Claude Code/Opus 5.5 2026-10-15 | `src/inshellisense/src/runtime/generator.ts`；`customGenerator.test.ts`（4 个）；T-048 清单第 8 项 |
