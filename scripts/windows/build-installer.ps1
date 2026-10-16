@@ -120,9 +120,9 @@ if (-not $Iscc) {
     ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
 }
 if (-not $Iscc) { throw '找不到 Inno Setup 7 的 ISCC.exe。请安装 Inno Setup 7.1 或更新版本，或者用 -Iscc 指定。' }
-$isccVersion = [version](Get-Item -LiteralPath $Iscc).VersionInfo.ProductVersion.Split(' ')[0]
-if ($isccVersion -lt [version]'7.1') { throw "需要 Inno Setup 7.1 或更新版本（其中有官方的简体中文界面），现在是 $isccVersion：$Iscc" }
-Write-Host "Inno Setup：$Iscc（$isccVersion）"
+# 版本要求（7.1 或更新）写在 installer/figwin.iss 中，由 ISCC 自己检查；ISCC.exe 的“产品版本”字段是 0.0.0.0，不能用
+$info = (Get-Item -LiteralPath $Iscc).VersionInfo
+Write-Host "Inno Setup：$Iscc（文件版本 $($info.FileMajorPart).$($info.FileMinorPart).$($info.FileBuildPart)）"
 Invoke-Checked 'ISCC' {
     & $Iscc "/DAppVersion=$version" "/DNumericVersion=$numericVersion" "/DStageDir=$stage" "/DOutputDir=$OutputDir" (Join-Path $repo 'installer' 'figwin.iss')
 }

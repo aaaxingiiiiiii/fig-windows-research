@@ -11,7 +11,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getConfig, loadConfig } from "../../utils/config.js";
 
-const template = fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../../installer/inshellisenserc.toml"), "utf8");
+// Windows checkouts have CRLF line endings
+const template = fs
+  .readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../../installer/inshellisenserc.toml"), "utf8")
+  .replaceAll("\r\n", "\n");
 const uncommented = template.replace(/^# (\[[A-Za-z.]+\]|[A-Za-z]+ = )/gm, "$1");
 
 const loadTemplate = async (text: string) => {

@@ -22,6 +22,9 @@
 #ifndef StageDir
   #error 缺少 StageDir：请用 scripts/windows/build-installer.ps1 构建
 #endif
+#if Ver < EncodeVer(7, 1, 0)
+  #error 需要 Inno Setup 7.1 或更新版本（其中有官方的简体中文界面）
+#endif
 #ifndef OutputDir
   #define OutputDir "..\dist"
 #endif
