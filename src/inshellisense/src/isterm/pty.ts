@@ -45,15 +45,17 @@ type ISTermOptions = {
 };
 
 // fig-windows-research T-056（试验中）：ConPTY 的缓冲区只有可见区域那么大，没有回滚区。窗口变高时它在底部加空行；
-// xterm 默认却从回滚区拉回旧行，内部模型和 ConPTY 的行号从此错开。windowsPty 让 xterm 改用 ConPTY 的规则。
+// 变宽时合并折行，光标随之上移。xterm 默认在这两种情况下都从回滚区拉回旧行，内部模型和 ConPTY 的行号从此错开。
 // FIGWIN_T056_VARIANT 只用于 Windows 上的对照试验（spikes/T-056-resize-sim/matrix.cjs），有结论后删除：
-//   off（默认，与上游相同）、conpty（不拉回旧行，保留重新折行）、legacy（不拉回旧行，也不重新折行）
-export const t056WindowsPty = (platform: NodeJS.Platform, release: string, variant: string | undefined): IWindowsPty | undefined => {
-  if (platform !== "win32") return undefined;
+//   off（默认，与上游相同）、conpty（windowsPty：变高时不拉回旧行）、legacy（再加上不重新折行）、
+//   noscroll（windowsPty，并且内部 xterm 不保留回滚区，变宽时也和 ConPTY 一样让光标上移）
+export const t056TerminalOptions = (platform: NodeJS.Platform, release: string, variant: string | undefined): { windowsPty?: IWindowsPty; scrollback?: number } => {
+  if (platform !== "win32") return {};
   const build = Number(release.split(".")[2]) || 0;
-  if (variant === "conpty") return { backend: "conpty", buildNumber: Math.max(build, 21376) };
-  if (variant === "legacy") return { backend: "conpty", buildNumber: 21375 };
-  return undefined;
+  if (variant === "conpty") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) } };
+  if (variant === "legacy") return { windowsPty: { backend: "conpty", buildNumber: 21375 } };
+  if (variant === "noscroll") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) }, scrollback: 0 };
+  return {};
 };
 
 export type ISTermPatch = {
@@ -100,9 +102,9 @@ export class ISTerm implements IPty {
     this.process = this.#pty.process;
 
     const unicode11Addon = new Unicode11Addon();
-    const windowsPty = t056WindowsPty(process.platform, os.release(), process.env.FIGWIN_T056_VARIANT);
-    log.debug({ msg: "t056 windowsPty", variant: process.env.FIGWIN_T056_VARIANT ?? "off", windowsPty });
-    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols, windowsPty });
+    const t056Options = t056TerminalOptions(process.platform, os.release(), process.env.FIGWIN_T056_VARIANT);
+    log.debug({ msg: "t056 terminal options", variant: process.env.FIGWIN_T056_VARIANT ?? "off", ...t056Options });
+    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols, ...t056Options });
     this.#term.loadAddon(unicode11Addon);
     this.#term.unicode.activeVersion = "11";
     this.#term.parser.registerCsiHandler({ final: "n" }, (params) => {

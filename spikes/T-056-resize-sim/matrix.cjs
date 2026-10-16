@@ -6,7 +6,7 @@
 // 每组都带 --wrap --per-step（最后一组除外），依次是：
 //   direct-*：不经过 inshellisense，直接运行 pwsh。也错位，说明问题不在 inshellisense
 //   is-off-*：现在的 inshellisense（E-012 的条件）
-//   is-conpty-* / is-legacy-*：inshellisense 内部的 xterm 改用 ConPTY 的窗口变化规则（候选修复，见 src/isterm/pty.ts）
+//   is-conpty-* / is-legacy-* / is-noscroll-*：inshellisense 内部的 xterm 改用 ConPTY 的窗口变化规则（候选修复，见 src/isterm/pty.ts）
 //   *-plain / *-conpty：外层 xterm 用默认规则 / 用 ConPTY 的规则
 // 完整输出（含提示符，可能有本机路径）写到 --out 目录；屏幕上和 summary.md 中只有坐标和是否对齐，可以公开。
 
@@ -29,7 +29,9 @@ const groups = [
   { name: "is-conpty-plain", flags: [], variant: "conpty" },
   { name: "is-conpty-conpty", flags: ["--outer-conpty"], variant: "conpty" },
   { name: "is-legacy-conpty", flags: ["--outer-conpty"], variant: "legacy" },
-  { name: "is-conpty-conpty-nowrap", flags: ["--outer-conpty"], variant: "conpty", nowrap: true },
+  { name: "is-noscroll-plain", flags: [], variant: "noscroll" },
+  { name: "is-noscroll-conpty", flags: ["--outer-conpty"], variant: "noscroll" },
+  { name: "is-noscroll-conpty-nowrap", flags: ["--outer-conpty"], variant: "noscroll", nowrap: true },
 ];
 
 const cell = (result) => {
@@ -37,6 +39,7 @@ const cell = (result) => {
   if (result.label === "exited early") return "提前退出";
   if (result.aligned === false) return `✗框 ${where}`;
   if (result.promptAligned === false) return `✗行 ${where}`;
+  if (result.rowStable === false) return `✗跳 ${where}`;
   return `✓ ${where}`;
 };
 
@@ -68,7 +71,7 @@ const table = [
     return `| ${name} | ${exit} | ${labels.map((label) => (byLabel.has(label) ? cell(byLabel.get(label)) : extra ? cell(extra) : "")).join(" | ")} |`;
   }),
   "",
-  "✓ 对齐；✗框 候选框没有紧贴光标；✗行 输入的字符没有出现在提示符所在的行。坐标是外层终端的光标（列,行，从 0 开始）。",
+  "✓ 对齐；✗框 候选框没有紧贴光标；✗行 输入的字符没有出现在提示符所在的行；✗跳 输入一个字符后光标跳到了别的行。坐标是外层终端的光标（列,行，从 0 开始）。",
 ].join("\n");
 fs.writeFileSync(path.join(out, "summary.md"), table + "\n");
 console.log("\n" + table);

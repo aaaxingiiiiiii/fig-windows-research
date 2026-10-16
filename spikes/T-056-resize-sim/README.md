@@ -24,7 +24,7 @@ node spikes/T-056-resize-sim/resize-sim.cjs zsh           # Mac 上对照
 | `--outer-conpty` | 外层 xterm 按 ConPTY 的规则处理窗口变化（`windowsPty`，VS Code 的终端也这样设置） |
 | `--per-step` | 每次改变大小后都输入 `e`、检查、再删掉，用来定位是哪一步引起错位 |
 | `--steps=80x30,120x30` | 改变大小的顺序，默认 `80x30,120x30,90x24,100x30` |
-| 环境变量 `FIGWIN_T056_VARIANT` | inshellisense 内部 xterm 的候选修复：`off`（默认，与上游相同）、`conpty`、`legacy`，见 `src/inshellisense/src/isterm/pty.ts` |
+| 环境变量 `FIGWIN_T056_VARIANT` | inshellisense 内部 xterm 的候选修复：`off`（默认，与上游相同）、`conpty`、`legacy`、`noscroll`，见 `src/inshellisense/src/isterm/pty.ts` |
 
 pwsh 第一条命令是 `Set-PSReadLineOption -HistorySaveStyle SaveNothing`，测试的命令不会写进 PowerShell 的历史，只有这一行本身会被记录。
 
@@ -34,7 +34,7 @@ pwsh 第一条命令是 `Set-PSReadLineOption -HistorySaveStyle SaveNothing`，�
 node spikes/T-056-resize-sim/matrix.cjs pwsh    # 约 6 分钟，结果在 local/evidence/T-056-matrix/
 ```
 
-依次运行 8 组：直接运行 pwsh（外层两种规则）、现在的 inshellisense（外层两种规则）、两种候选修复、修复后不折行的一组。屏幕上和 `summary.md` 中只有坐标和是否对齐，可以公开；完整输出含提示符（可能有本机路径），只留在 `local/`。GitHub Actions 的 `t056` 作业也运行它（T-061）。
+依次运行 10 组：直接运行 pwsh（外层两种规则）、现在的 inshellisense（外层两种规则）、三种候选修复（`noscroll` 再分外层两种规则）、`noscroll` 不折行的一组。表格中“✗跳”表示输入一个字符后光标跳到了别的行。屏幕上和 `summary.md` 中只有坐标和是否对齐，可以公开；完整输出含提示符（可能有本机路径），只留在 `local/`。GitHub Actions 的 `t056` 作业也运行它（T-061）。
 
 怎样读结果：
 
@@ -57,4 +57,10 @@ node spikes/T-056-resize-sim/matrix.cjs pwsh    # 约 6 分钟，结果在 local
 2026-10-15，Windows（ConPTY、PowerShell 7.6.7）：普通组对齐；`--wrap` 连续两次在最后一次改变大小（90×24 → 100×30）后输入时错位，光标从第 29 行跳到第 22 行（E-012）。
 
 2026-10-16 的分析（推断）：ConPTY 的缓冲区只有可见区域那么大，没有回滚区，窗口变高时在底部加空行，光标留在原来的行。inshellisense 内部用来跟踪屏幕的 xterm 默认会从回滚区拉回旧行，光标随之下移。窗口变化 150 ms 后，inshellisense 按内部模型重画整个屏幕，于是外层屏幕也跟着内部模型走。之后 pwsh 按 ConPTY 的行号输出，就落到了别的行。普通组没有错位，是因为屏幕没有写满、没有回滚区可拉。变宽时 xterm 合并折行后也会从回滚区拉行，ConPTY 做不到，所以 `--wrap` 还可能有第二个原因。Mac 上的对照试验 8 组全部对齐（内层不是 ConPTY，候选修复在 Mac 上不生效）。
+
+2026-10-16，GitHub Actions 的 Windows 虚拟机（第一次运行，E-017）：
+- 直接运行 pwsh 的两组全部对齐：问题确实在 inshellisense 一侧。
+- 现在的 inshellisense：变宽（120×30）后输入时错位。直接运行时，ConPTY 合并折行后光标从第 29 行上移到第 27 行；inshellisense 仍停在第 29 行。
+- `conpty` 变体：变高（24 → 30 行）后光标留在第 23 行，与 ConPTY 一致；变宽那一步仍然错位。`legacy` 更差。
+- 由此推断：变宽时还有第二个原因，是 xterm 从回滚区拉行。新增 `noscroll` 变体（内部 xterm 不保留回滚区），等下一次运行的结果。
 

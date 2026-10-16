@@ -38,3 +38,4 @@
 | 2026-10-16 | T-062 | `src/tests/figspec/shellInit.test.ts` | 新增 3 个测试：生成的脚本内容；用真实的 pwsh 运行初始化脚本，假的 `is` 失败时 PowerShell 仍可使用、成功时外层被关闭（没有 pwsh 或不是交互式会话时跳过后两个） | 防止回归；变异检查有效 | 否 |
 | 2026-10-16 | T-060 | `src/utils/config.ts` | `loadConfig(program, paths?)`：新增可选参数 `paths`，默认仍是 `~/.inshellisenserc` 和 XDG 路径 | 测试需要加载指定的文件（安装包的默认配置）；jest 中改 `HOME` 影响不到 `os.homedir()` | 否 |
 | 2026-10-16 | T-060 | `src/tests/figspec/configTemplate.test.ts` | 新增 3 个测试：安装包的默认配置 `installer/inshellisenserc.toml` 原样加载不改变任何默认值；去掉注释后每项设置都合法，并且等于代码中的默认值 | 防止模板与代码不一致；变异检查有效 | 否 |
+| 2026-10-16 | T-056 | `src/isterm/pty.ts`、`src/tests/isterm/windowsPty.test.ts` | `t056WindowsPty` 改为 `t056TerminalOptions`，返回 xterm 选项；新增变体 `noscroll`（`windowsPty`，并且 `scrollback: 0`）；测试增加到 5 个，包括变宽的情况 | 第一次 CI 对照试验（E-017）：`conpty` 修好了变高的情况，变宽时仍然错位。ConPTY 没有回滚区，变宽合并折行后光标上移；xterm 只有在没有回滚区时才这样做 | 先在 Windows 上验证 |
