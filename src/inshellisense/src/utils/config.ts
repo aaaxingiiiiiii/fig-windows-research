@@ -129,8 +129,9 @@ let globalConfig: Config = {
 };
 
 export const getConfig = (): Config => globalConfig;
-export const loadConfig = async (program: Command) => {
-  for (const configPath of configPaths) {
+// fig-windows-research T-060: `paths` lets tests load a given file (the installer's default config)
+export const loadConfig = async (program: Command, paths: string[] = configPaths) => {
+  for (const configPath of paths) {
     if (fs.existsSync(configPath)) {
       let config: Config;
       try {

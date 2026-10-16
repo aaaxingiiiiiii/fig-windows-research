@@ -2,12 +2,13 @@
 # Licensed under the MIT License.
 #
 # install.ps1 / uninstall.ps1 的自测（T-058）。不修改真实的配置文件、PATH 和用户目录：
-# 所有路径都在临时目录中；用一个假的 `is` 代替打包好的程序，它只输出一行初始化语句并创建数据目录。
+# 所有路径都在临时目录中；用一个假的 `is` 代替打包好的程序：它记录每次调用的参数，创建数据目录，并输出一行初始化语句。
 # 在 Mac 或 Windows 的 PowerShell 7 中运行：pwsh -NoProfile -File scripts/windows/test-install.ps1
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'profile-file.ps1')
+. (Join-Path $PSScriptRoot 'user-path.ps1')
 
 $root = Join-Path ([IO.Path]::GetTempPath()) "figwin-install-test-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
 New-Item -ItemType Directory -Path $root | Out-Null
@@ -24,81 +25,195 @@ if ($IsWindows) {
     $fakeName = 'is.cmd'
     $fake = Join-Path $root 'fake-is.cmd'
     Set-Content -LiteralPath $fake -Encoding utf8 -Value @(
-        '@echo off', 'chcp 65001 >nul', 'if "%1"=="--version" (echo 0.0.4-figwin.test& exit /b 0)', 'mkdir "%FIGWIN_TEST_DATA%" 2>nul', 'echo.', "echo $($sourceLine.Replace('%', '%%'))")
+        '@echo off', 'chcp 65001 >nul', 'if "%1"=="--version" (echo 0.0.4-figwin.test& exit /b 0)', 'echo %*>>"%FIGWIN_TEST_CALLS%"', 'mkdir "%FIGWIN_TEST_DATA%" 2>nul', 'echo.', "echo $($sourceLine.Replace('%', '%%'))")
 }
 else {
     $fakeName = 'is'
     $fake = Join-Path $root 'fake-is.sh'
-    Set-Content -LiteralPath $fake -Encoding utf8 -Value @('#!/bin/sh', 'if [ "$1" = "--version" ]; then echo 0.0.4-figwin.test; exit 0; fi', 'mkdir -p "$FIGWIN_TEST_DATA"', 'echo', "printf '%s\n' `"$($sourceLine.Replace('"', '\"'))`"")
+    Set-Content -LiteralPath $fake -Encoding utf8 -Value @('#!/bin/sh', 'if [ "$1" = "--version" ]; then echo 0.0.4-figwin.test; exit 0; fi', 'echo "$*" >> "$FIGWIN_TEST_CALLS"', 'mkdir -p "$FIGWIN_TEST_DATA"', 'echo', "printf '%s\n' `"$($sourceLine.Replace('"', '\"'))`"")
     chmod +x $fake
 }
 
-function Invoke-Case([string]$Name, [scriptblock]$Prepare, [scriptblock]$AfterInstall, [scriptblock]$Verify) {
+$template = Join-Path $root 'template.toml'
+Set-Content -LiteralPath $template -Encoding utf8NoBOM -Value '# 默认配置（测试）'
+
+# $Options：传给 install.ps1 的额外参数；Prepare 可以返回新的选项（例如原地安装时的 Source）
+function Invoke-Case([string]$Name, [scriptblock]$Prepare, [scriptblock]$AfterInstall, [scriptblock]$Verify, [hashtable]$Options = @{}) {
     Write-Host "用例：$Name"
     $case = Join-Path $root ([guid]::NewGuid().ToString('N').Substring(0, 8))
     $profilePath = Join-Path $case 'profile' 'Microsoft.PowerShell_profile.ps1'
     $installDir = Join-Path $case 'install'
     $dataDir = Join-Path $case 'data'
+    $configPath = Join-Path $case 'home' '.inshellisenserc'
+    $calls = Join-Path $case 'calls.txt'
     $env:FIGWIN_TEST_DATA = $dataDir
-    New-Item -ItemType Directory -Path (Split-Path -Parent $profilePath) -Force | Out-Null
-    & $Prepare $profilePath $dataDir
+    $env:FIGWIN_TEST_CALLS = $calls
+    New-Item -ItemType Directory -Path (Split-Path -Parent $profilePath), (Split-Path -Parent $configPath) -Force | Out-Null
+    $ctx = @{ Profile = $profilePath; Data = $dataDir; Config = $configPath; Install = $installDir; Calls = $calls }
+    $extra = & $Prepare $ctx
     $before = if (Test-Path -LiteralPath $profilePath) { (Get-FileHash -LiteralPath $profilePath).Hash } else { $null }
-    $common = @{ Source = $fake; InstallDir = $installDir; ProfilePath = $profilePath; DataDir = $dataDir; ExecutableName = $fakeName; NoPathUpdate = $true }
+    $ctx.Before = $before
+    $common = @{ Source = $fake; InstallDir = $installDir; ProfilePath = $profilePath; DataDir = $dataDir; ExecutableName = $fakeName; NoPathUpdate = $true; ConfigPath = $configPath }
+    foreach ($key in $Options.Keys) { $common[$key] = $Options[$key] }
+    if ($extra -is [hashtable]) { foreach ($key in $extra.Keys) { $common[$key] = $extra[$key] } }
+    $ctx.Extra = $extra
     & (Join-Path $PSScriptRoot 'install.ps1') @common 6>$null | Out-Null
-    $text = (Read-ProfileFile -Path $profilePath).Text
-    $lines = @($text -split "`r?`n" | Where-Object { $_ })
-    Assert-True ($lines[-1] -eq $sourceLine) '安装后初始化语句是配置文件的最后一行'
-    Assert-True ($lines[-2] -eq $ProfileMarker) '初始化语句前面是标记注释'
-    $installedHash = (Get-FileHash -LiteralPath $profilePath).Hash
+    if (-not $Options.ContainsKey('NoProfileUpdate')) {
+        $text = (Read-ProfileFile -Path $profilePath).Text
+        $lines = @($text -split "`r?`n" | Where-Object { $_ })
+        Assert-True ($lines[-1] -eq $sourceLine) '安装后初始化语句是配置文件的最后一行'
+        Assert-True ($lines[-2] -eq $ProfileMarker) '初始化语句前面是标记注释'
+    }
+    $installedHash = if (Test-Path -LiteralPath $profilePath) { (Get-FileHash -LiteralPath $profilePath).Hash } else { $null }
+    $initCalls = @(Get-Content -LiteralPath $calls | Where-Object { $_ -like 'init*' }).Count
     & (Join-Path $PSScriptRoot 'install.ps1') @common 6>$null | Out-Null
-    Assert-True ((Get-FileHash -LiteralPath $profilePath).Hash -eq $installedHash) '重复安装不再修改配置文件'
-    if ($AfterInstall) { & $AfterInstall $profilePath }
+    $currentHash = if (Test-Path -LiteralPath $profilePath) { (Get-FileHash -LiteralPath $profilePath).Hash } else { $null }
+    Assert-True ($currentHash -eq $installedHash) '重复安装不再修改配置文件'
+    Assert-True (@(Get-Content -LiteralPath $calls | Where-Object { $_ -like 'init*' }).Count -eq $initCalls + 1) '重复安装（升级）时重新运行 init，解包新版本的资源'
+    $order = @(Get-Content -LiteralPath $calls | ForEach-Object { "$_".Trim() })
+    Assert-True (($order -join ',') -eq 'reinit,init pwsh,reinit,init pwsh') '每次安装都先 reinit（删除旧资源）再 init'
+    if ($AfterInstall) { & $AfterInstall $ctx }
     $warnings = $null
     & (Join-Path $PSScriptRoot 'uninstall.ps1') -InstallDir $installDir -WarningVariable warnings -WarningAction SilentlyContinue 6>$null | Out-Null
     Assert-True (-not (Test-Path -LiteralPath $installDir)) '卸载后安装目录已删除'
-    & $Verify $profilePath $before $dataDir $warnings
+    $ctx.Warnings = $warnings
+    & $Verify $ctx
 }
 
 Invoke-Case '安装前没有配置文件' { } $null {
-    param($profilePath, $before, $dataDir)
-    Assert-True (-not (Test-Path -LiteralPath $profilePath)) '卸载后配置文件被删除（安装前不存在）'
-    Assert-True (-not (Test-Path -LiteralPath $dataDir)) '安装时新建的数据目录被删除'
+    param($ctx)
+    Assert-True (-not (Test-Path -LiteralPath $ctx.Profile)) '卸载后配置文件被删除（安装前不存在）'
+    Assert-True (-not (Test-Path -LiteralPath $ctx.Data)) '安装时新建的数据目录被删除'
 }
 
 Invoke-Case 'UTF-8 带 BOM、CRLF、没有结尾换行、含中文' {
-    param($profilePath)
-    [IO.File]::WriteAllBytes($profilePath, [byte[]](0xEF, 0xBB, 0xBF) + [Text.Encoding]::UTF8.GetBytes("# 我的配置`r`nSet-Alias ll Get-ChildItem"))
+    param($ctx)
+    [IO.File]::WriteAllBytes($ctx.Profile, [byte[]](0xEF, 0xBB, 0xBF) + [Text.Encoding]::UTF8.GetBytes("# 我的配置`r`nSet-Alias ll Get-ChildItem"))
 } $null {
-    param($profilePath, $before)
-    Assert-True ((Get-FileHash -LiteralPath $profilePath).Hash -eq $before) '配置文件逐字节恢复（UTF-8 BOM）'
+    param($ctx)
+    Assert-True ((Get-FileHash -LiteralPath $ctx.Profile).Hash -eq $ctx.Before) '配置文件逐字节恢复（UTF-8 BOM）'
 }
 
 Invoke-Case 'UTF-16 LE（Windows PowerShell 5.1 常见）' {
-    param($profilePath)
-    [IO.File]::WriteAllBytes($profilePath, [byte[]](0xFF, 0xFE) + [Text.Encoding]::Unicode.GetBytes("Import-Module posh-git`r`n"))
+    param($ctx)
+    [IO.File]::WriteAllBytes($ctx.Profile, [byte[]](0xFF, 0xFE) + [Text.Encoding]::Unicode.GetBytes("Import-Module posh-git`r`n"))
 } {
-    param($profilePath)
-    Assert-True ((Read-ProfileFile -Path $profilePath).Encoding -eq 'utf16le') '安装后仍是 UTF-16 LE'
+    param($ctx)
+    Assert-True ((Read-ProfileFile -Path $ctx.Profile).Encoding -eq 'utf16le') '安装后仍是 UTF-16 LE'
 } {
-    param($profilePath, $before)
-    Assert-True ((Get-FileHash -LiteralPath $profilePath).Hash -eq $before) '配置文件逐字节恢复（UTF-16 LE）'
+    param($ctx)
+    Assert-True ((Get-FileHash -LiteralPath $ctx.Profile).Hash -eq $ctx.Before) '配置文件逐字节恢复（UTF-16 LE）'
 }
 
 Invoke-Case '安装后用户又在末尾加了内容' {
-    param($profilePath, $dataDir)
-    Set-Content -LiteralPath $profilePath -Encoding utf8NoBOM -Value 'Write-Host start'
-    New-Item -ItemType Directory -Path $dataDir | Out-Null
+    param($ctx)
+    Set-Content -LiteralPath $ctx.Profile -Encoding utf8NoBOM -Value 'Write-Host start'
+    New-Item -ItemType Directory -Path $ctx.Data | Out-Null
 } {
-    param($profilePath)
-    Add-Content -LiteralPath $profilePath -Encoding utf8NoBOM -Value 'Write-Host later'
+    param($ctx)
+    Add-Content -LiteralPath $ctx.Profile -Encoding utf8NoBOM -Value 'Write-Host later'
 } {
-    param($profilePath, $before, $dataDir, $warnings)
-    $text = Get-Content -LiteralPath $profilePath -Raw
+    param($ctx)
+    $text = Get-Content -LiteralPath $ctx.Profile -Raw
     Assert-True ($text -notmatch [regex]::Escape($ProfileMarker)) '删除了标记注释'
     Assert-True (-not $text.Contains($sourceLine)) '删除了初始化语句'
     Assert-True ($text.Contains('Write-Host start') -and $text.Contains('Write-Host later')) '保留了用户的其他内容'
-    Assert-True (@($warnings).Count -ge 1) '提示配置文件在安装后被修改过'
-    Assert-True (Test-Path -LiteralPath $dataDir) '安装前就存在的数据目录被保留'
+    Assert-True (@($ctx.Warnings).Count -ge 1) '提示配置文件在安装后被修改过'
+    Assert-True (Test-Path -LiteralPath $ctx.Data) '安装前就存在的数据目录被保留'
+}
+
+Invoke-Case '创建默认补全配置，卸载时删除没有改过的' { } $null {
+    param($ctx)
+    Assert-True (-not (Test-Path -LiteralPath $ctx.Config)) '没有改过的默认补全配置被删除'
+} -Options @{ ConfigTemplate = $template }
+
+Invoke-Case '默认补全配置安装后被用户修改' { } {
+    param($ctx)
+    Assert-True ((Get-Content -LiteralPath $ctx.Config -Raw) -eq (Get-Content -LiteralPath $template -Raw)) '创建的补全配置与模板相同'
+    Add-Content -LiteralPath $ctx.Config -Value 'maxSuggestions = 8'
+} {
+    param($ctx)
+    Assert-True ((Test-Path -LiteralPath $ctx.Config) -and (Get-Content -LiteralPath $ctx.Config -Raw).Contains('maxSuggestions = 8')) '用户改过的补全配置被保留'
+} -Options @{ ConfigTemplate = $template }
+
+Invoke-Case '用户已有补全配置' {
+    param($ctx)
+    Set-Content -LiteralPath $ctx.Config -Value 'useNerdFont = true'
+} $null {
+    param($ctx)
+    Assert-True ((Get-Content -LiteralPath $ctx.Config -Raw).Trim() -eq 'useNerdFont = true') '已有的补全配置不被覆盖，卸载后仍在'
+} -Options @{ ConfigTemplate = $template }
+
+Invoke-Case '不修改 PowerShell 配置文件（-NoProfileUpdate）' {
+    param($ctx)
+    Set-Content -LiteralPath $ctx.Profile -Encoding utf8NoBOM -Value 'Write-Host mine'
+} {
+    param($ctx)
+    Assert-True ((Get-FileHash -LiteralPath $ctx.Profile).Hash -eq $ctx.Before) '安装没有修改配置文件'
+} {
+    param($ctx)
+    Assert-True ((Get-FileHash -LiteralPath $ctx.Profile).Hash -eq $ctx.Before) '卸载后配置文件仍是原样'
+} -Options @{ NoProfileUpdate = $true }
+
+Invoke-Case '原地安装（安装包已把程序放进安装目录）' {
+    param($ctx)
+    New-Item -ItemType Directory -Path $ctx.Install | Out-Null
+    $placed = Join-Path $ctx.Install $fakeName
+    Copy-Item -LiteralPath $fake -Destination $placed
+    if (-not $IsWindows) { chmod +x $placed }
+    @{ Source = $placed }
+} $null {
+    param($ctx)
+    Assert-True (-not (Test-Path -LiteralPath $ctx.Profile)) '原地安装后也能完整卸载'
+}
+
+# ---- 用户 PATH（只在 Windows 上）：用 HKCU 下的临时子键代替 HKCU\Environment，不碰真实的 PATH ----
+if ($IsWindows) {
+    $testKeyRoot = "Software\figwin-install-test-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+    $script:pathCase = 0
+    function New-TestPathKey($Value, [string]$Kind = 'ExpandString') {
+        $script:pathCase++
+        $key = "$testKeyRoot\case$script:pathCase"
+        $handle = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($key)
+        if ($null -ne $Value) { $handle.SetValue('Path', $Value, [Microsoft.Win32.RegistryValueKind]$Kind) }
+        $handle.Dispose()
+        return @{ PathKey = $key; NoPathUpdate = $false }
+    }
+    $original = '%USERPROFILE%\AppData\Local\Microsoft\WindowsApps;C:\Tools;;'
+
+    Invoke-Case 'PATH 是 REG_EXPAND_SZ，含 %USERPROFILE% 和多余的分号' { New-TestPathKey $original } {
+        param($ctx)
+        $value = Get-UserPathValue $ctx.Extra.PathKey
+        Assert-True ((Split-PathEntries $value.Value)[0] -eq $ctx.Install) '安装目录是 PATH 的第一项'
+        Assert-True ($value.Kind -eq 'ExpandString') 'PATH 仍是 REG_EXPAND_SZ'
+        Assert-True ($value.Value.Contains('%USERPROFILE%\AppData')) '原有的 %USERPROFILE% 没有被展开'
+    } {
+        param($ctx)
+        $value = Get-UserPathValue $ctx.Extra.PathKey
+        Assert-True ($value.Value -ceq $original -and $value.Kind -eq 'ExpandString') '卸载后 PATH 的值和类型与安装前完全相同'
+    }
+
+    Invoke-Case '安装前没有用户 PATH' { New-TestPathKey $null } {
+        param($ctx)
+        Assert-True ((Get-UserPathValue $ctx.Extra.PathKey).Value -eq $ctx.Install) '新建的 PATH 只有安装目录'
+    } {
+        param($ctx)
+        Assert-True ($null -eq (Get-UserPathValue $ctx.Extra.PathKey)) '卸载后仍然没有用户 PATH'
+    }
+
+    Invoke-Case '安装后用户又在 PATH 中加了一项' { New-TestPathKey 'C:\Tools' 'String' } {
+        param($ctx)
+        $value = Get-UserPathValue $ctx.Extra.PathKey
+        Set-UserPathValue ([ordered]@{ Value = "$($value.Value);D:\Later"; Kind = $value.Kind }) $ctx.Extra.PathKey
+    } {
+        param($ctx)
+        $value = Get-UserPathValue $ctx.Extra.PathKey
+        Assert-True ($value.Value -eq 'C:\Tools;D:\Later' -and $value.Kind -eq 'String') '只删除了安装目录，保留了用户新加的项和原来的类型'
+    }
+    [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($testKeyRoot, $false)
+}
+else {
+    Write-Host '用例：用户 PATH（跳过：只在 Windows 上运行）'
 }
 
 Remove-Item -LiteralPath $root -Recurse -Force

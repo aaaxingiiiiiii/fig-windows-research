@@ -1,0 +1,42 @@
+# figwin 终端补全的配置文件（inshellisense 的 .inshellisenserc，TOML 格式）
+#
+# 怎么改：去掉某个设置前面的“# ”，改成你想要的值，保存后新开一个 PowerShell 标签就生效。
+# 下面每个设置的值都是默认值，不改也可以。
+# 写错格式时，新开的标签会显示出错的行号，并且不启用补全（PowerShell 本身照常可用），改正后再开一个标签即可。
+# 想恢复默认：删除这个文件，或者把改过的行重新加上“# ”。
+
+# 候选列表一次最多显示几项
+# maxSuggestions = 5
+
+# 候选框的边角："square"（直角）或 "rounded"（圆角）
+# boxBorderStyle = "square"
+
+# 选中项的背景色，格式是 #RRGGBB
+# activeSuggestionBackgroundColor = "#7D56F4"
+
+# 使用 Nerd Font 图标。终端字体不是 Nerd Font 时，图标会显示成方框，所以默认关闭
+# useNerdFont = false
+
+# 快捷键。key 的写法：tab、return（回车）、escape、up、down、left、right、space，或者单个字母；
+# 需要同时按 Shift 或 Ctrl 时，加上 shift = true 或 control = true。
+# 例如改成 Ctrl+空格 接受候选：key = "space" 和 control = true 写在 [bindings.acceptSuggestion] 下面。
+
+# 接受选中的候选
+# [bindings.acceptSuggestion]
+# key = "tab"
+
+# 选择下一项
+# [bindings.nextSuggestion]
+# key = "down"
+
+# 选择上一项
+# [bindings.previousSuggestion]
+# key = "up"
+
+# 关闭候选列表
+# [bindings.dismissSuggestions]
+# key = "escape"
+
+# 额外的补全规格目录（Fig 格式、已编译的 .js 文件）。路径中的反斜杠要写两遍
+# [specs]
+# path = ["D:\\my-specs"]
