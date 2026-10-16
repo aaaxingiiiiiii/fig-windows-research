@@ -14,6 +14,7 @@ import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
 import type { IBuffer, IBufferCell } from "@xterm/xterm";
+import type { IWindowsPty } from "@xterm/headless";
 
 interface ICellData extends IBufferCell {
   extended: { underlineStyle: number };
@@ -41,6 +42,18 @@ type ISTermOptions = {
   shellArgs?: string[];
   underTest: boolean;
   login: boolean;
+};
+
+// fig-windows-research T-056（试验中）：ConPTY 的缓冲区只有可见区域那么大，没有回滚区。窗口变高时它在底部加空行；
+// xterm 默认却从回滚区拉回旧行，内部模型和 ConPTY 的行号从此错开。windowsPty 让 xterm 改用 ConPTY 的规则。
+// FIGWIN_T056_VARIANT 只用于 Windows 上的对照试验（spikes/T-056-resize-sim/matrix.cjs），有结论后删除：
+//   off（默认，与上游相同）、conpty（不拉回旧行，保留重新折行）、legacy（不拉回旧行，也不重新折行）
+export const t056WindowsPty = (platform: NodeJS.Platform, release: string, variant: string | undefined): IWindowsPty | undefined => {
+  if (platform !== "win32") return undefined;
+  const build = Number(release.split(".")[2]) || 0;
+  if (variant === "conpty") return { backend: "conpty", buildNumber: Math.max(build, 21376) };
+  if (variant === "legacy") return { backend: "conpty", buildNumber: 21375 };
+  return undefined;
 };
 
 export type ISTermPatch = {
@@ -87,7 +100,9 @@ export class ISTerm implements IPty {
     this.process = this.#pty.process;
 
     const unicode11Addon = new Unicode11Addon();
-    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
+    const windowsPty = t056WindowsPty(process.platform, os.release(), process.env.FIGWIN_T056_VARIANT);
+    log.debug({ msg: "t056 windowsPty", variant: process.env.FIGWIN_T056_VARIANT ?? "off", windowsPty });
+    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols, windowsPty });
     this.#term.loadAddon(unicode11Addon);
     this.#term.unicode.activeVersion = "11";
     this.#term.parser.registerCsiHandler({ final: "n" }, (params) => {
