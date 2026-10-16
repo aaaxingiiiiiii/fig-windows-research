@@ -474,3 +474,10 @@
   - 安装脚本自测：82 项通过，另有 4 个只在 Windows 上运行的 PATH 用例；两处变异检查有效。
 - T-056：`noscroll` 无效。新增变体 `sysconpty`、`syswpty`（改用系统 ConPTY），等第三次 CI。
 
+
+## 2026-10-16 · Codex/GPT-6（Windows）· T-056
+- 做了：在 ai/codex/T-056 同步 develop；分别在 1a1f902 和 e8a0166 构建、运行 L1、安装脚本隔离自测和两轮矩阵（20 组）。
+- 结果：首轮 L1 387 通过、94 项安装自测通过；最新 L1 388 通过、10 跳过、93 快照通过，114 项安装自测通过。系统 ConPTY 四组全通过，旧方案仍有错位。原表与观察/推断写入 research/spike-fork-windows.md，证据 E-019。
+- CI：e8a0166 的 tests、t056、installer 作业成功；安装包在一次性 VM 中 30 项验收通过（E-020），本机未试装。
+- 没做：不改变运行时默认方案，按 windows-next 交 Mac 整理修复；人工验收按 D-014 后置；没有重写 handoff 或 windows-next。
+- 下一步：T-021 原生悬浮窗，再 T-019、T-044。roadmap 第 2 节仍有旧的人工优先说明，本次遵循 windows-next 第 3 版及 roadmap 第 8.1 节。
