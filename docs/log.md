@@ -520,3 +520,4 @@
 - T-064：常驻 pwsh 调用 TabExpansion2，用于 PowerShell 自己的命令和没有 Fig 规格的命令，替换范围对不上时不给候选；测试 9 个。Mac 上在真实的 inshellisense 会话中，`Get-ChildItem -Pa` 出现 `-Path`，`git ch` 照旧出现 `checkout`。W-xxx 用例改为关闭原生补全（它们检查 Fig 规格这条路径）。安装包验收增加 `complete-ps` 检查。
 - 写了 `docs/acceptance-phase-a.md`（14 项），新增 T-065；更新 windows-next 第 4 节、roadmap 第 7 节。
 - L1：Mac 上 422 个，411 个通过，10 个跳过，1 个失败（Homebrew）。
+- T-064 推送后的 CI：安装包验收 30 项通过、1 项失败，新加的 `complete-ps` 没有候选（`tests` 作业中直接调用常驻 pwsh 的集成测试是通过的）。推断是按键请求积压：短前缀的命令名补全要扫描很长的 PATH。修复：同时只发一个请求，新请求替换排队中的旧请求；命令名只在含 `-` 时问 PowerShell；预热时做一次补全。新增积压测试。

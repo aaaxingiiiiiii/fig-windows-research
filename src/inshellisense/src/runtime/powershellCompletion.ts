@@ -64,14 +64,25 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
 }
 `;
 
-type Pending = { resolve: (value: Record<string, unknown> | undefined) => void; timer: NodeJS.Timeout };
+type Job = { body: Record<string, unknown>; resolve: (value: Record<string, unknown> | undefined) => void; signal?: AbortSignal; settled: boolean };
 
-/** 常驻的 pwsh。第一次请求时启动，进程退出后下次请求时重启。 */
+const settle = (job: Job, value: Record<string, unknown> | undefined) => {
+  if (job.settled) return;
+  job.settled = true;
+  job.resolve(value);
+};
+
+/**
+ * 常驻的 pwsh。第一次请求时启动，进程退出后下次请求时重启。
+ * pwsh 一次只处理一个请求，所以同时只发一个：新的补全请求进来时，替换还在排队的旧补全请求（每次按键都会发一个，
+ * 旧的已经没有用了），避免积压。超时从真正发出时算起；pwsh 超过 10 秒没有回复时重启它。
+ */
 export class PowerShellWorker implements PowerShellBackend {
   readonly #executable: string;
   #process?: ChildProcessWithoutNullStreams;
   #nextId = 1;
-  readonly #pending = new Map<number, Pending>();
+  #queue: Job[] = [];
+  #inflight?: { id: number; job: Job; timer: NodeJS.Timeout; watchdog: NodeJS.Timeout };
 
   constructor(executable: string) {
     this.#executable = executable;
@@ -89,19 +100,21 @@ export class PowerShellWorker implements PowerShellBackend {
       } catch {
         return;
       }
-      const pending = typeof reply.id === "number" ? this.#pending.get(reply.id) : undefined;
-      if (pending == null) return;
-      this.#pending.delete(reply.id as number);
-      clearTimeout(pending.timer);
-      pending.resolve(reply.error != null ? undefined : reply);
+      const inflight = this.#inflight;
+      if (inflight == null || reply.id !== inflight.id) return;
+      this.#finishInflight();
+      settle(inflight.job, reply.error != null ? undefined : reply);
+      this.#pump();
     });
     const exited = () => {
-      if (this.#process === child) this.#process = undefined;
-      for (const [id, pending] of this.#pending) {
-        clearTimeout(pending.timer);
-        pending.resolve(undefined);
-        this.#pending.delete(id);
+      if (this.#process !== child) return;
+      this.#process = undefined;
+      const inflight = this.#inflight;
+      if (inflight != null) {
+        this.#finishInflight();
+        settle(inflight.job, undefined);
       }
+      this.#pump();
     };
     child.on("exit", exited);
     child.on("error", (error) => {
@@ -112,21 +125,46 @@ export class PowerShellWorker implements PowerShellBackend {
     return child;
   }
 
-  #request(body: Record<string, unknown>, signal?: AbortSignal): Promise<Record<string, unknown> | undefined> {
-    if (signal?.aborted) return Promise.resolve(undefined);
+  #finishInflight(): void {
+    if (this.#inflight == null) return;
+    clearTimeout(this.#inflight.timer);
+    clearTimeout(this.#inflight.watchdog);
+    this.#inflight = undefined;
+  }
+
+  #pump(): void {
+    if (this.#inflight != null) return;
+    let job: Job | undefined;
+    while ((job = this.#queue.shift()) != null && (job.settled || job.signal?.aborted)) settle(job, undefined);
+    if (job == null) return;
     this.#process ??= this.#start();
     const id = this.#nextId++;
+    const current = job;
+    this.#inflight = {
+      id,
+      job,
+      // 等不及了：先返回“没有候选”，但仍等这个回复回来再发下一个
+      timer: setTimeout(() => settle(current, undefined), REQUEST_TIMEOUT_MS),
+      // pwsh 卡住了：重启
+      watchdog: setTimeout(() => {
+        log.debug({ msg: "powershell completion worker is stuck, restarting" });
+        this.#process?.kill();
+      }, 10_000),
+    };
+    this.#process.stdin.write(JSON.stringify({ id, ...job.body }) + "\n");
+  }
+
+  #request(body: Record<string, unknown>, signal?: AbortSignal): Promise<Record<string, unknown> | undefined> {
+    if (signal?.aborted) return Promise.resolve(undefined);
     return new Promise((resolve) => {
-      const done = (value: Record<string, unknown> | undefined) => {
-        if (!this.#pending.has(id)) return;
-        clearTimeout(this.#pending.get(id)!.timer);
-        this.#pending.delete(id);
-        resolve(value);
-      };
-      const timer = setTimeout(() => done(undefined), REQUEST_TIMEOUT_MS);
-      this.#pending.set(id, { resolve, timer });
-      signal?.addEventListener("abort", () => done(undefined), { once: true });
-      this.#process!.stdin.write(JSON.stringify({ id, ...body }) + "\n");
+      if (body.op === "complete") {
+        for (const queued of this.#queue) if (queued.body.op === "complete") settle(queued, undefined);
+        this.#queue = this.#queue.filter((queued) => !queued.settled);
+      }
+      const job: Job = { body, resolve, signal, settled: false };
+      signal?.addEventListener("abort", () => settle(job, undefined), { once: true });
+      this.#queue.push(job);
+      this.#pump();
     });
   }
 
@@ -167,6 +205,8 @@ const getBackend = (): PowerShellBackend | null => {
 /** 提前启动常驻的 pwsh（启动约需 1 秒），免得第一次补全时等待。 */
 export const warmUpPowerShell = (): void => {
   void isPowerShellCommand("Get-ChildItem");
+  // 第一次补全要加载补全引擎，可能要几秒；提前做一次
+  void getBackend()?.complete("Get-ChildItem -", process.cwd());
 };
 
 /** 命令是不是 PowerShell 自己的（cmdlet、函数、别名、脚本）。结果按命令名缓存。 */
@@ -235,6 +275,9 @@ export const toSuggestionBlob = (line: string, token: CommandToken | undefined, 
   if (suggestions.length === 0) return undefined;
   return { suggestions, activeToken: token != null && !token.complete ? token : undefined };
 };
+
+/** 正在输入的命令名像 PowerShell 的“动词-名词”（例如 Get-Ch）时才问 PowerShell：G、Ge 这样的短前缀会让它扫描 PATH 中的所有程序，很慢。 */
+export const looksLikePowerShellCommandName = (name: string): boolean => /^[A-Za-z]+-/.test(name);
 
 /** 用 PowerShell 的原生补全得到候选；没有 pwsh、超时或范围对不上时返回 undefined。 */
 export const getPowerShellSuggestions = async (

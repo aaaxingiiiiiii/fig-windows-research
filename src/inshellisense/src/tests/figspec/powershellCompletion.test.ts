@@ -9,7 +9,13 @@ import which from "which";
 
 import { getSuggestions } from "../../runtime/runtime.js";
 import { parseCommand } from "../../runtime/parser.js";
-import { type PowerShellBackend, PowerShellWorker, setPowerShellBackend, toSuggestionBlob } from "../../runtime/powershellCompletion.js";
+import {
+  type PowerShellBackend,
+  PowerShellWorker,
+  looksLikePowerShellCommandName,
+  setPowerShellBackend,
+  toSuggestionBlob,
+} from "../../runtime/powershellCompletion.js";
 import { Shell } from "../../utils/shell.js";
 
 const lastToken = (line: string) => parseCommand(line, Shell.Pwsh).at(-1);
@@ -42,6 +48,11 @@ describe("toSuggestionBlob", () => {
   test("empty results give no suggestions", () => {
     expect(toSuggestionBlob("git ch", lastToken("git ch"), { index: 4, length: 2, matches: [] })).toBeUndefined();
   });
+});
+
+test("command names are only sent to PowerShell when they look like Verb-Noun (short prefixes would scan the whole PATH)", () => {
+  expect(["Get-", "Get-Ch", "set-loc"].map(looksLikePowerShellCommandName)).toEqual([true, true, true]);
+  expect(["G", "Get", "gci", "-x", "1-2"].map(looksLikePowerShellCommandName)).toEqual([false, false, false, false, false]);
 });
 
 describe("routing in getSuggestions", () => {
@@ -79,6 +90,12 @@ describe("routing in getSuggestions", () => {
     expect(backend.complete).not.toHaveBeenCalled();
   });
 
+  test("a short command-name prefix does not ask PowerShell", async () => {
+    const backend = fakeBackend({});
+    await getSuggestions("Ge", process.cwd(), Shell.Pwsh);
+    expect(backend.complete).not.toHaveBeenCalled();
+  });
+
   test("other shells never ask PowerShell", async () => {
     const backend = fakeBackend({ ls: "Alias" });
     await getSuggestions("Get-Ch", process.cwd(), Shell.Bash);
@@ -101,6 +118,23 @@ pwshTest(
       expect(result?.matches.map((m) => m.text)).toContain("-Path");
       expect(await worker.commandType("Get-ChildItem")).toBe("Cmdlet");
       expect(await worker.commandType("definitely-not-a-command-xyz")).toBeUndefined();
+    } finally {
+      worker.dispose();
+    }
+  },
+  30_000,
+);
+
+pwshTest(
+  "a burst of requests (one per keystroke) does not pile up: queued ones are replaced and the latest still answers",
+  async () => {
+    const worker = new PowerShellWorker(pwsh!);
+    try {
+      const lines = ["Get-ChildItem -", "Get-ChildItem -P", "Get-ChildItem -Pa"];
+      const results = await Promise.all([...lines, ...lines].map((line) => worker.complete(line, process.cwd())));
+      // the first request is sent at once; the others wait, and each new one replaces the previous queued one
+      expect(results.slice(1, -1).every((result) => result === undefined)).toBe(true);
+      expect(results.at(-1)?.matches.map((m) => m.text)).toContain("-Path");
     } finally {
       worker.dispose();
     }

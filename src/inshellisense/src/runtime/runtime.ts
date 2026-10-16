@@ -19,7 +19,7 @@ import log from "../utils/log.js";
 import { specResourcesPath } from "../utils/constants.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 import { clearImplicitGeneratorState } from "./generatorCache.js";
-import { getPowerShellSuggestions, isPowerShellCommand } from "./powershellCompletion.js";
+import { getPowerShellSuggestions, isPowerShellCommand, looksLikePowerShellCommandName } from "./powershellCompletion.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
@@ -114,8 +114,8 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, sig
     }
     if (rootToken != null && !rootToken.complete) {
       const commands = await runCommand(rootToken);
-      // fig-windows-research T-064: in pwsh, PowerShell's own commands (Get-ChildItem ...) when no Fig spec name matches
-      if (shell === Shell.Pwsh && (commands == null || commands.suggestions.length === 0)) {
+      // fig-windows-research T-064: in pwsh, PowerShell's own commands (Get-Ch -> Get-ChildItem) when no Fig spec name matches
+      if (shell === Shell.Pwsh && (commands == null || commands.suggestions.length === 0) && looksLikePowerShellCommandName(rootToken.token)) {
         return (await getPowerShellSuggestions(cmd, cwd, rootToken, signal)) ?? commands;
       }
       return commands;
