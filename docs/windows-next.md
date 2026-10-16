@@ -12,7 +12,7 @@
   - 不要再约用户做 T-048 的 8 项人工清单、T-056 的手动复现、T-057 的新标签确认；这些在第 4 节，等功能完成后一起做。
   - 不在用户的电脑上运行安装包，也不修改用户真实的 `$PROFILE` 和 PATH。
 - **安装包（T-059）已由 Mac 端写好**：`installer/figwin.iss`、`scripts/windows/build-installer.ps1`。构建和安装、升级、卸载的验收都在 GitHub Actions 的一次性 Windows 虚拟机中进行（T-061，`.github/workflows/windows.yml`），不需要在你这边安装 Inno Setup。
-- **T-056**：Mac 端根据你的复现和 GitHub Actions 中的对照试验找到了原因，并已修复（F-035）：Windows 11 上改用系统自带的 ConPTY。请在第 1 步中在用户的电脑上复验。
+- **T-056**：Mac 端根据你的复现和 GitHub Actions 中的对照试验找到了原因，并已修复（F-035）：Windows 11 上改用系统自带的 ConPTY。你在 E-019 中已经验证了系统 ConPTY；第 1 步只需确认修复后的默认选择（`is-default-*`）也对齐。
 
 ## 0. 每次开工前
 

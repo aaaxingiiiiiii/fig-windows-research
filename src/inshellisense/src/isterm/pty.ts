@@ -47,7 +47,7 @@ type ISTermOptions = {
 // The bundled one does not repaint the screen after a resize, while the internal xterm pulls lines back from its
 // scrollback when the window grows taller or wider. The two then disagree about rows, inshellisense repaints the screen
 // from the internal model, and the shell's later output lands on the wrong lines. The system ConPTY repaints after a
-// resize, so the internal model follows it (F-035, E-019). Older Windows 10 builds keep the bundled one.
+// resize, so the internal model follows it (F-035, E-019, E-020). Older Windows 10 builds keep the bundled one.
 // FIGWIN_CONPTY=bundled|system overrides the choice for troubleshooting.
 export const useBundledConpty = (platform: NodeJS.Platform, release: string, override: string | undefined): boolean => {
   if (platform !== "win32") return true;

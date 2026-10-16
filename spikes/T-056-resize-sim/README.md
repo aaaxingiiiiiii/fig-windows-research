@@ -36,7 +36,7 @@ node spikes/T-056-resize-sim/matrix.cjs pwsh    # 约 6 分钟，结果在 local
 
 依次运行 8 组：直接运行 pwsh（外层两种规则）；inshellisense 分别用附带的 conpty.dll、系统 ConPTY、默认选择；系统 ConPTY 不折行的一组。表格中“✗跳”表示输入一个字符后光标跳到了别的行。屏幕上和 `summary.md` 中只有坐标和是否对齐，可以公开；完整输出含提示符（可能有本机路径），只留在 `local/`。GitHub Actions 的 `t056` 作业也运行它（T-061）。
 
-期望的结果（E-019）：`direct-*`、`is-system-*`、`is-default-*` 全部对齐；`is-bundled-*` 在变宽（120×30）后输入时错位。如果在某台 Windows 11 上 `is-system-*` 也错位，或者 `is-default-*` 和 `is-system-*` 不一致，把结果交给 Mac 端。
+期望的结果（E-019、E-020）：`direct-*`、`is-system-*`、`is-default-*` 全部对齐；`is-bundled-*` 在变宽（120×30）后输入时错位。如果在某台 Windows 11 上 `is-system-*` 也错位，或者 `is-default-*` 和 `is-system-*` 不一致，把结果交给 Mac 端。
 
 ## 结果
 
@@ -59,5 +59,5 @@ node spikes/T-056-resize-sim/matrix.cjs pwsh    # 约 6 分钟，结果在 local
 - `conpty` 变体：变高（24 → 30 行）后光标留在第 23 行，与 ConPTY 一致；变宽那一步仍然错位。`legacy` 更差。
 - 由此推断：变宽时还有第二个原因，是 xterm 从回滚区拉行。新增 `noscroll` 变体（内部 xterm 不保留回滚区），等下一次运行的结果。
 
-2026-10-16，GitHub Actions 的 Windows 虚拟机（第三次运行，E-019）：改用系统 ConPTY 的 4 组（加不加 `windowsPty`、外层两种规则、不折行）**全部对齐**，坐标与直接运行 pwsh 完全一致；其余各组照旧错位。系统 ConPTY 在窗口变化后会重画整个屏幕，内部模型随之与 ConPTY 一致。据此把修复定为：Windows 11 上默认用系统 ConPTY（`useBundledConpty`），删除了试验用的 xterm 变体。
+2026-10-16，GitHub Actions 的 Windows 虚拟机（第三次运行，E-020；用户的 Windows 11 26200 上结果一致，E-019）：改用系统 ConPTY 的 4 组（加不加 `windowsPty`、外层两种规则、不折行）**全部对齐**，坐标与直接运行 pwsh 完全一致；其余各组照旧错位。系统 ConPTY 在窗口变化后会重画整个屏幕，内部模型随之与 ConPTY 一致。据此把修复定为：Windows 11 上默认用系统 ConPTY（`useBundledConpty`），删除了试验用的 xterm 变体。
 
