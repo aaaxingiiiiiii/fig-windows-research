@@ -173,3 +173,15 @@
     安装包作为运行结果的附件保留 14 天，不发布 Release。
 - 安装包显示的名称暂定为“figwin 终端补全”（figwin 是代码中一直使用的项目代号）。需要改名时，只改 `installer/figwin.iss` 中的 `AppName` 一行。
 - 用户的电脑上不需要安装 Inno Setup。Windows 端要在本机构建时，需要先征得用户同意，再安装 Inno Setup 7.1。
+
+## D-016 悬浮窗宿主的默认端点和自动启动
+
+- 状态：已采用（2026-10-16，整合者的技术选择，补充协议 v1 第 2 节；不改变消息格式）
+- 原因：以前只能通过环境变量 `FIGWIN_OVERLAY_PIPE` 指定端点，安装后的日常使用需要一个固定的规则，并且宿主没有运行时要能自动启动（T-046 的前置工作，T-063）。
+- 决定：
+  - 端点名称 `figwin-overlay-v1-<userKey>-<logonSession>`：userKey 是用户名转小写后 SHA-256 的前 16 个十六进制字符；logonSession 是 Windows 会话编号。Node 读不到会话编号，由 PowerShell 初始化脚本放进 `FIGWIN_LOGON_SESSION`。两端各自实现，测试使用同一组数据。
+  - 只有配置文件中 `[overlay] enabled = true` 时才使用默认端点，默认关闭。明确设置的 `FIGWIN_OVERLAY_PIPE` 优先，这时不自动启动宿主（开发和测试）。
+  - 连不上（ENOENT、ECONNREFUSED）时，在后台启动宿主 `--pipe <名称>`，每个会话最多一次。宿主程序默认是 `is.exe` 旁边的 `figwin-host.exe`，可以用配置中的 `hostPath` 指定。启动失败时只记日志，继续用终端内绘制。
+  - 宿主用 `FirstPipeInstance` 保证同一个名称只有一个实例，后启动的安静退出。
+- 安全：名称不是凭据，访问控制仍然靠 `PipeOptions.CurrentUserOnly`（协议第 2 节）。
+

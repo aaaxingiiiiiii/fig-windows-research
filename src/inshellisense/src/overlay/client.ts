@@ -44,6 +44,8 @@ export type ClientOptions = {
   log?: (message: Record<string, unknown>) => void;
   pid?: number;
   wtSession?: string | null;
+  /** T-063：还没连上就失败、并且是“没有人在监听”（ENOENT、ECONNREFUSED）时调用，用来启动宿主。 */
+  onUnreachable?: () => void;
 };
 
 type PendingSnapshot = { kind: "show"; body: ShowBody; token: ShowToken } | { kind: "hide"; reason: HideReason };
@@ -136,12 +138,14 @@ export class OverlayClient {
     const socket = connect(this.#options.endpoint);
     this.#socket = socket;
     const isCurrent = () => this.#socket === socket;
+    let reached = false;
 
     // 从发起连接起计时：welcome 必须在这段时间内到达（第 4 节）
     this.#welcomeTimer = setTimeout(() => isCurrent() && this.#close("welcome-timeout"), this.#timing.welcomeWithinMs);
 
     socket.on("connect", () => {
       if (!isCurrent()) return;
+      reached = true;
       const wtSession = this.#options.wtSession !== undefined ? this.#options.wtSession : process.env.WT_SESSION ?? null;
       this.#write(
         this.#envelope("hello", {
@@ -153,7 +157,11 @@ export class OverlayClient {
     });
     socket.on("data", (chunk: Buffer) => isCurrent() && this.#receive(chunk));
     socket.on("drain", () => isCurrent() && this.#flush());
-    socket.on("error", (error: Error) => isCurrent() && this.#close(`socket-error: ${error.message}`));
+    socket.on("error", (error: NodeJS.ErrnoException) => {
+      if (!isCurrent()) return;
+      if (!reached && (error.code === "ENOENT" || error.code === "ECONNREFUSED")) this.#options.onUnreachable?.();
+      this.#close(`socket-error: ${error.message}`);
+    });
     socket.on("close", () => isCurrent() && this.#close("eof"));
   }
 

@@ -91,12 +91,20 @@ npm test -- --ci                                                                
 
 inshellisense 一侧的悬浮窗支持。协议见 `docs/protocol.md`，宿主由 T-044 实现。
 
-**启用方式**：设置环境变量 `FIGWIN_OVERLAY_PIPE`，值为宿主的端点：
+**启用方式**，有两种：
 
-- Windows 上是 `\\.\pipe\<名称>`；
-- 其他系统上是 Unix 域套接字的路径。
+- 开发和测试：设置环境变量 `FIGWIN_OVERLAY_PIPE`，值为宿主的端点（Windows 上是 `\\.\pipe\<名称>`，其他系统上是 Unix 域套接字的路径）。这时不会自动启动宿主。
+- 正式使用（T-063）：在配置文件中加入
 
-没有设置时，行为与原来完全相同。
+  ```toml
+  [overlay]
+  enabled = true
+  # hostPath = "D:\\figwin\\figwin-host.exe"   # 不写时用 is.exe 旁边的 figwin-host.exe
+  ```
+
+  inshellisense 按用户和登录会话算出默认端点（`overlay/launch.ts`，协议第 2 节），连不上时在后台启动宿主。登录会话编号来自 PowerShell 初始化脚本设置的 `FIGWIN_LOGON_SESSION`；从源码直接运行时要自己设置这个变量。
+
+两种都没有时，行为与原来完全相同。在 Mac 上联调自动启动：`hostPath` 指向一个运行 `dotnet <DevHost.dll> "$@"` 的脚本，再用 `XDG_CONFIG_HOME` 指定一份临时配置，不必修改 `~/.inshellisenserc`。
 
 **代码**（`src/inshellisense/src/overlay/`）：
 
@@ -106,7 +114,8 @@ inshellisense 一侧的悬浮窗支持。协议见 `docs/protocol.md`，宿主�
 | `protocol.ts` | 常量、消息类型、按行分帧（处理半包、合包、CRLF，限制单行字节数）、校验宿主消息 |
 | `snapshot.ts` | 从候选页、命令状态和光标单元格生成 show 或 hide；清洗文字；超长时依次缩短 |
 | `client.ts` | 连接与协议状态：握手、心跳与租期、show 的 100 ms 确认超时、背压时只保留最新快照、有界队列、按 1 s、2 s、5 s 重连 |
-| `overlayRenderer.ts` | 渲染器接口 `Renderer`；`OverlayRenderer` 在终端渲染和悬浮窗之间切换；`createRenderer` 按环境变量选择 |
+| `overlayRenderer.ts` | 渲染器接口 `Renderer`；`OverlayRenderer` 在终端渲染和悬浮窗之间切换；`createRenderer` 按环境变量和配置选择 |
+| `launch.ts` | 默认端点、宿主路径、自动启动宿主（T-063） |
 
 对上游文件的改动：
 

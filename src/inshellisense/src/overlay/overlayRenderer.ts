@@ -3,7 +3,7 @@
 // Licensed under the MIT License.
 //
 // T-043：渲染器抽象和悬浮窗渲染器（docs/protocol.md 第 6 节）。
-// - 没有设置 FIGWIN_OVERLAY_PIPE 时直接使用原来的终端渲染器，行为完全不变。
+// - 没有设置 FIGWIN_OVERLAY_PIPE、配置中也没有启用悬浮窗时，直接使用原来的终端渲染器，行为完全不变（端点见 launch.ts）。
 // - 与宿主握手成功后，终端内不再绘制候选（PTY 输出照常透传），改为向宿主发送显示快照。
 // - 连接失败、超时、宿主报告失败或失焦时回到终端内绘制，并按退避间隔重连。
 // 按键规则：只有宿主确认当前候选列表已经显示时才拦截候选按键；
@@ -15,7 +15,8 @@ import type { SuggestionRenderer } from "../ui/suggestionRenderer.js";
 import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
 import { type ClientListener, type ShowToken, OverlayClient } from "./client.js";
-import { type HideReason, ENDPOINT_ENV } from "./protocol.js";
+import { type OverlayConfig, createHostLauncher, resolveOverlayTarget } from "./launch.js";
+import { type HideReason } from "./protocol.js";
 import { type Snapshot, buildSnapshot } from "./snapshot.js";
 
 type TerminalBuffer = "normal" | "alternate";
@@ -202,10 +203,13 @@ export const createRenderer = (
   suggestions: SuggestionsLike,
   terminal: TerminalRendererLike,
   env: NodeJS.ProcessEnv = process.env,
+  overlay: OverlayConfig = getConfig().overlay,
 ): Renderer => {
-  const endpoint = env[ENDPOINT_ENV];
-  if (endpoint == null || endpoint.length === 0) return terminal;
-  const client = new OverlayClient({ endpoint, log: (message) => log.debug(message) });
+  // T-063：明确的 FIGWIN_OVERLAY_PIPE，或者配置中启用悬浮窗时的默认端点；都没有时使用原来的终端渲染器
+  const target = resolveOverlayTarget(env, overlay);
+  if (target == null) return terminal;
+  const onUnreachable = target.launch != null ? createHostLauncher(target.launch, (message) => log.debug(message)) : undefined;
+  const client = new OverlayClient({ endpoint: target.endpoint, log: (message) => log.debug(message), onUnreachable });
   const renderer = new OverlayRenderer(term, suggestions, terminal, client);
   client.start();
   return renderer;

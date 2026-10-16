@@ -58,7 +58,13 @@ var host = new OverlayHostCore(new WindowsPresenter(...));
 await new PipeServer(host, pipeName).RunAsync(cancellationToken);
 ```
 
-管道名在生产环境中要按用户和登录会话隔离（`docs/protocol.md` 第 2 节，T-046）。
+管道名（T-063，D-016）：
+
+- inshellisense 自动启动宿主时会传入 `--pipe <名称>`，宿主应使用这个名称；
+- 由其他方式启动时（例如登录时自启），用 `OverlayEndpoint.DefaultPipeName()` 计算当前用户、当前登录会话的默认名称；
+- 同一个名称上已经有宿主时，`PipeServer.RunAsync` 抛出 `HostAlreadyRunningException`，应安静地退出（退出码 0）。
+
+可执行文件请命名为 `figwin-host.exe`：安装包会把它放在 `is.exe` 旁边，inshellisense 默认在那里找它。开发用宿主已经支持 `--pipe` 和 `--default-pipe`，可以参考。
 
 ## 与 inshellisense 联调
 

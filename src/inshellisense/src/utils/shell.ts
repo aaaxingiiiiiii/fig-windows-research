@@ -346,12 +346,14 @@ fi`;
 fi`;
     // fig-windows-research T-062: only close the outer shell when inshellisense ended normally. If `is` is missing or fails
     // to start (invalid config, resources from another version), stay in the plain shell instead of closing every new window.
+    // T-063: pass the Windows logon session to inshellisense, which cannot read it, for the overlay host endpoint.
     case Shell.Powershell:
     case Shell.Pwsh:
       return `$__IsCommandFlag = ([Environment]::GetCommandLineArgs() | Where-Object { $_ -imatch '^-c(ommand)?$' }).Count -gt 0
 $__IsNoExitFlag = ([Environment]::GetCommandLineArgs() | Where-Object { $_ -imatch '^-noe(xit)?$' }).Count -gt 0
 $__IsInteractive = -not $__IsCommandFlag -or ($__IsCommandFlag -and $__IsNoExitFlag)
 if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -and $__IsInteractive -and [string]::IsNullOrEmpty($env:VSCODE_RESOLVING_ENVIRONMENT)) {
+  $env:FIGWIN_LOGON_SESSION = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
   is -s ${shell}
   if ($?) { Stop-Process -Id $pid }
 }`;

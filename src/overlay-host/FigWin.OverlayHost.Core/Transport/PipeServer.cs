@@ -10,7 +10,8 @@ namespace FigWin.OverlayHost.Transport;
 /// <summary>
 /// 字节模式的命名管道服务端（第 2 节）。Windows 上是 \\.\pipe\&lt;名称&gt;；其他系统上 .NET 用 Unix 域套接字实现，
 /// 路径见 <see cref="EndpointPath"/>，便于在 Mac 上与 inshellisense 联调。
-/// 只接受当前用户的连接（PipeOptions.CurrentUserOnly）。生产端点的命名（按用户和登录会话隔离）由 T-044/T-046 决定。
+/// 只接受当前用户的连接（PipeOptions.CurrentUserOnly）。生产端点的命名见 <see cref="OverlayEndpoint"/>。
+/// 同一个管道名只能有一个宿主：已经有宿主在监听时，<see cref="RunAsync"/> 抛出 <see cref="HostAlreadyRunningException"/>。
 /// </summary>
 public sealed class PipeServer(OverlayHostCore host, string pipeName)
 {
@@ -21,10 +22,21 @@ public sealed class PipeServer(OverlayHostCore host, string pipeName)
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         var connections = new List<Task>();
+        var first = true;
         while (!cancellationToken.IsCancellationRequested)
         {
-            var stream = new NamedPipeServerStream(pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            NamedPipeServerStream stream;
+            try
+            {
+                // 第一个实例带 FirstPipeInstance：已有宿主在用这个名称时创建失败
+                stream = new NamedPipeServerStream(pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly | (first ? PipeOptions.FirstPipeInstance : PipeOptions.None));
+            }
+            catch (Exception e) when (first && e is IOException or UnauthorizedAccessException)
+            {
+                throw new HostAlreadyRunningException(pipeName, e);
+            }
+            first = false;
             try
             {
                 await stream.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
@@ -121,3 +133,11 @@ public sealed class PipeServer(OverlayHostCore host, string pipeName)
         }
     }
 }
+
+/// <summary>同一个管道名上已经有宿主在监听。</summary>
+public sealed class HostAlreadyRunningException(string pipeName, Exception inner)
+    : Exception($"another overlay host is already listening on {pipeName}", inner)
+{
+    public string PipeName { get; } = pipeName;
+}
+

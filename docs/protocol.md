@@ -16,8 +16,9 @@
 ## 2. 传输与端点
 
 - 服务端建立本机双向、异步、**字节模式**命名管道；每个连接一个客户端角色。允许多个连接，单个可见窗口由宿主按已确认的前台窗格仲裁。
-- 端点由启动器/测试工具通过进程环境变量 `FIGWIN_OVERLAY_PIPE` 传给 Node，值为完整路径，例如 `\\.\pipe\figwin-overlay-v1-demo`。宿主以同一端点的名称部分创建管道。变量缺失时维持终端渲染，不猜用户名、不扫描全部管道；安装器的自动启动/端点分发属于 T-046。
-- 生产端点必须按当前用户和 Windows 登录会话隔离，命名示意 `figwin-overlay-v1-<userKey>-<logonSession>`；userKey 不是认证凭据，不能用端点可猜测性替代权限。只接收本机连接；用同用户访问控制及同一提升级别。权限不符直接回退，不请求自动提权。
+- 端点由启动器/测试工具通过进程环境变量 `FIGWIN_OVERLAY_PIPE` 传给 Node，值为完整路径，例如 `\\.\pipe\figwin-overlay-v1-demo`。宿主以同一端点的名称部分创建管道。不扫描全部管道。
+- 2026-10-16 补充（T-063，D-016）：没有设置 `FIGWIN_OVERLAY_PIPE` 时，只有在配置文件中 `[overlay] enabled = true`，并且有登录会话编号（环境变量 `FIGWIN_LOGON_SESSION`，由 PowerShell 初始化脚本设置）时，才使用下面的默认端点；否则维持终端渲染。连不上时，Node 在后台启动宿主（`--pipe <名称>`），每个会话最多一次；宿主用 `FirstPipeInstance` 保证同一个名称只有一个实例。
+- 生产端点必须按当前用户和 Windows 登录会话隔离，命名为 `figwin-overlay-v1-<userKey>-<logonSession>`：userKey 是用户名转小写后 SHA-256 的前 16 个十六进制字符，logonSession 是 Windows 会话编号（T-063，两端实现：`src/inshellisense/src/overlay/launch.ts`、`FigWin.OverlayHost.Transport.OverlayEndpoint`，测试使用同一组数据）；userKey 不是认证凭据，不能用端点可猜测性替代权限。只接收本机连接；用同用户访问控制及同一提升级别。权限不符直接回退，不请求自动提权。
 - **观察（官方文档）**：Node `net` 在 Windows 上支持命名管道；路径支持 `\\.\pipe\`。见 [Node 22 net IPC](https://nodejs.org/download/release/latest-v22.x/docs/api/net.html#ipc-support)。`.NET PipeOptions.CurrentUserOnly` 在 Windows 上检查用户和提升级别，见 [Microsoft PipeOptions](https://learn.microsoft.com/dotnet/api/system.io.pipes.pipeoptions)。本协议不把该选项当作窗格身份验证。
 - 每条消息：一个 UTF-8 JSON 对象加 LF，无 BOM；字符串中的换行由 JSON 转义，接收方兼容 CRLF。必须按字节累计到换行再解码，支持中文字符跨读包、半包和多条合包；不是“一次 read 一条消息”。
 - 单行最多 **65536 字节（不含 LF，含可能的 CR）**，无换行时也按此上限终止累积。JSON 嵌套深度最多 16。无效 UTF-8/JSON、重复键、缺字段、错误类型、越界数值、错误方向的消息均关闭连接并撤销本连接显示；能安全识别信封时可先发送 error。

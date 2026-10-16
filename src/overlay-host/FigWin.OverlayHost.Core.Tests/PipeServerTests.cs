@@ -57,4 +57,35 @@ public class PipeServerTests
         if (OperatingSystem.IsWindows()) Assert.Equal(@"\\.\pipe\demo", path);
         else Assert.EndsWith("CoreFxPipe_demo", path);
     }
+
+    [Fact]
+    public async Task 同一个管道名上已有宿主时_第二个宿主报告已在运行()
+    {
+        var pipeName = $"figwin-overlay-test-{Guid.NewGuid():N}"[..40];
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var first = new PipeServer(new OverlayHostCore(new FakePresenter()), pipeName).RunAsync(cancellation.Token);
+        // 等第一个宿主开始监听
+        await using (var probe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+        {
+            await probe.ConnectAsync(cancellation.Token);
+        }
+
+        var error = await Assert.ThrowsAsync<HostAlreadyRunningException>(
+            () => new PipeServer(new OverlayHostCore(new FakePresenter()), pipeName).RunAsync(cancellation.Token));
+        Assert.Equal(pipeName, error.PipeName);
+
+        cancellation.Cancel();
+        await first;
+    }
+
+    // 与 src/inshellisense/src/tests/overlay/launch.test.ts 使用同一组数据：两边必须算出同样的管道名
+    [Theory]
+    [InlineData("alice", 1, "figwin-overlay-v1-2bd806c97f0e00af-1")]
+    [InlineData("Alice", 1, "figwin-overlay-v1-2bd806c97f0e00af-1")]
+    [InlineData("张三", 2, "figwin-overlay-v1-1d841bc0ee98309c-2")]
+    [InlineData("runneradmin", 0, "figwin-overlay-v1-6d4dd91a15baa7e0-0")]
+    public void 默认管道名按用户和登录会话计算(string userName, int logonSession, string expected)
+    {
+        Assert.Equal(expected, OverlayEndpoint.DefaultPipeName(userName, logonSession));
+    }
 }

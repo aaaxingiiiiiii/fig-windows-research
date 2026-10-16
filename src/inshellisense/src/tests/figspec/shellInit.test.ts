@@ -48,6 +48,8 @@ const runInit = (exitCode: number) => {
 test("pwsh init script only stops the outer shell when is succeeds", () => {
   expect(getShellConfig(Shell.Pwsh)).toContain("  is -s pwsh\n  if ($?) { Stop-Process -Id $pid }\n");
   expect(getShellConfig(Shell.Powershell)).toContain("  is -s powershell\n  if ($?) { Stop-Process -Id $pid }\n");
+  // T-063: the logon session for the overlay host endpoint
+  expect(getShellConfig(Shell.Pwsh)).toContain("  $env:FIGWIN_LOGON_SESSION = [System.Diagnostics.Process]::GetCurrentProcess().SessionId\n  is -s pwsh\n");
 });
 
 pwshTest(

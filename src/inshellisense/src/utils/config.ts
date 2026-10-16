@@ -36,6 +36,8 @@ type Config = {
   maxSuggestions?: number;
   activeSuggestionBackgroundColor: string;
   boxBorderStyle: BoxBorderStyle;
+  // fig-windows-research T-063: Fig-style overlay window (phase B)
+  overlay: { enabled: boolean; hostPath?: string };
 };
 
 const bindingSchema: JSONSchemaType<Binding> = {
@@ -103,6 +105,15 @@ const configSchema = {
       enum: ["square", "rounded"],
       default: "square",
     },
+    overlay: {
+      type: "object",
+      nullable: true,
+      properties: {
+        enabled: { type: "boolean", nullable: true },
+        hostPath: { type: "string", nullable: true },
+      },
+      additionalProperties: false,
+    },
   },
   additionalProperties: false,
 };
@@ -126,6 +137,7 @@ let globalConfig: Config = {
   useNerdFont: false,
   activeSuggestionBackgroundColor: "#7D56F4",
   boxBorderStyle: "square",
+  overlay: { enabled: false },
 };
 
 export const getConfig = (): Config => globalConfig;
@@ -159,6 +171,7 @@ export const loadConfig = async (program: Command, paths: string[] = configPaths
         maxSuggestions: config?.maxSuggestions ?? 5,
         activeSuggestionBackgroundColor: config?.activeSuggestionBackgroundColor ?? "#7D56F4",
         boxBorderStyle: config?.boxBorderStyle ?? "square",
+        overlay: { enabled: config?.overlay?.enabled ?? false, ...(config?.overlay?.hostPath != null ? { hostPath: config.overlay.hostPath } : {}) },
       };
     }
   }
