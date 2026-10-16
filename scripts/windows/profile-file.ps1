@@ -66,24 +66,36 @@ function Get-BytesHash([byte[]]$Bytes) {
     return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Bytes))
 }
 
-# 原子地写入文件：先写到同一目录下的临时文件，再替换原文件。写到一半中断时，原文件保持不变
+# 原子地写入文件：先写到同一目录下的临时文件，再替换原文件。写到一半中断时，原文件保持不变。
+# 替换时让系统先把原文件改名为备份（ReplaceFile 的 lpBackupFileName）：替换中途失败、原文件已经不在原位时，把它放回去。
+# 只有在原位置有文件时，才删除备份和临时文件，任何时候都不会删掉最后一份内容
 function Write-FileAtomic {
     param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][AllowEmptyCollection()][byte[]]$Bytes)
-    $temp = "$Path.figwin-tmp-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+    $suffix = [guid]::NewGuid().ToString('N').Substring(0, 8)
+    $temp = "$Path.figwin-tmp-$suffix"
+    $old = "$Path.figwin-old-$suffix"
+    $stream = [IO.File]::Create($temp)
     try {
-        $stream = [IO.File]::Create($temp)
-        try {
-            $stream.Write($Bytes, 0, $Bytes.Length)
-            $stream.Flush($true)
-        }
-        finally {
-            $stream.Dispose()
-        }
-        if (Test-Path -LiteralPath $Path -PathType Leaf) { [IO.File]::Replace($temp, $Path, [NullString]::Value) }
-        else { [IO.File]::Move($temp, $Path) }
+        $stream.Write($Bytes, 0, $Bytes.Length)
+        $stream.Flush($true)
     }
     finally {
-        if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue }
+        $stream.Dispose()
+    }
+    try {
+        if (Test-Path -LiteralPath $Path -PathType Leaf) { [IO.File]::Replace($temp, $Path, $old, $true) }
+        else { [IO.File]::Move($temp, $Path) }
+    }
+    catch {
+        if (-not (Test-Path -LiteralPath $Path) -and (Test-Path -LiteralPath $old)) { [IO.File]::Move($old, $Path) }
+        throw
+    }
+    finally {
+        if (Test-Path -LiteralPath $Path -PathType Leaf) {
+            foreach ($leftover in $temp, $old) {
+                if (Test-Path -LiteralPath $leftover) { Remove-Item -LiteralPath $leftover -Force -ErrorAction SilentlyContinue }
+            }
+        }
     }
 }
 

@@ -12,7 +12,7 @@
 //   --outer-conpty：外层 xterm 按 ConPTY 的规则处理窗口变化（windowsPty，VS Code 的终端也这样设置）
 //   --per-step：每次改变大小后都输入 e、检查、再删掉，用来定位是哪一步引起错位
 //   --steps：改变大小的顺序，默认 80x30,120x30,90x24,100x30
-// 内层 inshellisense 的试验变体用环境变量 FIGWIN_T056_VARIANT 指定（off、conpty、legacy、noscroll，见 src/inshellisense/src/isterm/pty.ts）。
+// inshellisense 用哪个 ConPTY，可以用环境变量 FIGWIN_CONPTY（bundled、system）指定，见 src/inshellisense/src/isterm/pty.ts 的 useBundledConpty。
 // 输出：每次检查一行 JSON。aligned=false 表示候选框没有紧贴光标；promptAligned=false 表示输入的字符没有出现在提示符所在的行；
 // rowStable=false 表示输入一个字符后光标跳到了别的行。
 // 输出中的 cursorLine 和 rawAfterTyping 含提示符（可能有本机路径），只存到 local/。

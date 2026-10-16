@@ -14,7 +14,6 @@ import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
 import type { IBuffer, IBufferCell } from "@xterm/xterm";
-import type { IWindowsPty } from "@xterm/headless";
 
 interface ICellData extends IBufferCell {
   extended: { underlineStyle: number };
@@ -44,25 +43,17 @@ type ISTermOptions = {
   login: boolean;
 };
 
-// fig-windows-research T-056（试验中）：ConPTY 的缓冲区只有可见区域那么大，没有回滚区。窗口变高时它在底部加空行；
-// 变宽时合并折行，光标随之上移。xterm 默认在这两种情况下都从回滚区拉回旧行，内部模型和 ConPTY 的行号从此错开。
-// FIGWIN_T056_VARIANT 只用于 Windows 上的对照试验（spikes/T-056-resize-sim/matrix.cjs），有结论后删除：
-//   off（默认，与上游相同）、conpty（windowsPty：变高时不拉回旧行）、legacy（再加上不重新折行）、
-//   noscroll（windowsPty，并且内部 xterm 不保留回滚区，变宽时也和 ConPTY 一样让光标上移）、
-//   sysconpty（改用系统自带的 ConPTY，不用 node-pty 附带的 conpty.dll：对照组中系统 ConPTY 在窗口变化后会重画整个屏幕）、
-//   syswpty（系统 ConPTY，再加上 windowsPty）
-export const t056UseConptyDll = (variant: string | undefined): boolean => variant !== "sysconpty" && variant !== "syswpty";
-export const t056TerminalOptions = (
-  platform: NodeJS.Platform,
-  release: string,
-  variant: string | undefined,
-): { windowsPty?: IWindowsPty; scrollback?: number } => {
-  if (platform !== "win32") return {};
-  const build = Number(release.split(".")[2]) || 0;
-  if (variant === "conpty" || variant === "syswpty") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) } };
-  if (variant === "legacy") return { windowsPty: { backend: "conpty", buildNumber: 21375 } };
-  if (variant === "noscroll") return { windowsPty: { backend: "conpty", buildNumber: Math.max(build, 21376) }, scrollback: 0 };
-  return {};
+// fig-windows-research T-056: on Windows 11 use the system ConPTY instead of the conpty.dll bundled with node-pty.
+// The bundled one does not repaint the screen after a resize, while the internal xterm pulls lines back from its
+// scrollback when the window grows taller or wider. The two then disagree about rows, inshellisense repaints the screen
+// from the internal model, and the shell's later output lands on the wrong lines. The system ConPTY repaints after a
+// resize, so the internal model follows it (F-035, E-019). Older Windows 10 builds keep the bundled one.
+// FIGWIN_CONPTY=bundled|system overrides the choice for troubleshooting.
+export const useBundledConpty = (platform: NodeJS.Platform, release: string, override: string | undefined): boolean => {
+  if (platform !== "win32") return true;
+  if (override === "bundled") return true;
+  if (override === "system") return false;
+  return (Number(release.split(".")[2]) || 0) < 22000;
 };
 
 export type ISTermPatch = {
@@ -101,7 +92,7 @@ export class ISTerm implements IPty {
       cwd: process.cwd(),
       env: { ...convertToPtyEnv(shell, underTest, login), ...env },
       useConpty: true,
-      useConptyDll: t056UseConptyDll(process.env.FIGWIN_T056_VARIANT),
+      useConptyDll: useBundledConpty(process.platform, os.release(), process.env.FIGWIN_CONPTY),
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;
@@ -109,9 +100,7 @@ export class ISTerm implements IPty {
     this.process = this.#pty.process;
 
     const unicode11Addon = new Unicode11Addon();
-    const t056Options = t056TerminalOptions(process.platform, os.release(), process.env.FIGWIN_T056_VARIANT);
-    log.debug({ msg: "t056 terminal options", variant: process.env.FIGWIN_T056_VARIANT ?? "off", ...t056Options });
-    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols, ...t056Options });
+    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
     this.#term.loadAddon(unicode11Addon);
     this.#term.unicode.activeVersion = "11";
     this.#term.parser.registerCsiHandler({ final: "n" }, (params) => {

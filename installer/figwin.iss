@@ -8,7 +8,8 @@
 ; 安装只影响当前用户，不需要管理员权限。修改 PowerShell 配置文件（$PROFILE）、PATH 和补全配置的步骤
 ; 由 scripts/windows/install.ps1 完成，卸载时由 uninstall.ps1 撤销（自测见 scripts/windows/test-install.ps1）。
 ; 升级和卸载前，如果有终端正在运行 is.exe，会请用户先关闭：运行中的 is.exe 会占用它解包的原生模块，资源无法更新或删除。
-; 配置失败时安装程序以退出码 9 结束，再运行一次会继续完成；卸载脚本失败时，恢复所需的文件保存到 %LOCALAPPDATA%\figwin-recovery。
+; 配置失败时安装程序以退出码 9 结束，再运行一次会继续完成。卸载开始前先把恢复所需的文件复制到 %LOCALAPPDATA%\figwin-recovery
+; （复制失败时取消卸载），卸载脚本成功后再删除这份副本。
 ;
 ; 测试用的命令行参数（scripts/windows/test-installer.ps1 使用）：
 ;   /PROFILEPATH=<路径>  把初始化语句写到这个文件，而不是真实的 $PROFILE
@@ -81,6 +82,7 @@ chs.Configuring=正在配置 PowerShell……
 chs.ScriptFailed=配置 PowerShell 时出错（退出码 %1）。程序文件已经安装，但补全不会自动启用。%n%n详细信息见：%2%n%n可以在“设置 → 应用”中卸载后重新安装。
 chs.UninstallScriptFailed=恢复 PowerShell 配置时出错（退出码 %1），配置文件和 PATH 可能还没有恢复。详细信息见：%2%n%n恢复所需的文件已保存在：%3%n关闭所有 PowerShell 标签后，在 PowerShell 7 中运行下面的命令完成恢复：%n%n    pwsh -NoProfile -File "%3\scripts\uninstall.ps1" -InstallDir "%3"
 chs.UninstallNoPwsh=没有找到 PowerShell 7，无法自动恢复 PowerShell 的配置文件和 PATH。%n%n恢复所需的文件已保存在：%1%n重新安装 PowerShell 7 后，运行下面的命令完成恢复：%n%n    pwsh -NoProfile -File "%1\scripts\uninstall.ps1" -InstallDir "%1"
+chs.RecoveryFailed=无法在卸载前保存恢复所需的文件（%1），卸载已取消，没有做任何修改。请检查磁盘空间后重试。
 chs.RunningUnknown=无法确认是否有终端正在使用补全。%n%n请关闭所有 PowerShell 标签和窗口，然后点击“确定”继续；点击“取消”退出。
 chs.Upgrade=已经安装过：这次只更新程序和资源，原来的选项保持不变。要改变选项，请先卸载再安装。
 chs.EditConfig=编辑补全配置
@@ -113,6 +115,8 @@ Type: dirifempty; Name: "{app}"
 var
   PwshPath: String;
   InstallScriptFailed: Boolean;
+  RecoveryDir: String;
+  UninstallScriptFailed: Boolean;
 
 { 查找 PowerShell 7：MSI 安装登记的 App Paths、默认安装目录、winget / 应用商店（MSIX）的应用执行别名、PATH }
 function FindPwsh(): String;
@@ -183,7 +187,7 @@ begin
     exit;
   PsPath := ExePath;
   StringChangeEx(PsPath, '''', '''''', True);
-  if Exec(Pwsh, '-NoLogo -NoProfile -NonInteractive -Command "if (Get-Process -Name is -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ''' + PsPath + ''' }) { exit 1 } else { exit 0 }"', '', SW_HIDE, ewWaitUntilTerminated, Code) and ((Code = 0) or (Code = 1)) then
+  if Exec(Pwsh, '-NoLogo -NoProfile -NonInteractive -Command "try { if (@(Get-Process -ErrorAction Stop | Where-Object { $_.Path -eq ''' + PsPath + ''' }).Count -gt 0) { exit 1 } else { exit 0 } } catch { exit 2 }"', '', SW_HIDE, ewWaitUntilTerminated, Code) and ((Code = 0) or (Code = 1)) then
     Result := Code
   else
     Log('用 PowerShell 检查进程也失败了');
@@ -295,48 +299,89 @@ begin
     Result := 9;
 end;
 
-function InitializeUninstall(): Boolean;
-var
-  State: Integer;
-begin
-  Result := True;
-  PwshPath := FindPwsh();
-  repeat
-    State := RunningState(ExpandConstant('{app}\is.exe'), PwshPath);
-    // 没有 PowerShell 7 时 is.exe 无法运行补全会话，无法确认也可以继续
-    if (State = 0) or ((State = 2) and (PwshPath = '')) then
-      exit;
-    if SuppressibleMsgBox(CustomMessage('RunningUninstall'), mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then
-    begin
-      Result := False;
-      exit;
-    end;
-  until False;
-end;
-
-// 卸载脚本没能完成时，在删除程序文件之前，把恢复所需的文件复制到单独的文件夹，返回它的路径
+// 卸载开始之前，先把恢复所需的文件（安装记录、配置文件的备份、脚本）复制到单独的文件夹。
+// 卸载脚本没能完成时，用户可以用它完成恢复；复制失败时取消卸载。返回文件夹的路径，失败时返回空字符串
 function SaveRecoveryFiles(): String;
 var
   Names: TArrayOfString;
   I: Integer;
+  Dir: String;
 begin
-  Result := ExpandConstant('{localappdata}\figwin-recovery\') + GetDateTimeString('yyyymmdd-hhnnss', #0, #0);
-  ForceDirectories(Result + '\scripts');
+  Result := '';
+  Dir := ExpandConstant('{localappdata}\figwin-recovery\') + GetDateTimeString('yyyymmdd-hhnnss', #0, #0);
+  if not ForceDirectories(Dir + '\scripts') then
+  begin
+    Log('无法创建 ' + Dir);
+    exit;
+  end;
   SetArrayLength(Names, 3);
   Names[0] := 'install-state.json';
   Names[1] := 'profile-backup.bin';
   Names[2] := 'install.log';
   for I := 0 to GetArrayLength(Names) - 1 do
-    if FileExists(ExpandConstant('{app}\') + Names[I]) then
-      FileCopy(ExpandConstant('{app}\') + Names[I], Result + '\' + Names[I], False);
+    if FileExists(ExpandConstant('{app}\') + Names[I]) and not FileCopy(ExpandConstant('{app}\') + Names[I], Dir + '\' + Names[I], False) then
+    begin
+      Log('无法复制 ' + Names[I]);
+      DelTree(Dir, True, True, True);
+      exit;
+    end;
   SetArrayLength(Names, 4);
   Names[0] := 'install.ps1';
   Names[1] := 'uninstall.ps1';
   Names[2] := 'profile-file.ps1';
   Names[3] := 'user-path.ps1';
   for I := 0 to GetArrayLength(Names) - 1 do
-    FileCopy(ExpandConstant('{app}\scripts\') + Names[I], Result + '\scripts\' + Names[I], False);
-  Log('恢复所需的文件已保存到 ' + Result);
+    if not FileCopy(ExpandConstant('{app}\scripts\') + Names[I], Dir + '\scripts\' + Names[I], False) then
+    begin
+      Log('无法复制 ' + Names[I]);
+      DelTree(Dir, True, True, True);
+      exit;
+    end;
+  Log('恢复所需的文件已保存到 ' + Dir);
+  Result := Dir;
+end;
+
+function InitializeUninstall(): Boolean;
+var
+  State: Integer;
+begin
+  Result := False;
+  PwshPath := FindPwsh();
+  repeat
+    State := RunningState(ExpandConstant('{app}\is.exe'), PwshPath);
+    if State = 0 then
+      break;
+    // 有终端在运行，或者无法确认：请用户关闭终端后重试；静默卸载时直接停止
+    if State = 1 then
+    begin
+      if SuppressibleMsgBox(CustomMessage('RunningUninstall'), mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then
+        exit;
+    end
+    else if SuppressibleMsgBox(CustomMessage('RunningUnknown'), mbConfirmation, MB_OKCANCEL, IDCANCEL) = IDOK then
+      break
+    else
+      exit;
+  until False;
+  if FileExists(ExpandConstant('{app}\install-state.json')) then
+  begin
+    RecoveryDir := SaveRecoveryFiles();
+    if RecoveryDir = '' then
+    begin
+      SuppressibleMsgBox(FmtMessage(CustomMessage('RecoveryFailed'), [ExpandConstant('{localappdata}\figwin-recovery')]), mbCriticalError, MB_OK, IDOK);
+      exit;
+    end;
+  end;
+  Result := True;
+end;
+
+// 卸载脚本成功时（或者用户在确认时取消了卸载），不再需要恢复文件
+procedure DeinitializeUninstall();
+begin
+  if (RecoveryDir <> '') and not UninstallScriptFailed then
+  begin
+    DelTree(RecoveryDir, True, True, True);
+    RemoveDir(ExpandConstant('{localappdata}\figwin-recovery'));
+  end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -350,7 +395,8 @@ begin
   if Pwsh = '' then
   begin
     Log('没有找到 PowerShell 7，跳过 uninstall.ps1');
-    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallNoPwsh'), [SaveRecoveryFiles()]), mbInformation, MB_OK, IDOK);
+    UninstallScriptFailed := True;
+    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallNoPwsh'), [RecoveryDir]), mbInformation, MB_OK, IDOK);
     exit;
   end;
   LogFile := ExpandConstant('{%TEMP}\figwin-uninstall.log');
@@ -359,6 +405,7 @@ begin
   if not Exec(Pwsh, Params, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
   begin
     Log('uninstall.ps1 失败，退出码 ' + IntToStr(Code));
-    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallScriptFailed'), [IntToStr(Code), LogFile, SaveRecoveryFiles()]), mbError, MB_OK, IDOK);
+    UninstallScriptFailed := True;
+    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallScriptFailed'), [IntToStr(Code), LogFile, RecoveryDir]), mbError, MB_OK, IDOK);
   end;
 end;

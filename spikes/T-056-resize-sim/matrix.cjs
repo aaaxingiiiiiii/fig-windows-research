@@ -4,9 +4,10 @@
 // T-056：一次跑完对照试验，定位错位的原因，不需要用户操作。在 Windows 上运行，Mac 上只能检查脚本本身。
 //   node spikes/T-056-resize-sim/matrix.cjs [pwsh] [--out=local/evidence/T-056-matrix]
 // 每组都带 --wrap --per-step（最后一组除外），依次是：
-//   direct-*：不经过 inshellisense，直接运行 pwsh。也错位，说明问题不在 inshellisense
-//   is-off-*：现在的 inshellisense（E-012 的条件）
-//   is-conpty-* / is-noscroll-*：inshellisense 内部的 xterm 改用 ConPTY 的窗口变化规则；is-sys*：改用系统自带的 ConPTY（候选修复，见 src/isterm/pty.ts）
+//   direct-*：不经过 inshellisense，直接运行 pwsh（对照组）
+//   is-bundled-*：inshellisense 用 node-pty 附带的 conpty.dll（T-056 修复之前的做法）
+//   is-system-*：inshellisense 用系统自带的 ConPTY（T-056 的修复，Windows 11 上的默认做法）
+//   is-default-*：不指定 FIGWIN_CONPTY，按 src/isterm/pty.ts 的 useBundledConpty 选择
 //   *-plain / *-conpty：外层 xterm 用默认规则 / 用 ConPTY 的规则
 // 完整输出（含提示符，可能有本机路径）写到 --out 目录；屏幕上和 summary.md 中只有坐标和是否对齐，可以公开。
 
@@ -24,14 +25,12 @@ fs.mkdirSync(out, { recursive: true });
 const groups = [
   { name: "direct-plain", flags: ["--direct"] },
   { name: "direct-conpty", flags: ["--direct", "--outer-conpty"] },
-  { name: "is-off-plain", flags: [], variant: "off" },
-  { name: "is-off-conpty", flags: ["--outer-conpty"], variant: "off" },
-  { name: "is-conpty-conpty", flags: ["--outer-conpty"], variant: "conpty" },
-  { name: "is-noscroll-conpty", flags: ["--outer-conpty"], variant: "noscroll" },
-  { name: "is-sysconpty-plain", flags: [], variant: "sysconpty" },
-  { name: "is-sysconpty-conpty", flags: ["--outer-conpty"], variant: "sysconpty" },
-  { name: "is-syswpty-conpty", flags: ["--outer-conpty"], variant: "syswpty" },
-  { name: "is-sysconpty-conpty-nowrap", flags: ["--outer-conpty"], variant: "sysconpty", nowrap: true },
+  { name: "is-bundled-plain", flags: [], conpty: "bundled" },
+  { name: "is-bundled-conpty", flags: ["--outer-conpty"], conpty: "bundled" },
+  { name: "is-system-plain", flags: [], conpty: "system" },
+  { name: "is-system-conpty", flags: ["--outer-conpty"], conpty: "system" },
+  { name: "is-default-conpty", flags: ["--outer-conpty"] },
+  { name: "is-system-conpty-nowrap", flags: ["--outer-conpty"], conpty: "system", nowrap: true },
 ];
 
 const cell = (result) => {
@@ -47,7 +46,9 @@ const rows = [];
 let labels = [];
 for (const group of groups) {
   const flags = [shell, ...(group.nowrap ? [] : ["--wrap"]), "--per-step", ...group.flags];
-  const env = { ...process.env, FIGWIN_T056_VARIANT: group.variant ?? "off" };
+  const env = { ...process.env };
+  delete env.FIGWIN_CONPTY;
+  if (group.conpty) env.FIGWIN_CONPTY = group.conpty;
   process.stdout.write(`${group.name} ... `);
   const run = spawnSync(process.execPath, [path.join(__dirname, "resize-sim.cjs"), ...flags], { cwd: repo, env, encoding: "utf8", timeout: 180000 });
   fs.writeFileSync(path.join(out, `${group.name}.jsonl`), run.stdout + (run.stderr ? `\n# stderr\n${run.stderr}` : ""));

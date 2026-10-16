@@ -119,14 +119,12 @@ try {
     elseif ($NoPathUpdate -or -not $IsWindows) {
         Write-Host 'PATH：未修改（-NoPathUpdate 或非 Windows）'
     }
-    elseif ($state['pathAdded']) {
-        Write-Host 'PATH：上次已经加入安装目录'
-    }
     else {
+        # 以注册表中的实际值为准：上次可能已经记下了要写入的值，却没来得及写入
         $before = Get-UserPathValue $PathKey
         $entries = if ($before) { Split-PathEntries $before.Value } else { @() }
         if ($entries | Where-Object { Test-PathEntry $_ $InstallDir }) {
-            Write-Host 'PATH：安装目录已在用户 PATH 中'
+            Write-Host "PATH：$(if ($state['pathAdded']) { '上次已经加入安装目录' } else { '安装目录已在用户 PATH 中' })"
         }
         elseif ($PSCmdlet.ShouldProcess('用户 PATH', "在最前面加入 $InstallDir")) {
             $after = [ordered]@{ Value = (@($InstallDir) + $entries) -join ';'; Kind = $(if ($before) { $before.Kind } else { 'ExpandString' }) }
@@ -174,13 +172,13 @@ try {
         Write-Host 'PowerShell 配置文件：上次已经修改'
     }
     elseif ($PSCmdlet.ShouldProcess($ProfilePath, '备份并在最后追加初始化语句')) {
-        if (-not $state['profileUpdated']) {
-            # 第一次修改前备份原文件；继续上次没完成的安装时，沿用上次的备份（它才是安装前的内容）
-            $state['profileExisted'] = Test-Path -LiteralPath $ProfilePath -PathType Leaf
-            if ($state['profileExisted']) {
-                Copy-Item -LiteralPath $ProfilePath -Destination (Join-Path $InstallDir 'profile-backup.bin') -Force
-                $state['originalHash'] = (Get-FileHash -LiteralPath $ProfilePath -Algorithm SHA256).Hash
-            }
+        # 每次真正写入之前都备份当前的内容。继续上次没完成的安装时也这样做：中断期间用户可能改过这个文件，
+        # 卸载要恢复的是“加入两行之前”的内容
+        $state['profileExisted'] = Test-Path -LiteralPath $ProfilePath -PathType Leaf
+        $state['originalHash'] = $null
+        if ($state['profileExisted']) {
+            Copy-Item -LiteralPath $ProfilePath -Destination (Join-Path $InstallDir 'profile-backup.bin') -Force
+            $state['originalHash'] = (Get-FileHash -LiteralPath $ProfilePath -Algorithm SHA256).Hash
         }
         if (-not (Test-Path -LiteralPath $ProfilePath -PathType Leaf)) {
             New-Item -ItemType Directory -Force -Path (Split-Path -Parent $ProfilePath) | Out-Null

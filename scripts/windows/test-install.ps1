@@ -201,12 +201,18 @@ Remove-Item Env:FIGWIN_TEST_FAIL_INIT
 $resumeState = Get-Content -LiteralPath (Join-Path $resumeInstall 'install-state.json') -Raw | ConvertFrom-Json -AsHashtable
 Assert-True ($failed -and $resumeState['completed'] -eq $false) 'init 失败时安装报错，记录标明没有完成'
 Assert-True ((Get-FileHash -LiteralPath $resumeProfile).Hash -eq $resumeBefore) '失败时配置文件还没有被修改'
+# 模拟更晚的中断点：记录已经写明“改过配置文件”，配置文件却还没写入；中断期间用户又改了配置文件
+$resumeState['profileUpdated'] = $true
+$resumeState['installedHash'] = 'never-written'
+$resumeState | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $resumeInstall 'install-state.json')
+Add-Content -LiteralPath $resumeProfile -Encoding utf8NoBOM -Value 'Write-Host interim'
+$resumeBefore = (Get-FileHash -LiteralPath $resumeProfile).Hash
 & (Join-Path $PSScriptRoot 'install.ps1') @resumeArgs 6>$null | Out-Null
 $resumeState = Get-Content -LiteralPath (Join-Path $resumeInstall 'install-state.json') -Raw | ConvertFrom-Json -AsHashtable
 $resumeLines = @((Read-ProfileFile -Path $resumeProfile).Text -split "`r?`n" | Where-Object { $_ })
 Assert-True ($resumeState['completed'] -eq $true -and $resumeLines[-2] -eq $ProfileMarker -and $resumeLines[-1] -eq $sourceLine) '再运行一次补完了配置文件的修改'
 & (Join-Path $PSScriptRoot 'uninstall.ps1') -InstallDir $resumeInstall 6>$null | Out-Null
-Assert-True ((Get-FileHash -LiteralPath $resumeProfile).Hash -eq $resumeBefore) '补完后卸载，配置文件逐字节恢复'
+Assert-True ((Test-Path -LiteralPath $resumeProfile) -and (Get-FileHash -LiteralPath $resumeProfile).Hash -eq $resumeBefore) '补完后卸载，配置文件逐字节恢复为加入两行之前的内容（包括中断期间用户的修改）'
 
 # 旧版本（第 1 版）的安装记录缺少后来新增的键：卸载不能在严格模式下出错
 Write-Host '用例：第 1 版的安装记录'
