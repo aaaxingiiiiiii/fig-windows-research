@@ -1,0 +1,130 @@
+# Copyright (c) fig-windows-research contributors.
+# Licensed under the MIT License.
+#
+# Windows 上的自动检查（T-061）。在 GitHub 提供的一次性 Windows 虚拟机中运行，不涉及任何人的电脑：
+#   tests      inshellisense 的 L1 测试、宿主协议核心的测试、安装脚本自测
+#   installer  构建安装包，并在虚拟机中实际安装、升级、卸载（scripts/windows/test-installer.ps1，A3 的自动部分）
+#   t056       T-056 窗口大小对照试验（spikes/T-056-resize-sim/matrix.cjs）
+# 安装包和日志作为 artifact 保留 14 天。结果摘要写在每次运行的 Summary 页面，失败项另有 annotation。
+
+name: Windows
+
+on:
+  push:
+    branches: [develop, "ai/**"]
+    paths-ignore: ["docs/**", "research/**", "tasks/**", "specs/**", "**/*.md"]
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22.21.1
+  INNO_SETUP_URL: https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe
+  INNO_SETUP_SHA256: 0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f
+
+jobs:
+  tests:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - name: inshellisense L1
+        working-directory: src/inshellisense
+        run: |
+          npm ci
+          npm run build
+          npm test -- --ci
+      - name: 宿主协议核心
+        run: dotnet test src/overlay-host/OverlayHost.slnx
+      - name: 安装脚本自测
+        run: pwsh -NoProfile -File scripts/windows/test-install.ps1
+
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: 安装 Inno Setup 7.1.0（校验 SHA256）
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+          Invoke-WebRequest -Uri $env:INNO_SETUP_URL -OutFile $installer
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:INNO_SETUP_SHA256) { throw "Inno Setup 安装程序的 SHA256 不符：$hash" }
+          $dir = Join-Path $env:RUNNER_TEMP 'innosetup'
+          Start-Process -FilePath $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CURRENTUSER', "/DIR=`"$dir`"" -Wait
+          if (-not (Test-Path (Join-Path $dir 'ISCC.exe'))) { throw '没有找到 ISCC.exe' }
+          "ISCC=$(Join-Path $dir 'ISCC.exe')" >> $env:GITHUB_ENV
+      - name: 构建安装包
+        run: ./scripts/windows/build-installer.ps1 -Iscc $env:ISCC
+      - name: 安装包验收（安装、升级、卸载）
+        run: |
+          $setup = Get-ChildItem dist -Filter 'figwin-setup-*.exe' | Select-Object -First 1
+          ./scripts/windows/test-installer.ps1 -Setup $setup.FullName -Disposable -LogDir (Join-Path $env:RUNNER_TEMP 'installer-test')
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: figwin-setup
+          path: |
+            dist/figwin-setup-*.exe
+            dist/figwin-setup-*.exe.sha256
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: installer-test-logs
+          path: ${{ runner.temp }}/installer-test
+          if-no-files-found: ignore
+          retention-days: 14
+
+  t056:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: 构建 inshellisense，解包资源
+        working-directory: src/inshellisense
+        run: |
+          npm ci
+          npm run build
+          node build/index.js reinit
+      - name: 对照试验
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 't056'
+          node spikes/T-056-resize-sim/matrix.cjs pwsh "--out=$out"
+          $summary = Get-Content -LiteralPath (Join-Path $out 'summary.md')
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value (@('## T-056 对照试验', '') + $summary)
+          foreach ($line in $summary | Where-Object { $_ -like '| *' -and $_ -notlike '| 组 *' -and $_ -notlike '| ---*' }) { Write-Host "::notice title=T-056::$line" }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: t056-matrix
+          path: ${{ runner.temp }}/t056
+          if-no-files-found: ignore
+          retention-days: 14
