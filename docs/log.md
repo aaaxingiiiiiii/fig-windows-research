@@ -512,4 +512,4 @@
   - 测试：Node 17 个、宿主 75 个。
   - Mac 上端到端检查：inshellisense 自动启动了宿主，宿主收到了候选，终端里不再画候选框。
 - GPT（Codex，只读）调研 PowerShell 原生补全（F-038，`research/powershell-native-completion.md`）：现在 cmdlet 和参数都没有补全；常驻 pwsh 调用 TabExpansion2 可行。整合者核对了两处源码。是否要做由用户决定（T-064）。
-
+- T-063 推送后的 CI：安装包验收 30 项通过；L1 在 Windows 上有 2 个新测试失败（`launch.ts` 用 `path.join`，测试 Mac 路径时得到反斜杠），改为按目标平台选择 `path.win32`、`path.posix`。

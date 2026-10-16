@@ -46,3 +46,4 @@
 | 2026-10-16 | T-063 | `src/utils/config.ts` | 配置新增 `[overlay]`：`enabled`（默认 false）、`hostPath` | 同上 | 否 |
 | 2026-10-16 | T-063 | `src/utils/shell.ts` | PowerShell 初始化脚本在 `is -s` 之前设置 `$env:FIGWIN_LOGON_SESSION` | Node 读不到 Windows 会话编号，默认端点需要它 | 否 |
 | 2026-10-16 | T-063 | `src/tests/overlay/launch.test.ts`（新增）、`src/tests/figspec/shellInit.test.ts` | 新增 17 个测试（管道名与宿主使用同一组数据、端点、启动一次、启动失败、onUnreachable）；初始化脚本内容检查 | 防止回归 | 否 |
+| 2026-10-16 | T-063 | `src/overlay/launch.ts`、`src/tests/overlay/launch.test.ts` | 拼路径时按目标平台使用 `path.win32` 或 `path.posix` | Windows 上的 CI 中，测试 Mac 路径时 `path.join` 用了反斜杠；实际运行时行为不变 | 否 |

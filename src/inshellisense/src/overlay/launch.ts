@@ -26,13 +26,16 @@ export const userKey = (userName: string): string => createHash("sha256").update
 
 export const defaultPipeName = (userName: string, logonSession: string): string => `figwin-overlay-v1-${userKey(userName)}-${logonSession}`;
 
+// 按目标平台拼路径，不受运行测试的系统影响
+const pathFor = (platform: NodeJS.Platform) => (platform === "win32" ? path.win32 : path.posix);
+
 /** 与宿主的 PipeServer.EndpointPath 相同：Windows 上是命名管道；其他系统上 .NET 用 Unix 域套接字实现。 */
 export const endpointPath = (pipeName: string, platform: NodeJS.Platform = process.platform, tmpdir: string = os.tmpdir()): string =>
-  platform === "win32" ? `\\\\.\\pipe\\${pipeName}` : path.join(tmpdir, `CoreFxPipe_${pipeName}`);
+  platform === "win32" ? `\\\\.\\pipe\\${pipeName}` : pathFor(platform).join(tmpdir, `CoreFxPipe_${pipeName}`);
 
 /** 安装包把宿主放在 is.exe 旁边。 */
 export const defaultHostPath = (execPath: string = process.execPath, platform: NodeJS.Platform = process.platform): string =>
-  path.join(path.dirname(execPath), platform === "win32" ? "figwin-host.exe" : "figwin-host");
+  pathFor(platform).join(pathFor(platform).dirname(execPath), platform === "win32" ? "figwin-host.exe" : "figwin-host");
 
 const currentUserName = (): string | undefined => {
   try {

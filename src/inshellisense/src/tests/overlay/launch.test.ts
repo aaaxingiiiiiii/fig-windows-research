@@ -28,7 +28,7 @@ test("端点路径与宿主的 PipeServer.EndpointPath 相同", () => {
 });
 
 test("宿主默认放在 is.exe 旁边", () => {
-  expect(defaultHostPath("C:\\Apps\\figwin\\is.exe", "win32")).toMatch(/figwin-host\.exe$/);
+  expect(defaultHostPath("C:\\Apps\\figwin\\is.exe", "win32")).toBe("C:\\Apps\\figwin\\figwin-host.exe");
   expect(defaultHostPath("/opt/figwin/is", "darwin")).toBe("/opt/figwin/figwin-host");
 });
 
