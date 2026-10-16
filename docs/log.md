@@ -513,3 +513,10 @@
   - Mac 上端到端检查：inshellisense 自动启动了宿主，宿主收到了候选，终端里不再画候选框。
 - GPT（Codex，只读）调研 PowerShell 原生补全（F-038，`research/powershell-native-completion.md`）：现在 cmdlet 和参数都没有补全；常驻 pwsh 调用 TabExpansion2 可行。整合者核对了两处源码。是否要做由用户决定（T-064）。
 - T-063 推送后的 CI：安装包验收 30 项通过；L1 在 Windows 上有 2 个新测试失败（`launch.ts` 用 `path.join`，测试 Mac 路径时得到反斜杠），改为按目标平台选择 `path.win32`、`path.posix`。
+
+## 2026-10-16 · Claude Code/Opus 5.5（Mac，整合者）· T-064 最小实现；阶段 A 验收清单
+
+- 用户决定 D-017：PowerShell 命令补全先做最小实现；阶段 A 先验收，不等悬浮窗。
+- T-064：常驻 pwsh 调用 TabExpansion2，用于 PowerShell 自己的命令和没有 Fig 规格的命令，替换范围对不上时不给候选；测试 9 个。Mac 上在真实的 inshellisense 会话中，`Get-ChildItem -Pa` 出现 `-Path`，`git ch` 照旧出现 `checkout`。W-xxx 用例改为关闭原生补全（它们检查 Fig 规格这条路径）。安装包验收增加 `complete-ps` 检查。
+- 写了 `docs/acceptance-phase-a.md`（14 项），新增 T-065；更新 windows-next 第 4 节、roadmap 第 7 节。
+- L1：Mac 上 422 个，411 个通过，10 个跳过，1 个失败（Homebrew）。

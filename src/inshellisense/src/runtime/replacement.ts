@@ -19,7 +19,7 @@ const commonPrefixLength = (a: string, b: string): number => {
 // Shells delete one character per backspace, but tokenLength is a display width in which wide
 // characters (e.g. CJK) count as 2. Quotes and escapes are single-width, so the difference between
 // the width and the character count of the token text is exactly the extra width to remove.
-const typedCharCount = (token: CommandToken): number => token.tokenLength - (wcswidth(token.token) - Array.from(token.token).length);
+export const typedCharCount = (token: CommandToken): number => token.tokenLength - (wcswidth(token.token) - Array.from(token.token).length);
 
 export const calculateReplacement = (token: CommandToken | undefined, suggestion: Suggestion): ReplacementAction | undefined => {
   const suggestionText = suggestion.insertValue ?? suggestion.name + " ";

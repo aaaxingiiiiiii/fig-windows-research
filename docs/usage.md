@@ -79,11 +79,14 @@ node build/index.js -s pwsh
 
 ## 4. 路径中的特殊字符
 
+`cd`、`ls`、`Get-ChildItem` 这类 PowerShell 自带的命令，路径由 PowerShell 自己补全（见第 5 节），写法与按 Tab 时相同。下面说的是 git、npm 这类外部程序的参数。
+
 在 PowerShell 中，名称含空格或特殊字符（例如 `$`、`&`、`'`、反引号）的文件夹，补全后会自动加上单引号；名称中的单引号会写成两个单引号，例如 `'it''s/'`。这是 PowerShell 的标准写法，可以直接执行。
 
 ## 5. 已知限制
 
 - 补全规则来自 Fig 的 spec 库，其中一部分动态候选要执行 Linux 风格的命令行工具（`ls`、`cat`、`grep`、`sed` 等）。最常见的用法已经改由 Node 模拟，不需要 Git for Windows，包括文件补全，git、npm、yarn、pnpm、npx、cargo、make 的动态候选（T-049）。其余用法在没有安装 Git for Windows 时没有动态候选，但不会报错，静态的子命令和选项照常显示。
+- PowerShell 自带的命令（cmdlet、函数、别名，例如 `Get-ChildItem -Path`、Windows 上的 `ls`）由一个后台的 PowerShell 进程用 PowerShell 自己的补全给出候选（T-064，最小版本）：看不到 `$PROFILE` 和当前会话中定义的函数、别名；打开标签后的第一次补全可能慢约 1 秒。
 - 只支持 Windows Terminal 中的 PowerShell 7；Windows PowerShell 5.1、cmd 和其他终端没有测试。
 - 全屏程序（vim、less 等）运行期间不显示候选。
 - 拖动窗口大小（尤其是窗口变宽、或者屏幕上有折行的长内容时）后，候选和输入可能错开几行（T-056），运行 `Clear-Host` 可以恢复。原因已经查明，还没有修复。

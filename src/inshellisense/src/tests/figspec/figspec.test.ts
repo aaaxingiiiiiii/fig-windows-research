@@ -16,6 +16,7 @@ import path from "node:path";
 
 import { getSuggestions } from "../../runtime/runtime.js";
 import { calculateReplacement } from "../../runtime/replacement.js";
+import { setPowerShellBackend } from "../../runtime/powershellCompletion.js";
 import { Shell } from "../../utils/shell.js";
 import { unpackResources } from "../../utils/node.js";
 import { SuggestionManager } from "../../ui/suggestionManager.js";
@@ -149,6 +150,11 @@ describe("C-xxx：与 Fig 开源基线对照（bash）", () => {
 });
 
 describe("W-xxx：PowerShell 规则", () => {
+  // T-064 起，pwsh 中的 cd 等 PowerShell 自己的命令改用 PowerShell 的原生补全。这组用例检查的是 Fig 规格这条路径上的
+  // 引号和删除规则（git、npm 等外部程序的路径参数仍然走这条路径），所以关闭原生补全，结果不受机器上有没有 pwsh 影响
+  beforeAll(() => setPowerShellBackend(null));
+  afterAll(() => setPowerShellBackend(undefined));
+
   test("W-001 带空格的文件夹用单引号包裹", async () => {
     expect(await accept("cd M", Shell.Pwsh, workDir)).toEqual({ deleteCount: 1, insert: `'My Docs${path.sep}'` });
   });

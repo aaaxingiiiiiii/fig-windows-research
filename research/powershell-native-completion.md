@@ -51,3 +51,16 @@ GPT 已在 Mac 上做了最小实验（pwsh 7.6.7，`-NoProfile`，脚本全在�
 这些是 Mac 上简单用例的观察，不代表 Windows 上的延迟。
 
 **是否要做、做到哪一步，需要用户决定（T-064）**：这扩大了阶段 A 的范围，但对 PowerShell 用户来说，这是 Fig 式补全最明显的一块缺口。
+
+## 最小实现（T-064，2026-10-16，D-017）
+
+已经实现的部分：
+- 一个常驻的 pwsh（`-NoProfile`），第一次需要时启动；运行时初始化时预先启动。按行收发 JSON；每个请求最多等 1.5 秒；进程退出后重启。代码在 `src/inshellisense/src/runtime/powershellCompletion.ts`。
+- 路由（只在 pwsh 中）：
+  - 正在输入命令名，并且没有匹配的 Fig 规格时（例如 `Get-Ch`），问 PowerShell；
+  - 命令是 PowerShell 自己的（`Get-Command` 的类型是 Alias、Cmdlet、Function、Filter、ExternalScript，按命令名缓存）时，问 PowerShell，例如 Windows 上的 `ls`、`cd`；
+  - 外部程序有 Fig 规格时照旧用 Fig（git、npm）；没有 Fig 规格时也问 PowerShell。
+- 替换范围必须正好是正在输入的那个词，否则不给候选。
+- 测试：9 个，包括与真实 pwsh 的集成测试；`check-installed.cjs` 的 `complete-ps` 在真实的会话中检查 `Get-ChildItem -Pa` 出现 `-Path`，安装包验收也包括这一项。
+
+没有做的：会话中定义的函数和别名、在用户实际的会话中补全、按命令类型细分图标和说明。

@@ -19,6 +19,7 @@ import log from "../utils/log.js";
 import { specResourcesPath } from "../utils/constants.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 import { clearImplicitGeneratorState } from "./generatorCache.js";
+import { getPowerShellSuggestions, isPowerShellCommand } from "./powershellCompletion.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
@@ -112,14 +113,27 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, sig
       return;
     }
     if (rootToken != null && !rootToken.complete) {
-      return runCommand(rootToken);
+      const commands = await runCommand(rootToken);
+      // fig-windows-research T-064: in pwsh, PowerShell's own commands (Get-ChildItem ...) when no Fig spec name matches
+      if (shell === Shell.Pwsh && (commands == null || commands.suggestions.length === 0)) {
+        return (await getPowerShellSuggestions(cmd, cwd, rootToken, signal)) ?? commands;
+      }
+      return commands;
     }
 
     activeCmd = aliasExpand(activeCmd);
 
+    // fig-windows-research T-064: PowerShell's own commands (cmdlets, functions, aliases such as ls on Windows) use
+    // PowerShell's native completion; external programs keep their Fig specs
+    const lastToken = activeCmd.at(-1);
+    const nativeToken = lastToken != null && !lastToken.complete ? lastToken : undefined;
+    if (shell === Shell.Pwsh && rootToken != null && (await isPowerShellCommand(rootToken.token, signal))) {
+      return getPowerShellSuggestions(cmd, cwd, nativeToken, signal);
+    }
+
     signal?.throwIfAborted();
     const spec = await loadSpec(activeCmd, signal);
-    if (spec == null) return;
+    if (spec == null) return shell === Shell.Pwsh ? getPowerShellSuggestions(cmd, cwd, nativeToken, signal) : undefined;
     const subcommand = getSubcommand(spec);
     if (subcommand == null) return;
 

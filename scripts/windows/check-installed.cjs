@@ -5,7 +5,8 @@
 // 用 node-pty 启动程序，用 xterm-headless 模拟终端画面（并回复 PSReadLine 的光标位置查询）。
 //   node scripts/windows/check-installed.cjs <要启动的程序> <方式> [秒数] [-- 程序的参数...]
 // 方式：
-//   complete  等到 inshellisense 的提示符标记出现，输入 git ch，检查候选中有 checkout
+//   complete     等到 inshellisense 的提示符标记出现，输入 git ch，检查候选中有 checkout
+//   complete-ps  同上，输入 Get-ChildItem -Pa，检查候选中有 -Path（PowerShell 自己的命令，T-064）
 //   survive   inshellisense 启动失败时（例如配置写错），PowerShell 仍然可以使用：能执行 echo
 //   hold      等到 inshellisense 启动后保持若干秒再退出（用来检查“有终端在运行时阻止升级和卸载”）
 // 子进程的 PATH 用环境变量 FIGWIN_CHILD_PATH 指定（test-installer.ps1 去掉了 Node 所在的目录）。
@@ -70,11 +71,13 @@ env[process.platform === "win32" ? "Path" : "PATH"] = process.env.FIGWIN_CHILD_P
     // pwsh 第一次启动、inshellisense 解包后第一次加载都比较慢
     result.inshellisense = await waitFor(() => raw.includes(marker), 60000);
   }
-  if (mode === "complete") {
+  if (mode === "complete" || mode === "complete-ps") {
+    const [input, expected] = mode === "complete" ? ["git ch", "checkout"] : ["Get-ChildItem -Pa", "-Path"];
     if (result.inshellisense) {
       await sleep(1000);
-      await type("git ch");
-      result.completions = await waitFor(() => screen().includes("checkout"), 15000);
+      await type(input);
+      // 候选框里要出现期望的候选；输入行本身不算（输入行中是 -Pa，不包含 -Path）
+      result.completions = await waitFor(() => screen().includes(expected), 15000);
     }
     result.ok = result.inshellisense && result.completions === true;
   } else if (mode === "survive") {

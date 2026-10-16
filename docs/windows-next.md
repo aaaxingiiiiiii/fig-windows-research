@@ -66,7 +66,13 @@
   - 开启 Windows Sandbox 是系统设置的修改，要先问用户；
   - 在 Sandbox 中可以运行 `scripts/windows/test-installer.ps1 -Setup <安装包> -Disposable`。
 
-## 4. 功能完成后，和用户一起做的验收（现在不做）
+## 4. 和用户一起做的验收
+
+**2026-10-16 更新（D-017）**：阶段 A 的安装包现在就可以验收，不必等悬浮窗。用户准备好时，按 `docs/acceptance-phase-a.md` 带着用户一项一项做（14 项，约 30 分钟）。它代替了下面第 1 至 3 项。用户回答“否”时，按第 6 节处理。结果写入 `research/spike-fork-windows.md`，在任务板中更新 T-065。
+
+注意：T-064 起，pwsh 中 `cd`、`ls` 等 PowerShell 自己的命令改用 PowerShell 的原生补全，`spikes/T-048-engine-check/` 中 `cd` 的几项会得到 PowerShell 的写法（例如 `.\中文目录`），这是预期的变化。
+
+以下是原来的安排，阶段 B 完成后再做其中的第 4、5 项：
 
 等阶段 B 的功能完成、整合者更新本页之后，再请用户在场，按下面的顺序一次做完：
 

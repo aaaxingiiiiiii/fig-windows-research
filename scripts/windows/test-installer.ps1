@@ -113,11 +113,15 @@ $profileInstalled = Get-Hash $profilePath
 if ($interactive) {
     $r = Invoke-Checker 'complete' $pwsh @('-NoLogo')
     Check '新开的 PowerShell 7 自动启用补全，输入 git ch 出现 checkout（PATH 中没有 Node）' ([bool]$r.ok)
+    $r = Invoke-Checker 'complete-ps' $pwsh @('-NoLogo')
+    Check 'PowerShell 自己的命令也有补全：输入 Get-ChildItem -Pa 出现 -Path（T-064）' ([bool]$r.ok)
 }
 else {
     Add-Result '新开的 PowerShell 7 自动启用补全' '跳过' '当前不是交互式会话（[Environment]::UserInteractive 为 False），初始化脚本按设计不启动 is'
     $r = Invoke-Checker 'complete' $installedExe @('-s', 'pwsh')
     Check '直接运行安装的 is -s pwsh，输入 git ch 出现 checkout（PATH 中没有 Node）' ([bool]$r.ok)
+    $r = Invoke-Checker 'complete-ps' $installedExe @('-s', 'pwsh')
+    Check '直接运行安装的 is -s pwsh，输入 Get-ChildItem -Pa 出现 -Path（T-064）' ([bool]$r.ok)
 }
 
 # ---- 3. 有终端在使用补全时，阻止升级和卸载 ----

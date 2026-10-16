@@ -47,3 +47,6 @@
 | 2026-10-16 | T-063 | `src/utils/shell.ts` | PowerShell 初始化脚本在 `is -s` 之前设置 `$env:FIGWIN_LOGON_SESSION` | Node 读不到 Windows 会话编号，默认端点需要它 | 否 |
 | 2026-10-16 | T-063 | `src/tests/overlay/launch.test.ts`（新增）、`src/tests/figspec/shellInit.test.ts` | 新增 17 个测试（管道名与宿主使用同一组数据、端点、启动一次、启动失败、onUnreachable）；初始化脚本内容检查 | 防止回归 | 否 |
 | 2026-10-16 | T-063 | `src/overlay/launch.ts`、`src/tests/overlay/launch.test.ts` | 拼路径时按目标平台使用 `path.win32` 或 `path.posix` | Windows 上的 CI 中，测试 Mac 路径时 `path.join` 用了反斜杠；实际运行时行为不变 | 否 |
+| 2026-10-16 | T-064 | `src/runtime/powershellCompletion.ts`（新增）、`src/runtime/runtime.ts`、`src/runtime/initialize.ts` | pwsh 中，PowerShell 自己的命令（cmdlet、函数、别名、脚本）和没有 Fig 规格的命令，用常驻 pwsh 的 TabExpansion2 补全；命令名没有匹配的 Fig 规格时也问 PowerShell；替换范围必须正好是正在输入的词；运行时初始化时预先启动 pwsh | 最小实现（D-017，F-038）：PowerShell 命令和参数原来完全没有补全，Windows 上的 `ls` 还会提示 Unix 选项 | 否 |
+| 2026-10-16 | T-064 | `src/runtime/replacement.ts` | 导出 `typedCharCount` | 校验原生补全的替换范围 | 否 |
+| 2026-10-16 | T-064 | `src/tests/figspec/powershellCompletion.test.ts`（新增）、`src/tests/figspec/figspec.test.ts` | 新增 9 个测试（范围校验、路由、真实 pwsh 的集成测试）；W-xxx 用例关闭原生补全，继续检查 Fig 规格这条路径上的引号和删除规则 | pwsh 中的 `cd` 改用原生补全后，W-xxx 原来会随机器上有没有 pwsh 而变 | 否 |

@@ -22,7 +22,8 @@
 | T-061 | GitHub Actions 的 Windows 自动检查：L1 测试、宿主测试、安装脚本自测；构建安装包并在虚拟机中安装、升级、卸载；T-056 对照试验 | doing | any | T-059 | Claude Code/Opus 5.5 2026-10-16：`.github/workflows/windows.yml`（D-015） | 推送后三个作业都运行；安装包和日志作为附件保留 |
 | T-062 | PowerShell 初始化脚本：`is` 启动失败时不关闭 PowerShell | done | any | — | Claude Code/Opus 5.5 2026-10-16 | `src/utils/shell.ts`；`shellInit.test.ts`（3 个，用真实的 pwsh，变异检查有效）；安装包验收中再检查一次“配置写错时 PowerShell 仍可用” |
 | T-063 | 悬浮窗的默认端点和自动启动：配置 `[overlay]`、按用户和登录会话计算管道名、连不上时启动宿主、宿主只保留一个实例 | done | any | T-043, T-053 | Claude Code/Opus 5.5 2026-10-16（D-016） | inshellisense：`overlay/launch.ts`，测试 17 个；宿主：`OverlayEndpoint`、`HostAlreadyRunningException`，测试 75 个；开发用宿主支持 `--pipe`；Mac 上端到端检查：自动启动了宿主，宿主收到了候选 |
-| T-064 | PowerShell 自带命令（cmdlet、函数、别名）及其参数的补全 | todo | any | — | 需要用户决定是否要做、做到哪一步（F-038） | 推荐的做法和顺序见 `research/powershell-native-completion.md` |
+| T-064 | PowerShell 自带命令（cmdlet、函数、别名）及其参数的补全（最小实现，D-017） | done | any | — | Claude Code/Opus 5.5 2026-10-16 | 常驻 pwsh 调用 TabExpansion2（`runtime/powershellCompletion.ts`）；测试 9 个；Mac 上端到端检查通过；安装包验收增加 `complete-ps` 检查。局限见 `research/powershell-native-completion.md` |
+| T-065 | 阶段 A 验收：用户在自己的电脑上按 `docs/acceptance-phase-a.md` 做 14 项（代替 T-040、T-048、T-057 的人工部分） | todo | windows, human | T-059, T-064 | 用户（Windows 端的 AI 可以带着做） | 14 项都是“是”；结果写入 `research/spike-fork-windows.md`；之后进入 T-041 日常试用 |
 
 ### 阶段 B：悬浮窗（复用阶段 A）
 
